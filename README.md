@@ -3,6 +3,19 @@
 Internes Compliance-Tool für EPDE und EPROHA.  
 Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Handlungsempfehlungen.
 
+## Projektstart lokal
+- `npm run dev`
+- Browser: `http://localhost:4173`
+- Einstieg über `index.html` → leitet auf `Reihengeschaeftsrechner_22.html` weiter
+
+## Projektstruktur
+- `Reihengeschaeftsrechner_22.html` — Hauptanwendung als Single-File
+- `index.html` — schlanker Einstiegspunkt/Redirect für lokalen Start
+- `scripts/serve.mjs` — dependency-freier lokaler Static-Server + Strukturcheck
+- `CLAUDE.md` — Entwicklerregeln und Architekturhinweise
+- `RGR_CHANGELOG.md` — Session-Änderungen
+- `RGR_TODO.md` — offener Backlog
+
 ## Modi
 | 3P | Standard-Reihengeschäft (inkl. CH/GB Export) |
 |---|---|

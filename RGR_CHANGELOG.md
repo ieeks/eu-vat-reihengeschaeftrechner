@@ -2,6 +2,20 @@
 
 ---
 
+## v4.2 · 27.03.2026 — Session 10
+
+### Projektstruktur / Repo-Rahmen
+- Neues GitHub-Repo `ieeks/eu-vat-reihengeschaeftrechner` angelegt und `main` gepusht
+- Lokaler Einstiegspunkt `index.html` ergänzt → Redirect auf `Reihengeschaeftsrechner_22.html`
+- `package.json` ergänzt mit `npm run dev`, `npm run start`, `npm run check`
+- `scripts/serve.mjs` ergänzt als dependency-freier lokaler Static-Server
+- README + CLAUDE auf neue Start- und Strukturinfos aktualisiert
+
+### Nicht angefasst
+- VATEngine IIFE
+- analyze()
+- analyze2()
+
 ## v4.2 · 26.03.2026 — Session 9
 
 ### Dev-Overlay (P2)

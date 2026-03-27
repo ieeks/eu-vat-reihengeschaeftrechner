@@ -13,6 +13,9 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 | `README.md` | User-facing Übersicht |
 | `RGR_CHANGELOG.md` | Änderungsprotokoll |
 | `RGR_TODO.md` | Offene Punkte & Backlog |
+| `index.html` | Einstiegspunkt für lokalen Server / Redirect |
+| `package.json` | Start- und Check-Skripte |
+| `scripts/serve.mjs` | Dependency-freier lokaler Static-Server |
 
 ## Entities
 
@@ -110,6 +113,17 @@ eng._depEqDest                        → analyzeInland()
 
 ## Linke Seite
 Struktur → Warenkette → Transport → UID-Override → Context → Lohn → UID-Status (unten)
+
+## Projekt-Rahmen
+```bash
+npm run dev
+npm run check
+```
+
+- Einstieg lokal: `index.html`
+- App-Quelle bleibt `Reihengeschaeftsrechner_22.html`
+- Server-Logik nur in `scripts/serve.mjs`
+- Ziel der Aufräumung: bessere Startbarkeit ohne Eingriff in die Kernlogik
 
 ---
 

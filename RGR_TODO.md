@@ -11,6 +11,15 @@ Stand: 26.03.2026
 
 ---
 
+## Session 10 — Repo / Struktur
+
+- [x] **GitHub-Repo angelegt** — `eu-vat-reihengeschaeftrechner`
+- [x] **Lokaler Start-Workflow** — `npm run dev` via `scripts/serve.mjs`
+- [x] **Projekt-Einstiegspunkt** — `index.html` als Redirect auf Hauptdatei
+- [ ] **Browserabnahme nach Struktur-Update** — Redirect + Menü + Tests im Browser prüfen
+
+---
+
 ## P1 — Wichtig
 
 - [ ] **Typeahead Länder-Picker** — Native select ersetzen
