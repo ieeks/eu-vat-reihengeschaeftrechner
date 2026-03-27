@@ -2,6 +2,18 @@
 
 ---
 
+## v4.2 · 27.03.2026 — Session 13
+
+### Ergebnis-Ampel
+- Neue Top-Entscheidung in der Ergebnisbox: `ALLES OK`, `ACHTUNG GEHT NICHT`, `ACHTUNG UID-NR ÄNDERN`
+- Ableitung nur aus bestehendem Risiko-/Registrierungsstatus und Dreiecks-Opportunity
+- Integration oberhalb des Decision Flow in der `docs/`-App
+
+### Nicht angefasst
+- VATEngine IIFE
+- analyze()
+- analyze2()
+
 ## v4.2 · 27.03.2026 — Session 12
 
 ### Multi-File / Hosting

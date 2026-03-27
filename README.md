@@ -34,6 +34,7 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 | Lohn | Art. 17 Abs. 2 lit. f MwStSystRL |
 
 ## Output
+- **Ampel-Status** — `ALLES OK`, `ACHTUNG GEHT NICHT` oder `ACHTUNG UID-NR ÄNDERN` auf Basis des bestehenden Risiko-/Opportunity-Status
 - **Decision Flow** — strukturierte 4-Schritt-Begründung zu Transportzuordnung, bewegter Lieferung, steuerlicher Behandlung und restlicher Lieferung
 - **Eigene Lieferhinweise** — SAP-Code + UID pro eigener Lieferung in der Begründungsbox
 - **Warenfluss-Diagramm** — SVG inkl. Inland + CH/GB Export

@@ -20,6 +20,13 @@ Stand: 27.03.2026
 
 ---
 
+## Session 13 — Ergebnis-Ampel
+
+- [x] **Ampel-Status ergänzt** — OK / Geht nicht / UID ändern
+- [ ] **Browserabnahme Ampel** — grün/gelb/rot mit echten Fällen manuell prüfen
+
+---
+
 ## Session 10 — Repo / Struktur
 
 - [x] **GitHub-Repo angelegt** — `eu-vat-reihengeschaeftrechner`

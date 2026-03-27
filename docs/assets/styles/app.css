@@ -815,6 +815,30 @@ header {
 .kurz-toggle { font-size:0.58rem; color:var(--tx-3); opacity:0.7; transition:transform 0.15s; }
 .kurz-title.open .kurz-toggle { transform:rotate(90deg); }
 .decision-flow { display:flex; flex-direction:column; gap:12px; }
+.traffic-status {
+  display:flex; align-items:flex-start; gap:12px; padding:12px 14px;
+  border-radius:var(--r); border:1px solid var(--border-md);
+  background:var(--surface); margin-bottom:2px;
+}
+.traffic-status-light {
+  width:14px; height:14px; border-radius:999px; flex-shrink:0; margin-top:4px;
+  box-shadow:0 0 0 4px rgba(255,255,255,0.03);
+}
+.traffic-status-green { border-color:rgba(74,222,128,0.25); background:rgba(74,222,128,0.08); }
+.traffic-status-green .traffic-status-light { background:var(--green); }
+.traffic-status-yellow { border-color:rgba(251,191,36,0.26); background:rgba(251,191,36,0.08); }
+.traffic-status-yellow .traffic-status-light { background:var(--amber); }
+.traffic-status-red { border-color:rgba(248,113,113,0.25); background:rgba(248,113,113,0.08); }
+.traffic-status-red .traffic-status-light { background:var(--red); }
+.traffic-status-title {
+  font-family:var(--mono); font-size:0.78rem; font-weight:700; letter-spacing:0.04em;
+}
+.traffic-status-green .traffic-status-title { color:var(--green); }
+.traffic-status-yellow .traffic-status-title { color:var(--amber); }
+.traffic-status-red .traffic-status-title { color:var(--red); }
+.traffic-status-body {
+  margin-top:4px; font-size:0.78rem; line-height:1.6; color:var(--tx-1);
+}
 .decision-banner {
   padding:10px 12px; border-radius:var(--r);
   background:rgba(45,212,191,0.07); border:1px solid rgba(45,212,191,0.2);
@@ -1067,6 +1091,7 @@ header {
   .kurz-bullets { font-size: 0.72rem !important; }
   .decision-grid { grid-template-columns: 1fr !important; }
   .decision-step { padding: 10px 11px !important; }
+  .traffic-status { padding: 10px 11px !important; }
 
   /* ── Hints ── */
   .hint { font-size: 0.72rem !important; padding: 8px 10px !important; }

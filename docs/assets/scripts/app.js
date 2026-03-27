@@ -5200,7 +5200,45 @@ function buildMeldepflichten(ctx, engResult) {
 // Erstellt eine kompakte TL;DR-Zusammenfassung des Analyse-Ergebnisses.
 // Zeigt die wichtigsten Erkenntnisse auf einen Blick: bewegte Lieferung,
 // welche UID verwenden, wichtigste Pflicht (RC/ZM/Erwerb).
-function buildKurzbeschreibung(ctx, eng) {
+function buildTrafficStatus(ctx, eng, options = {}) {
+  if (!eng || !eng.supplies || !eng.supplies.length) return '';
+  const risks = eng.risks?.risks || [];
+  const hasBlockingRegistrationRisk = options.hasBlockingRegistrationRisk || risks.some((r) =>
+    r.type === 'registration-required' ||
+    r.type === 'ic-acquisition-no-reg' ||
+    r.type === 'resting-buyer-no-uid'
+  );
+
+  if (hasBlockingRegistrationRisk) {
+    return `<div class="traffic-status traffic-status-red" data-component="trafficStatus">
+      <div class="traffic-status-light"></div>
+      <div>
+        <div class="traffic-status-title">ACHTUNG GEHT NICHT</div>
+        <div class="traffic-status-body">In der aktuellen Konstellation ist das Geschäft nicht ohne zusätzliche Registrierung oder fehlende UID-Voraussetzungen umsetzbar. Bitte die Registrierungswarnungen prüfen.</div>
+      </div>
+    </div>`;
+  }
+
+  if (options.dreiecksOpportunity && !selectedUidOverride) {
+    return `<div class="traffic-status traffic-status-yellow" data-component="trafficStatus">
+      <div class="traffic-status-light"></div>
+      <div>
+        <div class="traffic-status-title">ACHTUNG UID-NR ÄNDERN</div>
+        <div class="traffic-status-body">Das Geschäft ist grundsätzlich darstellbar, aber nach der aktuellen Analyse sollte eine andere UID verwendet werden, damit die Vereinfachung ohne Registrierung im Bestimmungsland genutzt werden kann.</div>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="traffic-status traffic-status-green" data-component="trafficStatus">
+    <div class="traffic-status-light"></div>
+    <div>
+      <div class="traffic-status-title">ALLES OK</div>
+      <div class="traffic-status-body">Nach der aktuellen Konstellation ist das Geschäft in dieser Struktur umsetzbar. Bitte Rechnungshinweise, Belegnachweise und Meldepflichten wie ausgewiesen einhalten.</div>
+    </div>
+  </div>`;
+}
+
+function buildKurzbeschreibung(ctx, eng, options = {}) {
   if (!eng || !eng.supplies || !eng.supplies.length) return '';
   const isAT     = COMPANIES[currentCompany].home === 'AT';
   const hasAnyNonDestId = Object.keys(MY_VAT_IDS).some(c => c !== ctx.dest);
@@ -5351,8 +5389,9 @@ function buildKurzbeschreibung(ctx, eng) {
     ? `<div class="decision-banner">✅ <strong>Dreiecksgeschäft wirksam berücksichtigt:</strong> Nach der aktuellen UID- und Transportkonstellation ist keine eigene Registrierung im Bestimmungsland <strong>${cn(ctx.dest)}</strong> vorgesehen.</div>`
     : '';
   const ownSupplyMarkup = ownSupplyNotes();
+  const trafficStatusHtml = buildTrafficStatus(ctx, eng, options);
 
-  return `<div class="kurz-box fade" data-component="buildKurzbeschreibung"><div class="kurz-title" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📋 Decision Flow <span class="kurz-toggle">▸</span></div><div class="kurz-body"><div class="decision-flow">${topBanner}<div class="decision-grid">${steps}</div>${ownSupplyMarkup ? `<div class="decision-own-notes">${ownSupplyMarkup}</div>` : ''}</div></div></div>`;
+  return `<div class="kurz-box fade" data-component="buildKurzbeschreibung"><div class="kurz-title" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📋 Decision Flow <span class="kurz-toggle">▸</span></div><div class="kurz-body"><div class="decision-flow">${trafficStatusHtml}${topBanner}<div class="decision-grid">${steps}</div>${ownSupplyMarkup ? `<div class="decision-own-notes">${ownSupplyMarkup}</div>` : ''}</div></div></div>`;
 }
 
 
@@ -5669,7 +5708,10 @@ function analyze() {
     // Registrierungspflicht VOR allem anderen — kritischste Info zuerst
     if (engRegHtml) html = `<div class="hints reg-warnings" style="margin-bottom:12px;">${engRegHtml}</div>`;
     html += buildFlowDiagram(parties, movingL1?0:1, dep, dest, dreiecks||dreiecksOpportunity, 0, 1);
-    html += buildKurzbeschreibung(ctx, eng);
+    html += buildKurzbeschreibung(ctx, eng, {
+      hasBlockingRegistrationRisk: !!engRegHtml,
+      dreiecksOpportunity,
+    });
 
     // ── TL;DR summary ────────────────────────────────────────────────────
     {
@@ -5794,7 +5836,10 @@ function analyze() {
 
     html = engRegHtml ? `<div class="hints reg-warnings" style="margin-bottom:12px;">${engRegHtml}</div>` : '';
     html += buildFlowDiagram(parties, movingIndex, dep, dest, dreiecks, dreiecks?1:-1, dreiecks?2:-1);
-    html += buildKurzbeschreibung(ctx, eng);
+    html += buildKurzbeschreibung(ctx, eng, {
+      hasBlockingRegistrationRisk: !!engRegHtml,
+      dreiecksOpportunity: false,
+    });
 
     // ── TL;DR summary ────────────────────────────────────────────────────
     {

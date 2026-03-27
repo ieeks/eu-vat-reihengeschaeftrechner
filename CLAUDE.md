@@ -100,6 +100,7 @@ getTransportLetter()  → UI-Brücke für Transport-Buttons / Labels
 - Rechtsgrundlagen nur subtil als Chips / Referenzen
 - Bei fehlenden Daten defensiv rendern, nie hart abbrechen
 - Dreiecks-Chance separat als Opportunity-Banner, nur bei bestehender UI-Erkennung
+- Ampel-Status nur aus bestehendem Risiko-/Opportunity-Status ableiten
 
 ## SAP-Badge Logik
 ```
