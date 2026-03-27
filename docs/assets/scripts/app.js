@@ -5284,6 +5284,7 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
   const movingSupply = eng.supplies.find(s => s.isMoving) || eng.supplies[0];
   const remainingSupplies = eng.supplies.filter(s => !s.isMoving);
   const transport = getCanonicalTransport();
+  const dreiecksPossible = dreiecksOpportunity && !selectedUidOverride;
   const risks = eng.risks?.risks || [];
   const hasBlockingRegistrationRisk = risks.some(r =>
     r.type === 'registration-required' ||
@@ -5482,7 +5483,6 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
 
   const topBanner = '';
   const ownSupplyMarkup = ownSupplyNotes();
-  const dreiecksPossible = dreiecksOpportunity && !selectedUidOverride;
   const trafficStatusHtml = buildTrafficStatus(ctx, eng, {
     ...options,
     dreiecksApplied: dreiecks,
