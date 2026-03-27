@@ -5247,8 +5247,8 @@ function buildTrafficStatus(ctx, eng, options = {}) {
     return `<div class="traffic-status traffic-status-green" data-component="trafficStatus">
       <div class="traffic-status-light"></div>
       <div>
-        <div class="traffic-status-title">Dreiecksgeschäft angewendet</div>
-        <div class="traffic-status-body">Die Voraussetzungen sind erfüllt. Eine Registrierung im Bestimmungsland ist nicht erforderlich.</div>
+        <div class="traffic-status-title">Reihengeschäft möglich · Dreiecksgeschäft angewendet</div>
+        <div class="traffic-status-body">Die Voraussetzungen sind erfüllt. Das Reihengeschäft kann in dieser Konstellation als Dreiecksgeschäft abgewickelt werden; eine Registrierung im Bestimmungsland ist nicht erforderlich.</div>
       </div>
     </div>`;
   }
@@ -5257,8 +5257,8 @@ function buildTrafficStatus(ctx, eng, options = {}) {
     return `<div class="traffic-status traffic-status-yellow" data-component="trafficStatus">
       <div class="traffic-status-light"></div>
       <div>
-        <div class="traffic-status-title">Dreiecksgeschäft möglich (mit UID-Anpassung)</div>
-        <div class="traffic-status-body">Mit einer UID aus einem anderen Mitgliedstaat kann die Dreiecksgeschäfts-Vereinfachung angewendet und eine Registrierung im Bestimmungsland möglicherweise vermieden werden.<br>Bitte prüfen Sie, mit welcher UID der mittlere Unternehmer auftritt.</div>
+        <div class="traffic-status-title">Reihengeschäft möglich · Dreiecksgeschäft per UID-Anpassung möglich</div>
+        <div class="traffic-status-body">Das Reihengeschäft ist in der aktuellen Grundstruktur möglich. Mit einer UID aus einem anderen Mitgliedstaat kann zusätzlich die Dreiecksgeschäfts-Vereinfachung angewendet und eine Registrierung im Bestimmungsland möglicherweise vermieden werden.<br>Bitte prüfen Sie, mit welcher UID der mittlere Unternehmer auftritt.</div>
       </div>
     </div>`;
   }
@@ -5266,8 +5266,8 @@ function buildTrafficStatus(ctx, eng, options = {}) {
   return `<div class="traffic-status traffic-status-blue" data-component="trafficStatus">
     <div class="traffic-status-light"></div>
     <div>
-      <div class="traffic-status-title">Dreiecksgeschäft nicht anwendbar</div>
-      <div class="traffic-status-body">${getTriangulationReason({ ctx, eng, options })}</div>
+      <div class="traffic-status-title">Reihengeschäft möglich · kein Dreiecksgeschäft</div>
+      <div class="traffic-status-body">Die Lieferkette ist als Reihengeschäft auswertbar. Die Dreiecksgeschäfts-Vereinfachung greift in dieser Konstellation jedoch nicht. Grund: ${getTriangulationReason({ ctx, eng, options })}</div>
     </div>
   </div>`;
 }
@@ -5497,10 +5497,10 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
         <div class="summary-card-title">Ergebnis auf einen Blick</div>
         <div class="summary-grid">${summaryItems}</div>
       </div>
-      <button class="kurz-title" type="button" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('is-open');this.setAttribute('aria-expanded', this.classList.contains('open') ? 'true' : 'false')" aria-expanded="false">
+      <button class="kurz-title open" type="button" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('is-open');this.setAttribute('aria-expanded', this.classList.contains('open') ? 'true' : 'false')" aria-expanded="true">
         📋 ${detailButtonLabel} <span class="kurz-toggle">▸</span>
       </button>
-      <div class="kurz-body">
+      <div class="kurz-body is-open">
         <div class="decision-grid">${steps}</div>
         ${ownSupplyMarkup ? `<div class="decision-own-notes">${ownSupplyMarkup}</div>` : ''}
       </div>
