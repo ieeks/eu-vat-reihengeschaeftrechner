@@ -830,12 +830,15 @@ header {
 .traffic-status-yellow .traffic-status-light { background:var(--amber); }
 .traffic-status-red { border-color:rgba(248,113,113,0.25); background:rgba(248,113,113,0.08); }
 .traffic-status-red .traffic-status-light { background:var(--red); }
+.traffic-status-blue { border-color:rgba(96,165,250,0.24); background:rgba(59,130,246,0.08); }
+.traffic-status-blue .traffic-status-light { background:var(--blue); }
 .traffic-status-title {
   font-family:var(--mono); font-size:0.78rem; font-weight:700; letter-spacing:0.04em;
 }
 .traffic-status-green .traffic-status-title { color:var(--green); }
 .traffic-status-yellow .traffic-status-title { color:var(--amber); }
 .traffic-status-red .traffic-status-title { color:var(--red); }
+.traffic-status-blue .traffic-status-title { color:var(--blue); }
 .traffic-status-body {
   margin-top:4px; font-size:0.78rem; line-height:1.6; color:var(--tx-1);
 }

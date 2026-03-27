@@ -1310,7 +1310,7 @@ const VATEngine = (() => {
         if (altTransport) optionen += `⓵ ${altTransport}<br>`;
         optionen += `${altTransport ? '⓶' : '⓵'} ${lagerTipp}<br>`;
         optionen += `${altTransport ? '⓷' : '⓶'} Registrierung in ${ctx.nameOf(placeOfSupply)} beantragen<br>`;
-        if (dreieckMoeglich) optionen += `${altTransport ? '⓸' : '⓷'} Dreiecksgeschäft automatisch berücksichtigen (Art. 141 MwStSystRL)<br>`;
+        if (dreieckMoeglich) optionen += `${altTransport ? '⓸' : '⓷'} Geeignete UID für Dreiecksgeschäft nutzen (Art. 141 MwStSystRL)<br>`;
         risks.push({ type:'resting-buyer-no-uid', severity:'error', supply:label, country:placeOfSupply,
           message:`<strong>🚨 ${label}: Ruhende Lieferung in ${ctx.nameOf(placeOfSupply)} — keine ${placeOfSupply}-Registrierung!</strong><br>` +
             `Lieferant fakturiert ${r}% ${ctx.nameOf(placeOfSupply)}-MwSt. Ohne ${placeOfSupply}-UID kein Vorsteuerabzug → MwSt wird zum Kostenfaktor.<br>` +
@@ -3004,7 +3004,7 @@ function computeTax(isMoving, from, to, dep, dest, num, myCode) {
         } else {
           hints.push({type:'warn',icon:'⚠️',text:
             `Erwerb physisch in <strong>${cn(dest)}</strong> (${rate(dest)}%) – keine UID dort vorhanden.<br>
-            → Registrierung in ${cn(dest)} erforderlich, oder Dreiecksgeschäft prüfen (Art. 141 MwStSystRL).`
+            → Registrierung in ${cn(dest)} erforderlich, oder geeignete UID für das Dreiecksgeschäft nutzen (Art. 141 MwStSystRL).`
           });
           hints.push({type:'warn',icon:'🔁',text:
             `${natLaw('3d')}: Verwendest du deine ${cn(to)}-UID → Doppelerwerb-Risiko (${cn(to)} + ${cn(dest)}) bis Nachweis der Besteuerung in ${cn(dest)}.`
@@ -5200,6 +5200,28 @@ function buildMeldepflichten(ctx, engResult) {
 // Erstellt eine kompakte TL;DR-Zusammenfassung des Analyse-Ergebnisses.
 // Zeigt die wichtigsten Erkenntnisse auf einen Blick: bewegte Lieferung,
 // welche UID verwenden, wichtigste Pflicht (RC/ZM/Erwerb).
+function getTriangulationReason(result) {
+  const { ctx, eng, options = {} } = result;
+  if (!ctx || !eng) return 'Die Voraussetzungen für die Dreiecksgeschäfts-Vereinfachung sind in dieser Konstellation nicht erfüllt.';
+  if (ctx.mode !== 3) return 'Die Vereinfachung ist nur im 3-Parteien-Reihengeschäft vorgesehen.';
+  if ([ctx.s1, ctx.s2, ctx.s4].some(c => isNonEU(c))) return 'An dem Geschäft ist ein Drittland beteiligt.';
+  if (ctx.dep === ctx.dest) return 'Abgangsland und Bestimmungsland sind identisch.';
+  if (new Set([ctx.s1, ctx.s2, ctx.s4]).size < 3) return 'Es liegen nicht drei verschiedene beteiligte Unternehmerstaaten vor.';
+  if (eng.triangle?.subtype === 'blocked-by-dest-vat' || ctx.vatIds?.[ctx.dest]) {
+    return `Der mittlere Unternehmer verfügt bereits über eine UID im Bestimmungsland ${cn(ctx.dest)}.`;
+  }
+  if (selectedUidOverride === ctx.dep) {
+    return 'Der mittlere Unternehmer verwendet eine UID aus dem Abgangsland. Für die Vereinfachung ist eine UID eines anderen Mitgliedstaats erforderlich.';
+  }
+  if (eng.movingIndex !== 0) {
+    return 'Die bewegte Lieferung liegt nicht zwischen erstem und zweitem Unternehmer.';
+  }
+  if (!Object.keys(MY_VAT_IDS).some(c => c !== ctx.dest && !isNonEU(c))) {
+    return 'Es steht keine geeignete UID eines anderen Mitgliedstaats zur Verfügung.';
+  }
+  return eng.triangle?.reason || 'Die Voraussetzungen für die Dreiecksgeschäfts-Vereinfachung sind in dieser Konstellation nicht erfüllt.';
+}
+
 function buildTrafficStatus(ctx, eng, options = {}) {
   if (!eng || !eng.supplies || !eng.supplies.length) return '';
   const risks = eng.risks?.risks || [];
@@ -5208,6 +5230,8 @@ function buildTrafficStatus(ctx, eng, options = {}) {
     r.type === 'ic-acquisition-no-reg' ||
     r.type === 'resting-buyer-no-uid'
   );
+  const dreiecksApplied = options.dreiecksApplied;
+  const dreiecksPossible = options.dreiecksPossible;
 
   if (hasBlockingRegistrationRisk) {
     return `<div class="traffic-status traffic-status-red" data-component="trafficStatus">
@@ -5219,17 +5243,33 @@ function buildTrafficStatus(ctx, eng, options = {}) {
     </div>`;
   }
 
-  if (options.dreiecksOpportunity && !selectedUidOverride) {
-    return `<div class="traffic-status traffic-status-yellow" data-component="trafficStatus">
+  if (dreiecksApplied) {
+    return `<div class="traffic-status traffic-status-green" data-component="trafficStatus">
       <div class="traffic-status-light"></div>
       <div>
-        <div class="traffic-status-title">ACHTUNG UID-NR ÄNDERN</div>
-        <div class="traffic-status-body">Das Geschäft ist grundsätzlich darstellbar, aber nach der aktuellen Analyse sollte eine andere UID verwendet werden, damit die Vereinfachung ohne Registrierung im Bestimmungsland genutzt werden kann.</div>
+        <div class="traffic-status-title">Dreiecksgeschäft angewendet</div>
+        <div class="traffic-status-body">Die Voraussetzungen sind erfüllt. Eine Registrierung im Bestimmungsland ist nicht erforderlich.</div>
       </div>
     </div>`;
   }
 
-  return '';
+  if (dreiecksPossible) {
+    return `<div class="traffic-status traffic-status-yellow" data-component="trafficStatus">
+      <div class="traffic-status-light"></div>
+      <div>
+        <div class="traffic-status-title">Dreiecksgeschäft möglich (mit UID-Anpassung)</div>
+        <div class="traffic-status-body">Mit einer UID aus einem anderen Mitgliedstaat kann die Dreiecksgeschäfts-Vereinfachung angewendet und eine Registrierung im Bestimmungsland möglicherweise vermieden werden.<br>Bitte prüfen Sie, mit welcher UID der mittlere Unternehmer auftritt.</div>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="traffic-status traffic-status-blue" data-component="trafficStatus">
+    <div class="traffic-status-light"></div>
+    <div>
+      <div class="traffic-status-title">Dreiecksgeschäft nicht anwendbar</div>
+      <div class="traffic-status-body">${getTriangulationReason({ ctx, eng, options })}</div>
+    </div>
+  </div>`;
 }
 
 function buildKurzbeschreibung(ctx, eng, options = {}) {
@@ -5379,11 +5419,13 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
     </div>
   `).join('');
 
-  const topBanner = dreiecks
-    ? `<div class="decision-banner">✅ <strong>Dreiecksgeschäft wirksam berücksichtigt:</strong> Nach der aktuellen UID- und Transportkonstellation ist keine eigene Registrierung im Bestimmungsland <strong>${cn(ctx.dest)}</strong> vorgesehen.</div>`
-    : '';
+  const topBanner = '';
   const ownSupplyMarkup = ownSupplyNotes();
-  const trafficStatusHtml = buildTrafficStatus(ctx, eng, options);
+  const trafficStatusHtml = buildTrafficStatus(ctx, eng, {
+    ...options,
+    dreiecksApplied: dreiecks,
+    dreiecksPossible: dreiecksOpportunity && !selectedUidOverride,
+  });
 
   return `<div class="kurz-box fade" data-component="buildKurzbeschreibung"><div class="kurz-title" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📋 Decision Flow <span class="kurz-toggle">▸</span></div><div class="kurz-body"><div class="decision-flow">${trafficStatusHtml}${topBanner}<div class="decision-grid">${steps}</div>${ownSupplyMarkup ? `<div class="decision-own-notes">${ownSupplyMarkup}</div>` : ''}</div></div></div>`;
 }
@@ -5758,7 +5800,7 @@ function analyze() {
         if (hasVat(dest) && !movingL1 && iAmBuyerOnMoving) {
           tldrLines.push({ key: '✅', val: `IG-Erwerb in <strong>${cn(dest)}</strong> (${rate(dest)}%) selbst abführen · Saldo 0` });
         } else if (!hasVat(dest)) {
-          tldrLines.push({ key: '⚠', val: `Keine UID in <strong>${cn(dest)}</strong> → Registrierung oder Dreiecksgeschäft prüfen` });
+          tldrLines.push({ key: '⚠', val: `Keine UID in <strong>${cn(dest)}</strong> → Registrierung oder geeignete UID für Dreiecksgeschäft erforderlich` });
         }
       }
       // Customer UID check
@@ -9254,7 +9296,7 @@ function renderUIDs() {
 }
 
 // ── Context toggles ────────────────────────────────────────────────────
-let ctxOpts = { triangle: false, lohn: false, konsi: false };
+let ctxOpts = { lohn: false, konsi: false };
 
 // ── Lohnveredelung Mode 5 state ────────────────────────────────────────
 let lohnDirekt = true; // true=Direktlieferung Lieferant→Converter, false=Ware läuft über mich
@@ -9317,24 +9359,10 @@ function toggleCtxOpt(k, cb) {
 }
 
 function renderContextToggles() {
-  const countries = getSelectedCountries();
-  const dep = countries[0], dest = countries[countries.length-1];
-  const n = countries.length;
-  const canTri = n === 3 && dep !== dest && !isNonEU(dep) && !isNonEU(dest);
-
   let h = `<div class="ctx-toggle-group">
     <div class="ctx-toggle-hdr">⚙ Analyse-Optionen</div>
     <div class="ctx-toggle-sub">Optionale Einstellungen für die fachliche Einordnung des Geschäfts.</div>
     <div class="ctx-toggle-list">`;
-
-  if (canTri) {
-    h += `<label class="ctx-item${ctxOpts.triangle?' active':''}" onclick="this.querySelector('input').click()" title="Berücksichtigt automatisch die Dreiecksgeschäfts-Vereinfachung, wenn die Voraussetzungen erfüllt sind.">
-      <div class="ctx-chk"></div>
-      <span>Dreiecksgeschäft automatisch berücksichtigen (empfohlen)</span>
-      <span class="ctx-tag">Art. 141</span>
-      <input type="checkbox" aria-label="Dreiecksgeschäft automatisch berücksichtigen, wenn die Voraussetzungen erfüllt sind" title="Berücksichtigt automatisch die Dreiecksgeschäfts-Vereinfachung, wenn die Voraussetzungen erfüllt sind." ${ctxOpts.triangle?'checked':''} onchange="toggleCtxOpt('triangle',this)">
-    </label>`;
-  }
 
   h += `<label class="ctx-item${ctxOpts.konsi?' active':''}" onclick="this.querySelector('input').click()">
     <div class="ctx-chk"></div>
@@ -10300,7 +10328,15 @@ function renderExpertMelde() {
   const dep = countries[0], dest = countries[countries.length-1];
   const home = COMPANIES[currentCompany].home;
   let supplies = [];
-  try { const _ctx=buildCtx(); const _eng=VATEngine.run(_ctx); supplies = classifySuppliesNorm(_ctx, _eng.movingIndex); } catch(e) {}
+  let triangleEffective = false;
+  try {
+    const _ctx=buildCtx();
+    const _eng=VATEngine.run(_ctx);
+    supplies = classifySuppliesNorm(_ctx, _eng.movingIndex);
+    const triangleOpportunity = !_eng.trianglePossible && !_ctx.vatIds?.[_ctx.dest] &&
+      _ctx.mode===3 && _ctx.dep!==_ctx.dest && !isNonEU(_ctx.dep) && !isNonEU(_ctx.dest);
+    triangleEffective = _eng.trianglePossible || (triangleOpportunity && !!selectedUidOverride);
+  } catch(e) {}
   const hasIG = supplies.some(s=>s.vatTreatment==='ic-exempt'&&s.iAmSeller);
   const regSup = supplies.find(s=>s.vatTreatment==='registration-required');
 
@@ -10316,7 +10352,7 @@ function renderExpertMelde() {
       <div class="melde-item">
         <span class="mi-type ${hasIG?'mi-zm':'mi-none'}">ZM</span>
         <div class="mi-country">${flag(home)} ${cn(home)}</div>
-        <div class="mi-detail">${hasIG?'IG-Lieferung meldepflichtig. Kunden-UID + Nettobetrag.'+( ctxOpts.triangle?' Dreiecksgeschäft: KZ 077 setzen.':''):'Keine ZM-Pflicht'}</div>
+        <div class="mi-detail">${hasIG?'IG-Lieferung meldepflichtig. Kunden-UID + Nettobetrag.'+( triangleEffective?' Dreiecksgeschäft: KZ 077 setzen.':''):'Keine ZM-Pflicht'}</div>
         <div class="mi-deadline">${hasIG?'Frist: 25. Folgemonat':'—'}</div>
       </div>
       <div class="melde-item">
