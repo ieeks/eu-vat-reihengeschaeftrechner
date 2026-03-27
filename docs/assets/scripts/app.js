@@ -1407,7 +1407,7 @@ function buildFlowDiagram(parties, movingDeliveryIdx, departure, destination, is
   }
   const goodsLabel = `Ware: ${cn(departure)} → ${cn(destination)}`;
   return `<div class="flow-diagram" data-component="buildFlowDiagram">
-    <div class="flow-title" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">📦 Warenfluss &amp; Fakturierung</div>
+    <div class="flow-title">📦 Warenfluss &amp; Fakturierung</div>
     <div class="flow-diagram-body">
     <div class="flow-invoice-row">${invoiceRow}</div>
     <div class="flow-goods-row">
@@ -1527,7 +1527,7 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
 
   const svg = `
   <div class="flow-diagram">
-    <div class="flow-title" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">📦 Warenfluss &amp; Fakturierung · Dreiecksgeschäft</div>
+    <div class="flow-title">📦 Warenfluss &amp; Fakturierung · Dreiecksgeschäft</div>
     <div class="flow-diagram-body">
     <svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block;margin:0 auto;overflow:visible;">
       <defs>
@@ -1648,7 +1648,7 @@ function buildTriangleSVG4(parties, movingIdx, departure, destination) {
   const l3rate   = rate(D.code);
 
   return '<div class="flow-diagram">'+
-    '<div class="flow-title" onclick="this.classList.toggle(\'open\');this.nextElementSibling.classList.toggle(\'open\')">📦 Warenfluss &amp; Fakturierung · 4-Parteien Dreiecksgeschäft (EuG T-646/24)</div>'+
+    '<div class="flow-title">📦 Warenfluss &amp; Fakturierung · 4-Parteien Dreiecksgeschäft (EuG T-646/24)</div>'+
     '<div class="flow-diagram-body">'+
     '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="max-width:'+W+'px;display:block;margin:0 auto;overflow:visible;">'+
 
