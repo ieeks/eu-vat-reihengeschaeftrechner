@@ -5284,6 +5284,13 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
   const movingSupply = eng.supplies.find(s => s.isMoving) || eng.supplies[0];
   const remainingSupplies = eng.supplies.filter(s => !s.isMoving);
   const transport = getCanonicalTransport();
+  const risks = eng.risks?.risks || [];
+  const hasBlockingRegistrationRisk = risks.some(r =>
+    r.type === 'registration-required' ||
+    r.type === 'double-acquisition' ||
+    r.type === 'ic-acquisition-no-reg' ||
+    r.type === 'resting-buyer-no-uid'
+  );
   const roleMap = {
     supplier: `vom Lieferanten (${cn(ctx.s1)})`,
     middle: `vom Zwischenhändler (${cn(ctx.s2)})`,
@@ -5408,6 +5415,60 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
     body: restText,
   };
 
+  const summaryItems = (() => {
+    const items = [
+      {
+        label: 'Bewegte Lieferung',
+        value: `${flag(movingSupply.from)} ${cn(movingSupply.from)} → ${flag(movingSupply.to)} ${cn(movingSupply.to)}`,
+      },
+    ];
+
+    if (hasBlockingRegistrationRisk) {
+      items.push({
+        label: 'Registrierung',
+        value: `In der aktuellen Struktur zusätzliche Registrierung prüfen`,
+      });
+    } else if (dreiecks) {
+      items.push({
+        label: 'Registrierung',
+        value: `Keine Registrierung im Bestimmungsland erforderlich`,
+      });
+    } else {
+      items.push({
+        label: 'Registrierung',
+        value: `Keine zusätzliche Registrierung aus dem Primärergebnis ersichtlich`,
+      });
+    }
+
+    if (dreiecksPossible && !selectedUidOverride) {
+      items.push({
+        label: 'Empfohlene Aktion',
+        value: 'Geeignete UID des mittleren Unternehmers auswählen',
+      });
+    } else if (selectedUidOverride && MY_VAT_IDS[selectedUidOverride]) {
+      items.push({
+        label: 'Aktive UID',
+        value: `${flag(selectedUidOverride)} ${MY_VAT_IDS[selectedUidOverride]}`,
+      });
+    } else {
+      const ownHome = COMPANIES[currentCompany].home;
+      const fallbackUidCode = myVat(ownHome) ? ownHome : Object.keys(MY_VAT_IDS)[0];
+      if (fallbackUidCode && MY_VAT_IDS[fallbackUidCode]) {
+        items.push({
+          label: 'Aktive UID',
+          value: `${flag(fallbackUidCode)} ${MY_VAT_IDS[fallbackUidCode]}`,
+        });
+      }
+    }
+
+    return items.slice(0, 3).map(item => `
+      <div class="summary-item">
+        <div class="summary-label">${item.label}</div>
+        <div class="summary-value">${item.value}</div>
+      </div>
+    `).join('');
+  })();
+
   const steps = [step1, step2, step3, step4].map((step, index) => `
     <div class="decision-step">
       <div class="decision-step-top">
@@ -5421,13 +5482,30 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
 
   const topBanner = '';
   const ownSupplyMarkup = ownSupplyNotes();
+  const dreiecksPossible = dreiecksOpportunity && !selectedUidOverride;
   const trafficStatusHtml = buildTrafficStatus(ctx, eng, {
     ...options,
     dreiecksApplied: dreiecks,
-    dreiecksPossible: dreiecksOpportunity && !selectedUidOverride,
+    dreiecksPossible,
   });
+  const detailButtonLabel = ownSupplyMarkup ? 'Fachliche Begründung & Lieferdetails' : 'Fachliche Begründung';
 
-  return `<div class="kurz-box fade" data-component="buildKurzbeschreibung"><div class="kurz-title" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📋 Decision Flow <span class="kurz-toggle">▸</span></div><div class="kurz-body"><div class="decision-flow">${trafficStatusHtml}${topBanner}<div class="decision-grid">${steps}</div>${ownSupplyMarkup ? `<div class="decision-own-notes">${ownSupplyMarkup}</div>` : ''}</div></div></div>`;
+  return `<div class="kurz-box fade" data-component="buildKurzbeschreibung">
+    <div class="decision-flow">
+      ${trafficStatusHtml}
+      <div class="summary-card">
+        <div class="summary-card-title">Ergebnis auf einen Blick</div>
+        <div class="summary-grid">${summaryItems}</div>
+      </div>
+      <button class="kurz-title" type="button" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('is-open');this.setAttribute('aria-expanded', this.classList.contains('open') ? 'true' : 'false')" aria-expanded="false">
+        📋 ${detailButtonLabel} <span class="kurz-toggle">▸</span>
+      </button>
+      <div class="kurz-body">
+        <div class="decision-grid">${steps}</div>
+        ${ownSupplyMarkup ? `<div class="decision-own-notes">${ownSupplyMarkup}</div>` : ''}
+      </div>
+    </div>
+  </div>`;
 }
 
 
