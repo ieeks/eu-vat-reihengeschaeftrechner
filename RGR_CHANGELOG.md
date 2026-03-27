@@ -2,10 +2,27 @@
 
 ---
 
+## v4.2 · 27.03.2026 — Session 14
+
+### Primäres Ergebnis vereinfacht
+- Top-Status jetzt aus vier klaren Zuständen: `ACHTUNG GEHT NICHT`, `Dreiecksgeschäft angewendet`, `Dreiecksgeschäft möglich (mit UID-Anpassung)`, `Dreiecksgeschäft nicht anwendbar`
+- Neue kompakte Executive Summary oberhalb des Decision Flow
+- Dreiecks-Status vollständig aus bestehender Engine-/Risiko-Logik abgeleitet, kein manueller Toggle mehr
+
+### Sekundäre Hinweise reduziert
+- Nicht-kritische Hints auf Desktop in einklappbares Panel `Weitere Hinweise` verschoben
+- Mobile bleibt auf Primärinhalt fokussiert: Warnungen, Diagramm, Kurzbeschreibung
+- Ergebnisfläche insgesamt ruhiger, ohne Warnlogik oder Expert-Tabs fachlich zu verändern
+
+### Nicht angefasst
+- VATEngine IIFE
+- analyze()
+- analyze2()
+
 ## v4.2 · 27.03.2026 — Session 13
 
 ### Ergebnis-Ampel
-- Neue Top-Entscheidung in der Ergebnisbox: `ALLES OK`, `ACHTUNG GEHT NICHT`, `ACHTUNG UID-NR ÄNDERN`
+- Erste Top-Entscheidung in der Ergebnisbox ergänzt
 - Ableitung nur aus bestehendem Risiko-/Registrierungsstatus und Dreiecks-Opportunity
 - Integration oberhalb des Decision Flow in der `docs/`-App
 

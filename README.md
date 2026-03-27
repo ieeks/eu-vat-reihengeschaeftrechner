@@ -34,12 +34,13 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 | Lohn | Art. 17 Abs. 2 lit. f MwStSystRL |
 
 ## Output
-- **Ampel-Status** — `ALLES OK`, `ACHTUNG GEHT NICHT` oder `ACHTUNG UID-NR ÄNDERN` auf Basis des bestehenden Risiko-/Opportunity-Status
+- **Top-Status** — `ACHTUNG GEHT NICHT`, `Dreiecksgeschäft angewendet`, `Dreiecksgeschäft möglich (mit UID-Anpassung)` oder `Dreiecksgeschäft nicht anwendbar`
+- **Executive Summary** — kompakte 3er-Zusammenfassung zu Struktur, Transport und UID-Einsatz
 - **Decision Flow** — strukturierte 4-Schritt-Begründung zu Transportzuordnung, bewegter Lieferung, steuerlicher Behandlung und restlicher Lieferung
 - **Eigene Lieferhinweise** — SAP-Code + UID pro eigener Lieferung in der Begründungsbox
 - **Warenfluss-Diagramm** — SVG inkl. Inland + CH/GB Export
 - **P0 Warnungen** — Ruhende Lieferung ohne UID → 4 Handlungsoptionen
-- **Dreiecksgeschäft möglich** — prominenter Hinweisbanner bei bestehender UID-/Vereinfachungs-Chance
+- **Weitere Hinweise** — sekundäre Hints werden auf Desktop in ein einklappbares Panel verschoben
 - **⚖ Vergleich-Tab** — Transport-Szenarien nebeneinander (Supplier/Middle/Customer)
 - **Experten-Modus** — 5 Tabs + Perspektivwechsel
 
@@ -48,7 +49,7 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 - **GB (Post-Brexit):** 2P und 3P, DAP/DDP, HMRC, UK VAT, TCA
 
 ## Mobile
-iPhone-optimiert: Kurzbeschreibung + Diagramm + Warnungen
+iPhone-optimiert: Warnungen + Diagramm + primäre Kurzbeschreibung, sekundäre Inhalte weitgehend ausgeblendet
 
 ## Dev Mode
 ⋯-Menü → 🏷 Dev Mode: Hover-Tooltip zeigt Komponenten-Namen

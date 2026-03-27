@@ -8,7 +8,10 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 
 | Datei | Beschreibung |
 |---|---|
-| `Reihengeschaeftsrechner_22.html` | **Hauptdatei v4.2** (~12.800 Zeilen) |
+| `docs/assets/scripts/app.js` | **Hauptdatei v4.2** (deploybare App-Logik) |
+| `docs/assets/styles/app.css` | Haupt-Styles der deploybaren App |
+| `docs/index.html` | Deploybare Multi-File-App |
+| `Reihengeschaeftsrechner_22.html` | Legacy-Snapshot der früheren Single-File-App |
 | `CLAUDE.md` | Diese Datei |
 | `README.md` | User-facing Übersicht |
 | `RGR_CHANGELOG.md` | Änderungsprotokoll |
@@ -16,9 +19,6 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 | `index.html` | Einstiegspunkt für lokalen Server / Redirect |
 | `package.json` | Start- und Check-Skripte |
 | `scripts/serve.mjs` | Dependency-freier lokaler Static-Server |
-| `docs/index.html` | Deploybare Multi-File-App |
-| `docs/assets/styles/app.css` | Ausgelagerte Styles |
-| `docs/assets/scripts/app.js` | Ausgelagerte UI + App-Logik |
 | `.github/workflows/pages.yml` | GitHub-Pages-Deployment |
 
 ## Entities
@@ -33,10 +33,12 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 ## Architektur
 
 ```
-<script> BLOCK 1 ← Constants + Engine + Analysis
+docs/assets/scripts/app.js
+  Constants + Engine + Analysis
   VATEngine IIFE (NICHT modifizieren)
     detectStructureRisks() Section F: resting-buyer-no-uid
-  buildKurzbeschreibung() ← PRIMARY OUTPUT als Decision Flow (4 Schritte + SAP/UID-Hinweise)
+  buildTrafficStatus() ← Top-Status aus Risiko-/Dreiecksstatus
+  buildKurzbeschreibung() ← PRIMARY OUTPUT als Executive Summary + Decision Flow + SAP/UID-Hinweise
   buildInvoiceSnapshot() ← gibt '' zurück
   buildDreiecks3Result() ← selectedUidOverride
   buildNormal3Result() ← _uidOverride für myCode
@@ -49,9 +51,13 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
   computeTaxGB() ← export/domestic-l1/domestic-l2-gb (NEU v4.2)
   analyzeLohn() ← sup===con → Inland-Sonderfall (v4.1)
   buildVergleichTab() ← ⚖ Vergleich-Tab (v4.1)
+  simplifyBasisOutput() ← sekundäre Hints in Desktop-Panel bündeln
 
-<script> BLOCK 2 ← Tests
-<script> BLOCK 3 ← v4 UI Layer
+Reihengeschaeftsrechner_22.html
+  Legacy-Referenz, nicht wieder zur Hauptquelle machen
+
+Tests
+v4 UI Layer
   toggleDevMode() ← Dev-Overlay mit JS-Tooltip (v4.2)
 ```
 
@@ -90,6 +96,8 @@ getTransportLetter()  → UI-Brücke für Transport-Buttons / Labels
 
 ## Decision Flow
 ```
+0. Top-Status / Dreiecksstatus
+0.5 Executive Summary
 1. Transportzuordnung
 2. Bewegte Lieferung
 3. Steuerliche Behandlung
@@ -99,8 +107,8 @@ getTransportLetter()  → UI-Brücke für Transport-Buttons / Labels
 - Stil: kurze steuerliche Begründung, kein Debug-Output
 - Rechtsgrundlagen nur subtil als Chips / Referenzen
 - Bei fehlenden Daten defensiv rendern, nie hart abbrechen
-- Dreiecks-Chance separat als Opportunity-Banner, nur bei bestehender UI-Erkennung
-- Ampel-Status nur aus bestehendem Risiko-/Opportunity-Status ableiten
+- Dreiecks-Chance nur aus bestehender Engine-/Risiko-Logik ableiten, kein manueller Status-Toggle
+- Sekundäre Hints auf Desktop nachrangig in `Weitere Hinweise` bündeln
 
 ## SAP-Badge Logik
 ```

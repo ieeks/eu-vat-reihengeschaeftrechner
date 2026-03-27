@@ -22,8 +22,16 @@ Stand: 27.03.2026
 
 ## Session 13 — Ergebnis-Ampel
 
-- [x] **Ampel-Status ergänzt** — OK / Geht nicht / UID ändern
-- [ ] **Browserabnahme Ampel** — grün/gelb/rot mit echten Fällen manuell prüfen
+- [x] **Top-Status ergänzt** — Geht nicht / Dreieck angewendet / UID-Anpassung / nicht anwendbar
+- [ ] **Browserabnahme Top-Status** — rot/grün/gelb/blau mit echten Fällen manuell prüfen
+
+---
+
+## Session 14 — Primäres Ergebnis vereinfacht
+
+- [x] **Executive Summary ergänzt** — kompakte Struktur-/Transport-/UID-Zusammenfassung
+- [x] **Sekundäre Hints reduziert** — Desktop-Panel `Weitere Hinweise`
+- [ ] **Browserabnahme Ergebnisfläche** — Desktop und Mobile mit/ohne Warnungen manuell prüfen
 
 ---
 
