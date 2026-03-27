@@ -16,10 +16,10 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 | `index.html` | Einstiegspunkt für lokalen Server / Redirect |
 | `package.json` | Start- und Check-Skripte |
 | `scripts/serve.mjs` | Dependency-freier lokaler Static-Server |
-| `docs/index.html` | Deploybare Multi-File-App (GitHub Pages) |
+| `docs/index.html` | Deploybare Multi-File-App |
 | `docs/assets/styles/app.css` | Ausgelagerte Styles |
 | `docs/assets/scripts/app.js` | Ausgelagerte UI + App-Logik |
-| `.github/workflows/pages.yml` | GitHub-Pages-Deployment |
+| `netlify.toml` | Statisches Hosting-Setup für Netlify |
 
 ## Entities
 
@@ -154,7 +154,7 @@ npm run check:pages
 - Deploybare App liegt unter `docs/`
 - `Reihengeschaeftsrechner_22.html` nur noch als Legacy-Snapshot behalten
 - Server-Logik nur in `scripts/serve.mjs`
-- Ziel: statische Multi-File-App ohne Framework, pages-tauglich
+- Ziel: statische Multi-File-App ohne Framework, hostbar als reines Static-Deployment
 
 ---
 
@@ -175,6 +175,7 @@ npm run check:pages
 10. badge-export für Ausfuhr (nicht badge-ig) → A0 statt AF
 11. Decision Flow nur aus bestehendem Engine-Output ableiten, keine neue Steuerlogik erfinden
 12. Neue Änderungen primär in `docs/` umsetzen; Legacy-Single-File nicht wieder zur Hauptquelle machen
+13. Hosting-Dokumentation auf tatsächlichen Provider-Stand halten; kein GitHub-Pages-Setup dokumentieren, wenn das private Repo es nicht nutzen kann
 
 ## Tests
 ```bash

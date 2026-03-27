@@ -14,9 +14,9 @@ Stand: 27.03.2026
 ## Session 12 — Multi-File / Pages
 
 - [x] **Single-File abgelöst** — deploybare App liegt jetzt unter `docs/`
-- [x] **Pages-Workflow ergänzt** — `.github/workflows/pages.yml`
+- [x] **Alternatives Static Hosting vorbereitet** — `netlify.toml` + Publish-Ordner `docs/`
 - [x] **Pages-Strukturcheck** — `npm run check:pages`
-- [ ] **GitHub Pages live prüfen** — Workflow-Run, URL, Assets, Fonts, Redirect
+- [ ] **Live-Hosting prüfen** — Netlify-Deploy, Assets, Fonts, Redirect, lokale Links
 
 ---
 
