@@ -6,8 +6,17 @@ Stand: 27.03.2026
 
 ## P0 — Kritisch
 
-- [ ] **Release v4.2** — Finale Browserabnahme, GitHub commit
+- [ ] **Release v4.2** — Finale Browserabnahme der `docs/`-App
 - [ ] **3P CH/GB Browsertest** — B003a (AT→AT→CH middle), B003b (AT→DE→CH supplier), GB analog
+
+---
+
+## Session 12 — Multi-File / Pages
+
+- [x] **Single-File abgelöst** — deploybare App liegt jetzt unter `docs/`
+- [x] **Pages-Workflow ergänzt** — `.github/workflows/pages.yml`
+- [x] **Pages-Strukturcheck** — `npm run check:pages`
+- [ ] **GitHub Pages live prüfen** — Workflow-Run, URL, Assets, Fonts, Redirect
 
 ---
 

@@ -47,8 +47,32 @@ async function runCheck() {
   console.log(`Projektstruktur OK (${results.length} Dateien geprueft).`)
 }
 
+async function runPagesCheck() {
+  const requiredFiles = [
+    'docs/index.html',
+    'docs/.nojekyll',
+    'docs/assets/styles/app.css',
+    'docs/assets/scripts/app.js',
+  ]
+
+  const results = await Promise.all(
+    requiredFiles.map(async (relativePath) => {
+      const absolutePath = path.join(rootDir, relativePath)
+      await stat(absolutePath)
+      return relativePath
+    }),
+  )
+
+  console.log(`Pages-Struktur OK (${results.length} Dateien geprueft).`)
+}
+
 if (process.argv.includes('--check')) {
   runCheck().catch((error) => {
+    console.error(error.message)
+    process.exitCode = 1
+  })
+} else if (process.argv.includes('--check-pages')) {
+  runPagesCheck().catch((error) => {
     console.error(error.message)
     process.exitCode = 1
   })

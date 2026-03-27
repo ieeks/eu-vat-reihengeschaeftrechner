@@ -6,15 +6,25 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 ## Projektstart lokal
 - `npm run dev`
 - Browser: `http://localhost:4173`
-- Einstieg über `index.html` → leitet auf `Reihengeschaeftsrechner_22.html` weiter
+- Einstieg über `index.html` → leitet auf `docs/` weiter
 
 ## Projektstruktur
-- `Reihengeschaeftsrechner_22.html` — Hauptanwendung als Single-File
-- `index.html` — schlanker Einstiegspunkt/Redirect für lokalen Start
+- `docs/index.html` — deploybare Multi-File-App für Browser und GitHub Pages
+- `docs/assets/styles/app.css` — ausgelagerte Styles
+- `docs/assets/scripts/app.js` — ausgelagerte App-Logik
+- `Reihengeschaeftsrechner_22.html` — Legacy-Snapshot der früheren Single-File-App
+- `index.html` — schlanker Einstiegspunkt/Redirect auf `docs/`
 - `scripts/serve.mjs` — dependency-freier lokaler Static-Server + Strukturcheck
+- `.github/workflows/pages.yml` — GitHub-Pages-Deployment per Actions
 - `CLAUDE.md` — Entwicklerregeln und Architekturhinweise
 - `RGR_CHANGELOG.md` — Session-Änderungen
 - `RGR_TODO.md` — offener Backlog
+
+## Hosting
+- Zielplattform: GitHub Pages
+- Deployment-Artefakt: `docs/`
+- Workflow: `.github/workflows/pages.yml`
+- Erwartete URL: `https://ieeks.github.io/eu-vat-reihengeschaeftrechner/`
 
 ## Modi
 | 3P | Standard-Reihengeschäft (inkl. CH/GB Export) |

@@ -2,6 +2,23 @@
 
 ---
 
+## v4.2 · 27.03.2026 — Session 12
+
+### Multi-File / Hosting
+- Statische Multi-File-App unter `docs/` angelegt (`index.html`, `assets/styles/app.css`, `assets/scripts/app.js`)
+- Root-`index.html` auf Redirect nach `docs/` umgestellt
+- `Reihengeschaeftsrechner_22.html` als Legacy-Snapshot beibehalten
+- GitHub-Pages-Workflow `.github/workflows/pages.yml` ergänzt
+- `npm run check:pages` ergänzt und `scripts/serve.mjs` um Pages-Strukturcheck erweitert
+
+### Doku
+- README + CLAUDE auf neue Multi-File-/Pages-Struktur aktualisiert
+
+### Nicht angefasst
+- VATEngine IIFE
+- analyze()
+- analyze2()
+
 ## v4.2 · 27.03.2026 — Session 11
 
 ### Decision Flow / UI

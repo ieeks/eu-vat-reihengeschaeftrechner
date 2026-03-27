@@ -16,6 +16,10 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 | `index.html` | Einstiegspunkt für lokalen Server / Redirect |
 | `package.json` | Start- und Check-Skripte |
 | `scripts/serve.mjs` | Dependency-freier lokaler Static-Server |
+| `docs/index.html` | Deploybare Multi-File-App (GitHub Pages) |
+| `docs/assets/styles/app.css` | Ausgelagerte Styles |
+| `docs/assets/scripts/app.js` | Ausgelagerte UI + App-Logik |
+| `.github/workflows/pages.yml` | GitHub-Pages-Deployment |
 
 ## Entities
 
@@ -143,12 +147,14 @@ Struktur → Warenkette → Transport → UID-Override → Context → Lohn → 
 ```bash
 npm run dev
 npm run check
+npm run check:pages
 ```
 
 - Einstieg lokal: `index.html`
-- App-Quelle bleibt `Reihengeschaeftsrechner_22.html`
+- Deploybare App liegt unter `docs/`
+- `Reihengeschaeftsrechner_22.html` nur noch als Legacy-Snapshot behalten
 - Server-Logik nur in `scripts/serve.mjs`
-- Ziel der Aufräumung: bessere Startbarkeit ohne Eingriff in die Kernlogik
+- Ziel: statische Multi-File-App ohne Framework, pages-tauglich
 
 ---
 
@@ -168,6 +174,7 @@ npm run check
 9. Alle 5 Files nach jeder Session updaten
 10. badge-export für Ausfuhr (nicht badge-ig) → A0 statt AF
 11. Decision Flow nur aus bestehendem Engine-Output ableiten, keine neue Steuerlogik erfinden
+12. Neue Änderungen primär in `docs/` umsetzen; Legacy-Single-File nicht wieder zur Hauptquelle machen
 
 ## Tests
 ```bash
