@@ -32,7 +32,7 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 <script> BLOCK 1 ← Constants + Engine + Analysis
   VATEngine IIFE (NICHT modifizieren)
     detectStructureRisks() Section F: resting-buyer-no-uid
-  buildKurzbeschreibung() ← PRIMARY OUTPUT (SAP+UID pro Lieferung)
+  buildKurzbeschreibung() ← PRIMARY OUTPUT als Decision Flow (4 Schritte + SAP/UID-Hinweise)
   buildInvoiceSnapshot() ← gibt '' zurück
   buildDreiecks3Result() ← selectedUidOverride
   buildNormal3Result() ← _uidOverride für myCode
@@ -71,6 +71,31 @@ Seller bewegend → dep-UID
 Ruhend → Lieferort-UID
 Fallback → companyHome
 ```
+
+## UI-State Helper
+```
+getState()            → liest UI-Status gesammelt
+setState(patch)       → minimale, kompatible Zustandsupdates
+getCanonicalTransport() → normalisiert A/B/C/D ↔ supplier/middle/customer
+getTransportLetter()  → UI-Brücke für Transport-Buttons / Labels
+```
+
+- Keine ad-hoc Transport-Normalisierung mehr in `renderResult()`
+- `selectedTransport` nur über UI-Helper konsistent halten
+- Keine neue Tax-Logik in die Helper legen
+
+## Decision Flow
+```
+1. Transportzuordnung
+2. Bewegte Lieferung
+3. Steuerliche Behandlung
+4. Restliche Lieferung
+```
+
+- Stil: kurze steuerliche Begründung, kein Debug-Output
+- Rechtsgrundlagen nur subtil als Chips / Referenzen
+- Bei fehlenden Daten defensiv rendern, nie hart abbrechen
+- Dreiecks-Chance separat als Opportunity-Banner, nur bei bestehender UI-Erkennung
 
 ## SAP-Badge Logik
 ```
@@ -142,6 +167,7 @@ npm run check
 8. buildInvoiceSnapshot() gibt '' zurück
 9. Alle 5 Files nach jeder Session updaten
 10. badge-export für Ausfuhr (nicht badge-ig) → A0 statt AF
+11. Decision Flow nur aus bestehendem Engine-Output ableiten, keine neue Steuerlogik erfinden
 
 ## Tests
 ```bash

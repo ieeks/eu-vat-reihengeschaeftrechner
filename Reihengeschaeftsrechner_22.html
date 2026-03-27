@@ -822,6 +822,57 @@ header {
 .kurz-title { font-family:var(--mono); font-size:0.65rem; font-weight:700; color:var(--tx-3); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:10px; cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; }
 .kurz-toggle { font-size:0.58rem; color:var(--tx-3); opacity:0.7; transition:transform 0.15s; }
 .kurz-title.open .kurz-toggle { transform:rotate(90deg); }
+.decision-flow { display:flex; flex-direction:column; gap:12px; }
+.decision-banner {
+  padding:10px 12px; border-radius:var(--r);
+  background:rgba(45,212,191,0.07); border:1px solid rgba(45,212,191,0.2);
+  color:var(--teal); font-size:0.75rem; line-height:1.6; font-family:var(--mono);
+}
+.decision-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
+.decision-step {
+  padding:12px 13px; border-radius:var(--r); background:var(--surface);
+  border:1px solid var(--border); min-width:0;
+}
+.decision-step-top { display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; }
+.decision-step-num {
+  width:24px; height:24px; border-radius:999px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:0.68rem; font-weight:700;
+  color:var(--tx-1); background:var(--surface-3); border:1px solid var(--border-md);
+}
+.decision-step-title {
+  font-size:0.76rem; font-weight:700; color:var(--tx-1);
+  font-family:var(--mono); letter-spacing:0.02em;
+}
+.decision-step-body {
+  font-size:0.78rem; color:var(--tx-2); line-height:1.65;
+}
+.decision-step-refs { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+.decision-ref {
+  display:inline-flex; align-items:center; padding:2px 8px;
+  border-radius:999px; border:1px solid var(--border-md);
+  background:var(--surface-3); color:var(--tx-3);
+  font-family:var(--mono); font-size:0.6rem; letter-spacing:0.04em;
+}
+.decision-own-notes {
+  display:flex; flex-direction:column; gap:8px; padding-top:2px;
+}
+.decision-own-note {
+  padding:10px 12px; border-radius:var(--r); background:var(--surface);
+  border:1px solid var(--border);
+}
+.decision-own-head {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  margin-bottom:6px; flex-wrap:wrap;
+}
+.decision-own-title { font-size:0.76rem; font-weight:700; color:var(--tx-1); }
+.decision-own-role { font-size:0.66rem; color:var(--teal); font-family:var(--mono); letter-spacing:0.04em; }
+.decision-own-body {
+  display:flex; flex-direction:column; gap:5px;
+  font-size:0.75rem; color:var(--tx-2); line-height:1.6; font-family:var(--mono);
+}
+.decision-own-line { display:flex; gap:7px; }
+.decision-own-dot { color:var(--tx-3); flex-shrink:0; }
 
 /* Detail collapse (delivery boxes wrapper) */
 .detail-collapse { margin-bottom:12px; }
@@ -1022,6 +1073,8 @@ header {
   /* ── Kurzbeschreibung ── */
   .kurz-card { padding: 8px 10px !important; }
   .kurz-bullets { font-size: 0.72rem !important; }
+  .decision-grid { grid-template-columns: 1fr !important; }
+  .decision-step { padding: 10px 11px !important; }
 
   /* ── Hints ── */
   .hint { font-size: 0.72rem !important; padding: 8px 10px !important; }
@@ -5647,29 +5700,40 @@ function buildDreiecksOpportunity(supplier, me, customer, departure, destination
   const availableIds = Object.entries(MY_VAT_IDS)
     .filter(([code]) => code !== destination && !isNonEU(code))
     .map(([code, vatId]) => ({ code, vatId }));
+  if (!availableIds.length) return '';
   const uidBtns = availableIds.map(({code, vatId}) =>
-    `<div class="uid-btn" data-code="${code}" data-vatid="${vatId}" onclick="selectDreiecksUid(this)">
+    `<div class="uid-btn${selectedUidOverride === code ? ' selected' : ''}" data-code="${code}" data-vatid="${vatId}" onclick="selectDreiecksUid(this)">
       <span class="uid-flag">${flag(code)}</span>
       <div><span class="uid-country">${cn(code)}</span><span class="uid-number">${vatId}</span></div>
     </div>`).join('');
+  const lawLabel = currentCompany === 'EPROHA' ? 'Art. 25 UStG AT / Art. 141 MwStSystRL' : '§ 25b UStG / Art. 141 MwStSystRL';
   return `
-    <div class="dreiecks-opportunity">
+    <div class="dreiecks-opportunity" data-component="dreiecksOpportunityBanner">
       <div class="dreiecks-opportunity-header">
         <div class="dreiecks-opportunity-icon">△</div>
-        <div><div class="dreiecks-opportunity-title">${T('dreiecks.opportunity.title')}</div><div class="dreiecks-opportunity-sub">${T('dreiecks.opportunity.sub')}</div></div>
+        <div>
+          <div class="dreiecks-opportunity-title">Dreiecksgeschäft möglich</div>
+          <div class="dreiecks-opportunity-sub">UID-Option ohne Änderung der Grundlogik</div>
+        </div>
       </div>
       <div class="dreiecks-opportunity-body">
-        Keine USt-ID in <strong>${cn(destination)}</strong> – Dreiecksgeschäft-Vereinfachung anwendbar!<br>
-        Wähle eine USt-ID (egal welches Land, nur nicht ${cn(destination)}) gegenüber dem Lieferanten.
+        Für die Kette <strong>${cn(supplier)} → ${cn(me)} → ${cn(customer)}</strong> liegt nach der bestehenden Analyse eine
+        <strong>Dreiecksgeschäfts-Chance</strong> vor. Mit einer geeigneten UID kann eine Registrierung in
+        <strong>${cn(destination)}</strong> unter Umständen vermieden werden.
+        <br><br>
+        Bitte prüfe, mit welcher UID du gegenüber dem Lieferanten auftreten willst. Die Auswahl unten bildet nur die bereits erkannte Option nach und ändert keine steuerliche Kernlogik.
       </div>
       <div class="uid-selector">${uidBtns}</div>
-      <button class="uid-apply-btn" onclick="applyDreiecksUid('${supplier}','${me}','${customer}','${departure}','${destination}')">Analyse mit gewählter USt-ID →</button>
+      <button class="uid-apply-btn" onclick="applyDreiecksUid('${supplier}','${me}','${customer}','${departure}','${destination}')">UID übernehmen und Ergebnis aktualisieren</button>
       <div class="uid-result" id="dreiecksUidResult"></div>
+      <div class="decision-step-refs" style="margin-top:12px;">
+        <span class="decision-ref">${lawLabel}</span>
+      </div>
     </div>
     <div class="hints">
-      ${rH({type:'ok',icon:'✅',text:`Keine Registrierung in ${cn(destination)} (${rate(destination)}%) nötig.`})}
-      ${rH({type:'warn',icon:'❌',text:`Missglücktes Dreiecksgeschäft: Fehlende Pflichthinweise auf Rechnung oder fehlende ZM → Registrierungspflicht in ${cn(destination)}. Nicht heilbar (EuGH C-247/21).`})}
-      ${rH({type:'info',icon:'📋',text:`ZM-Meldung aus dem Land der gewählten USt-ID. Kunde versteuert ${rate(destination)}% selbst.`})}
+      ${rH({type:'ok',icon:'✅',text:`Praktischer Vorteil: Bei wirksamer Vereinfachung entfällt regelmäßig die Registrierung in ${cn(destination)}.`})}
+      ${rH({type:'info',icon:'🆔',text:`Bitte nur eine UID verwenden, die nicht aus ${cn(destination)} stammt. Danach Kurzbegründung, SAP-Hinweise und Folgepflichten erneut prüfen.`})}
+      ${rH({type:'warn',icon:'❌',text:`Ohne korrekten Rechnungshinweis und ohne ZM-Kennzeichnung greift die Vereinfachung nicht zuverlässig; die Registrierungspflicht im Bestimmungsland bleibt dann bestehen.`})}
     </div>`;
 }
 
@@ -5686,7 +5750,7 @@ function applyDreiecksUid(supplier, me, customer, departure, destination) {
     return;
   }
   // Set the global UID override and re-run full analysis
-  selectedUidOverride = selectedDreiecksUidCode;
+  setState({ uidOverride: selectedDreiecksUidCode });
   // Also update the v4 UID override state so renderResult() picks it up
   if (typeof renderResult === 'function') {
     renderResult();
@@ -7519,153 +7583,156 @@ function buildMeldepflichten(ctx, engResult) {
 function buildKurzbeschreibung(ctx, eng) {
   if (!eng || !eng.supplies || !eng.supplies.length) return '';
   const isAT     = COMPANIES[currentCompany].home === 'AT';
-  // dreiecksEffective: dreiecksOpportunity + gewählte UID zählt für Kurzbeschreibung wie echtes Dreiecksgeschäft
   const hasAnyNonDestId = Object.keys(MY_VAT_IDS).some(c => c !== ctx.dest);
   const movIdx = eng.movingIndex;
-  const s = eng.supplies;
   const dreiecksOpportunity = !eng.trianglePossible && !ctx.vatIds?.[ctx.dest] &&
     ctx.s2 !== ctx.s4 && ctx.s1 !== ctx.s4 && movIdx === 0 && ctx.s4 === ctx.dest && hasAnyNonDestId &&
     !isNonEU(ctx.s1) && !isNonEU(ctx.s2) && !isNonEU(ctx.s4);
   const dreiecks = eng.trianglePossible || (dreiecksOpportunity && !!selectedUidOverride);
+  const movingSupply = eng.supplies.find(s => s.isMoving) || eng.supplies[0];
+  const remainingSupplies = eng.supplies.filter(s => !s.isMoving);
+  const transport = getCanonicalTransport();
+  const roleMap = {
+    supplier: `vom Lieferanten (${cn(ctx.s1)})`,
+    middle: `vom Zwischenhändler (${cn(ctx.s2)})`,
+    middle2: `vom zweiten Zwischenhändler (${cn(ctx.s3)})`,
+    customer: `vom Abnehmer (${cn(ctx.dest)})`,
+  };
 
-  // ── Bullet 1: Transportzuordnung (immer aus Lieferanten-Sicht) ────────────
-  function bullet1(s) {
-    const qf = eng.quickFix;
-    if (s.isMoving) {
-      // Bewegte Lieferung — Rechtsgrundlage der Transportzuordnung
-      if (isAT) {
-        if (qf?.lit === 'a') return 'Bewegte Lieferung gem. § 3 Abs. 8 UStG AT iVm. § 3 Abs. 15 Z 1 lit. a UStG AT (Quick Fix lit. a)';
-        if (qf?.lit === 'b') return 'Bewegte Lieferung gem. § 3 Abs. 8 UStG AT iVm. § 3 Abs. 15 Z 1 lit. b UStG AT (Quick Fix lit. b)';
-        if (qf?.lit === 'c') return 'Bewegte Lieferung gem. § 3 Abs. 8 UStG AT iVm. § 3 Abs. 15 Z 1 lit. c UStG AT (Quick Fix lit. c)';
-        return 'Bewegte Lieferung gem. § 3 Abs. 8 UStG AT iVm. § 3 Abs. 15 Z 1 lit. a UStG AT';
-      } else {
-        if (qf?.lit === 'a') return 'Bewegte Lieferung gem. § 3 Abs. 6a S. 4 Nr. 1 UStG iVm. Art. 36a Abs. 2 lit. a MwStSystRL (Quick Fix lit. a)';
-        if (qf?.lit === 'b') return 'Bewegte Lieferung gem. § 3 Abs. 6a S. 4 Nr. 2 UStG iVm. Art. 36a Abs. 2 lit. b MwStSystRL (Quick Fix lit. b)';
-        return 'Bewegte Lieferung gem. § 3 Abs. 6a S. 2 UStG iVm. Art. 36a Abs. 1 MwStSystRL';
-      }
-    } else {
-      // Ruhende Lieferung
-      const pos = s.placeOfSupply || (eng.movingIndex === 0 ? ctx.dest : ctx.dep);
-      return isAT
-        ? `Ruhende Lieferung gem. § 3 Abs. 7 UStG AT iVm. § 3 Abs. 15 Z 4 UStG AT (Lieferort: ${cn(pos)})`
-        : `Ruhende Lieferung gem. § 3 Abs. 7 S. 1 UStG (Lieferort: ${cn(pos)})`;
-    }
+  function uniqRefs(list) {
+    return [...new Set((list || []).filter(Boolean))];
   }
 
-  // ── Bullet 2: Steuerlicher Ort / Lieferant-Sicht ──────────────────────────
-  function bullet2(s) {
-    if (s.isMoving) {
-      // Steuerbare steuerbefreite Lieferung aus dem Abgangsland (Lieferanten-Sicht)
-      return `Steuerbare steuerbefreite Lieferung in ${cn(s.from)} — Lieferant in ${cn(s.from)}`;
-    } else {
-      // Ruhende: Lieferort = Ort wo Ware sich befindet
-      const pos = s.placeOfSupply || (eng.movingIndex === 0 ? ctx.dest : ctx.dep);
-      if (dreiecks && s.iAmTheSeller)
-        return `Steuerbare Lieferung in ${cn(pos)} (${pos}) — Dreiecksgeschäft`;
-      if (dreiecks && !s.iAmTheSeller && !s.iAmTheBuyer)
-        return `Steuerbare Lieferung in ${cn(pos)} (${pos}) — Dreiecksgeschäft`;
-      return `Steuerbare Lieferung in ${cn(pos)} (${pos})`;
+  function decisionRefsForStep(index) {
+    if (index === 1) return uniqRefs([eng.movingSupply?.legalBasis]);
+    if (index === 2) return uniqRefs([
+      movingSupply?.isMoving ? (isAT ? '§ 3 Abs. 8 UStG AT' : '§ 3 Abs. 6a UStG / Art. 36a MwStSystRL') : null,
+    ]);
+    if (index === 3) {
+      if (dreiecks) return uniqRefs([natLaw('dreiecks')]);
+      if (movingSupply?.vatTreatment === 'ic-exempt') return uniqRefs([isAT ? 'Art. 6 Abs. 1 iVm. Art. 7 UStG 1994' : '§ 4 Nr. 1 lit. b iVm. § 6a UStG']);
+      if (movingSupply?.vatTreatment === 'export') return uniqRefs([isAT ? '§ 7 UStG AT' : '§ 6 UStG']);
+      return uniqRefs([natLaw(movingSupply?.vatTreatment || '')]);
     }
+    return uniqRefs(remainingSupplies.map(s => {
+      const pos = s.placeOfSupply || (movIdx === 0 ? ctx.dest : ctx.dep);
+      if (dreiecks && s.iAmTheSeller) return natLaw('dreiecks');
+      if (s.vatTreatment === 'rc') return natLaw('rc');
+      return `${isAT ? '§ 3 Abs. 7 UStG AT' : '§ 3 Abs. 7 UStG'} · ${cn(pos)}`;
+    }));
   }
 
-  // ── Bullet 3: Steuerbefreiung / Behandlung ────────────────────────────────
-  function bullet3(s) {
-    if (s.isMoving) {
-      // IG-Lieferung: Steuerbefreiungsgrundlage
-      // AT: Binnenmarkt-Anhang → Art. (nicht §!), DE: Hauptgesetz → §
-      return isAT
-        ? `Steuerbefreiung gem. Art. 6 Abs. 1 iVm. Art. 7 UStG 1994 (Innergemeinschaftliche Lieferung 0%)`
-        : `Steuerbefreiung gem. § 4 Nr. 1 lit. b iVm. § 6a UStG (Innergemeinschaftliche Lieferung 0%)`;
-    } else {
-      // Ruhende: Dreiecksgeschäft oder RC oder lokale MwSt
-      if (dreiecks && (s.iAmTheSeller || (!s.iAmTheSeller && !s.iAmTheBuyer))) {
-        return isAT
-          ? `Dreiecksgeschäft gem. ${natLaw('dreiecks')} — RC auf Abnehmer, keine eigene Registrierung in ${cn(ctx.dest)}`
-          : `Dreiecksgeschäft gem. ${natLaw('dreiecks')} — RC auf Abnehmer, keine eigene Registrierung in ${cn(ctx.dest)}`;
-      }
-      switch (s.vatTreatment) {
-        case 'rc':
-          return `Reverse Charge — ${natLaw('rc')} — Empfänger schuldet MwSt`;
-        case 'domestic':
-          return `Lokale MwSt ${s.mwstRate||rate(s.placeOfSupply||s.to)}% — Ausweis in Rechnung`;
-        case 'registration-required':
-          return `Registrierungspflicht im Lieferort — lokale MwSt ${rate(s.placeOfSupply||s.to)}%`;
-        case 'ic-acquisition':
-          return `IG-Erwerb ${rate(s.to)}% — Erwerbsteuer abführen, Vorsteuer abziehen (Saldo 0)`;
-        default:
-          return `MwSt-Behandlung: ${s.vatTreatment}`;
-      }
-    }
+  function formatOwnUidCode(s) {
+    const pos = s.placeOfSupply || (s.isMoving ? ctx.dep : ctx.dest);
+    if (selectedUidOverride && MY_VAT_IDS[selectedUidOverride]) return selectedUidOverride;
+    if (s.iAmTheBuyer && s.isMoving) return myVat(ctx.dest) ? ctx.dest : (myVat(pos) ? pos : COMPANIES[currentCompany].home);
+    if (s.iAmTheSeller && s.isMoving) return myVat(ctx.dep) ? ctx.dep : COMPANIES[currentCompany].home;
+    return myVat(pos) ? pos : COMPANIES[currentCompany].home;
   }
 
-  // ── Dreiecksgeschäft Hinweis oben ─────────────────────────────────────────
-  const dreiecksHeader = dreiecks
-    ? `<div class="kurz-reg-note">✅ <strong>Registrierungspflichten:</strong> Aufgrund der Vereinfachungsregelung für Dreiecksgeschäfte (${natLaw('dreiecks')}) ist für den Erwerber keine Registrierung im Bestimmungsland ${cn(ctx.dest)} erforderlich.</div>`
+  function ownSupplyNotes() {
+    return eng.supplies
+      .map((s, index) => ({ s, index }))
+      .filter(({ s }) => s.iAmTheSeller || s.iAmTheBuyer)
+      .map(({ s, index }) => {
+        const role = s.iAmTheSeller ? 'ICH ALS VERKÄUFER' : 'ICH ALS KÄUFER';
+        const pos = s.placeOfSupply || (s.isMoving ? ctx.dep : ctx.dest);
+        let sapTreat = s.vatTreatment;
+        if (s.iAmTheBuyer && s.isMoving && s.vatTreatment === 'ic-exempt') sapTreat = 'ic-acquisition';
+        if (dreiecks && s.iAmTheSeller && !s.isMoving) sapTreat = 'ic-exempt';
+        if (dreiecks && s.iAmTheBuyer && s.isMoving) sapTreat = 'ic-acquisition';
+        const uidCode = formatOwnUidCode(s);
+        const uid = MY_VAT_IDS[uidCode];
+        const badge = sapBadge(pos, sapTreat, s.iAmTheSeller ? 'seller' : 'buyer', s.iAmTheBuyer ? uidCode : undefined);
+        const lines = [];
+        lines.push(`<div class="decision-own-line"><span class="decision-own-dot">•</span><span>${s.isMoving ? 'Bewegte' : 'Ruhende'} Lieferung ${flag(s.from)} ${cn(s.from)} → ${flag(s.to)} ${cn(s.to)}</span></div>`);
+        if (badge) lines.push(`<div class="decision-own-line"><span class="decision-own-dot">⚙</span><span>${badge}</span></div>`);
+        if (uid) {
+          lines.push(`<div class="decision-own-line"><span class="decision-own-dot">🆔</span><span>${flag(uidCode)} <strong>${uid}</strong> · ${s.iAmTheBuyer ? 'gegenüber dem Lieferanten verwenden' : 'auf der Ausgangsrechnung ausweisen'}</span></div>`);
+        }
+        return `<div class="decision-own-note">
+          <div class="decision-own-head">
+            <div class="decision-own-title">L${index + 1}</div>
+            <div class="decision-own-role">${role}</div>
+          </div>
+          <div class="decision-own-body">${lines.join('')}</div>
+        </div>`;
+      })
+      .join('');
+  }
+
+  const step1 = {
+    title: 'Transportzuordnung',
+    body: `Der Transport wird ${roleMap[transport] || 'vom beteiligten Unternehmer'} organisiert. ${eng.movingSupply?.rationale || `Die Transportbewegung ist daher der Lieferung ${flag(movingSupply.from)} ${cn(movingSupply.from)} → ${flag(movingSupply.to)} ${cn(movingSupply.to)} zuzuordnen.`}`,
+  };
+
+  const step2 = {
+    title: 'Bewegte Lieferung',
+    body: `Die Lieferung ${flag(movingSupply.from)} ${cn(movingSupply.from)} → ${flag(movingSupply.to)} ${cn(movingSupply.to)} ist die bewegte Lieferung. Ort der Lieferung ist das Abgangsland <strong>${cn(ctx.dep)}</strong>; die Warenbewegung endet in <strong>${cn(ctx.dest)}</strong>.`,
+  };
+
+  const movingTreatment = (() => {
+    if (movingSupply?.vatTreatment === 'export') {
+      return `Die bewegte Lieferung ist als Ausfuhrlieferung steuerfrei. Maßgeblich bleibt das Abgangsland <strong>${cn(ctx.dep)}</strong>.`;
+    }
+    if (movingSupply?.vatTreatment === 'ic-exempt') {
+      return `Die bewegte Lieferung ist als innergemeinschaftliche Lieferung steuerfrei. Auf der Erwerbsseite entsteht der innergemeinschaftliche Erwerb im Bestimmungsland <strong>${cn(ctx.dest)}</strong>.`;
+    }
+    if (movingSupply?.vatTreatment === 'ic-acquisition') {
+      return `Die bewegte Lieferung führt auf Käuferseite zu einem innergemeinschaftlichen Erwerb im Bestimmungsland <strong>${cn(ctx.dest)}</strong>.`;
+    }
+    return `Die steuerliche Behandlung der bewegten Lieferung richtet sich nach <strong>${movingSupply?.vatTreatment || 'der ermittelten Lieferkonstellation'}</strong>.`;
+  })();
+
+  const step3 = {
+    title: 'Steuerliche Behandlung',
+    body: dreiecks
+      ? `${movingTreatment} Zusätzlich greift nach der bestehenden Analyse die Vereinfachung für das Dreiecksgeschäft; die anschließende Ausgangslieferung kann im Bestimmungsland im Reverse-Charge-Verfahren abgewickelt werden.`
+      : movingTreatment,
+  };
+
+  const restText = remainingSupplies.length
+    ? remainingSupplies.map((s, i) => {
+        const pos = s.placeOfSupply || (movIdx === 0 ? ctx.dest : ctx.dep);
+        const intro = `Die Lieferung ${flag(s.from)} ${cn(s.from)} → ${flag(s.to)} ${cn(s.to)} ist eine ruhende Lieferung.`;
+        if (dreiecks && s.iAmTheSeller) {
+          return `${intro} Ort der Lieferung ist <strong>${cn(pos)}</strong>; aufgrund der Dreiecksgeschäftsvereinfachung erfolgt die Besteuerung dort über Reverse Charge.`;
+        }
+        if (s.vatTreatment === 'rc') {
+          return `${intro} Ort der Lieferung ist <strong>${cn(pos)}</strong>; die Steuer schuldet der Leistungsempfänger im Reverse-Charge-Verfahren.`;
+        }
+        if (s.vatTreatment === 'registration-required') {
+          return `${intro} Ort der Lieferung ist <strong>${cn(pos)}</strong>. Daraus kann sich eine Registrierungspflicht im Lieferort ergeben.`;
+        }
+        if (s.vatTreatment === 'domestic') {
+          return `${intro} Ort der Lieferung ist <strong>${cn(pos)}</strong>; die Lieferung ist dort mit lokaler Umsatzsteuer (${s.mwstRate || rate(pos)}%) zu behandeln.`;
+        }
+        return `${intro} Ort der Lieferung ist <strong>${cn(pos)}</strong>.`;
+      }).join(' ')
+    : 'Neben der bewegten Lieferung ist keine weitere ruhende Lieferung zu würdigen.';
+
+  const step4 = {
+    title: 'Restliche Lieferung',
+    body: restText,
+  };
+
+  const steps = [step1, step2, step3, step4].map((step, index) => `
+    <div class="decision-step">
+      <div class="decision-step-top">
+        <div class="decision-step-num">${index + 1}</div>
+        <div class="decision-step-title">${step.title}</div>
+      </div>
+      <div class="decision-step-body">${step.body}</div>
+      <div class="decision-step-refs">${decisionRefsForStep(index + 1).map(ref => `<span class="decision-ref">${ref}</span>`).join('')}</div>
+    </div>
+  `).join('');
+
+  const topBanner = dreiecks
+    ? `<div class="decision-banner">✅ <strong>Dreiecksgeschäft wirksam berücksichtigt:</strong> Nach der aktuellen UID- und Transportkonstellation ist keine eigene Registrierung im Bestimmungsland <strong>${cn(ctx.dest)}</strong> vorgesehen.</div>`
     : '';
+  const ownSupplyMarkup = ownSupplyNotes();
 
-  const rowsHtml = eng.supplies.map((s, i) => {
-    const isMe  = s.iAmTheSeller || s.iAmTheBuyer;
-    const rolle = s.iAmTheSeller ? ' ✦ ICH (Verkäufer)' : s.iAmTheBuyer ? ' ✦ ICH (Käufer)' : '';
-    const movTag = s.isMoving ? '(bewegend)' : '(ruhend)';
-    const b1 = bullet1(s);
-    const b2 = bullet2(s);
-    const b3 = bullet3(s);
-    // SAP-Badge für meine Lieferungen
-    let sapHtml = '';
-    if (isMe) {
-      const sapRole = s.iAmTheSeller ? 'seller' : 'buyer';
-      let sapTreat = s.vatTreatment;
-      if (s.iAmTheBuyer && s.isMoving && s.vatTreatment === 'ic-exempt') sapTreat = 'ic-acquisition';
-      if (dreiecks && s.iAmTheSeller && !s.isMoving) sapTreat = 'ic-exempt';
-      if (dreiecks && s.iAmTheBuyer && s.isMoving) sapTreat = 'ic-acquisition';
-      const pos = s.placeOfSupply || (s.isMoving ? ctx.dep : ctx.dest);
-
-      // Korrekte UID pro Lieferung bestimmen:
-      // Buyer bewegend (ig. Erwerb) → dest-UID wenn vorhanden, sonst effectiveVatCode
-      // Seller bewegend (ig. Lieferung) → dep-UID wenn vorhanden, sonst home
-      // Seller ruhend → Lieferort-UID wenn vorhanden, sonst home
-      // Buyer ruhend → Lieferort-UID wenn vorhanden, sonst home
-      let uidCode;
-      if (selectedUidOverride && MY_VAT_IDS[selectedUidOverride]) {
-        uidCode = selectedUidOverride;
-      } else if (s.iAmTheBuyer && s.isMoving) {
-        // ig. Erwerb → dest-UID priorisieren
-        uidCode = myVat(ctx.dest) ? ctx.dest : (myVat(pos) ? pos : COMPANIES[currentCompany].home);
-      } else if (s.iAmTheSeller && s.isMoving) {
-        // ig. Lieferung → dep-UID priorisieren
-        uidCode = myVat(ctx.dep) ? ctx.dep : COMPANIES[currentCompany].home;
-      } else {
-        // Ruhend → Lieferort-UID priorisieren
-        uidCode = myVat(pos) ? pos : COMPANIES[currentCompany].home;
-      }
-
-      const uidHint = s.iAmTheBuyer ? uidCode : undefined;
-      const badge = sapBadge(pos, sapTreat, sapRole, uidHint);
-      if (badge) sapHtml = `<div class="kurz-bullet kurz-sap"><span class="kurz-dot">⚙</span><span>${badge}</span></div>`;
-      // UID-Hinweis
-      const uid = MY_VAT_IDS[uidCode];
-      if (uid) {
-        const uidLabel = s.iAmTheBuyer ? `Deine UID gegenüber Lieferant` : `Deine UID auf Rechnung`;
-        sapHtml += `<div class="kurz-bullet kurz-sap"><span class="kurz-dot">🆔</span><span>${flag(uidCode)} <strong>${uid}</strong> · ${uidLabel}</span></div>`;
-      }
-    }
-    return `<div class="kurz-row${isMe ? ' kurz-row-me' : ''}">
-      <div class="kurz-header">
-        <span class="kurz-lnum">L${i+1}</span>
-        <span class="kurz-tag${s.isMoving ? ' kurz-tag-moving' : ' kurz-tag-resting'}">${movTag}</span>
-        <span class="kurz-countries">${flag(s.from)} ${cn(s.from)} → ${flag(s.to)} ${cn(s.to)}</span>
-        ${rolle ? `<span class="kurz-me">${rolle}</span>` : ''}
-      </div>
-      <div class="kurz-bullets">
-        <div class="kurz-bullet"><span class="kurz-dot">•</span><span>${b1}</span></div>
-        <div class="kurz-bullet"><span class="kurz-dot">•</span><span>${b2}</span></div>
-        <div class="kurz-bullet"><span class="kurz-dot">•</span><span>${b3}</span></div>
-        ${sapHtml}
-      </div>
-    </div>`;
-  }).join('');
-
-  return `<div class="kurz-box fade" data-component="buildKurzbeschreibung"><div class="kurz-title" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📋 Kurzbeschreibung <span class="kurz-toggle">▸</span></div><div class="kurz-body">${dreiecksHeader}${rowsHtml}</div></div>`;
+  return `<div class="kurz-box fade" data-component="buildKurzbeschreibung"><div class="kurz-title" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📋 Decision Flow <span class="kurz-toggle">▸</span></div><div class="kurz-body"><div class="decision-flow">${topBanner}<div class="decision-grid">${steps}</div>${ownSupplyMarkup ? `<div class="decision-own-notes">${ownSupplyMarkup}</div>` : ''}</div></div></div>`;
 }
 
 
@@ -10763,15 +10830,63 @@ function setMePosition(btn)       { /* no-op in v4 — handled by setMePos() */ 
 const $ = id => document.getElementById(id);
 const PL = i => ['A','B','C','D'][i];
 
+function getCanonicalTransport(raw = selectedTransport, mode = currentMode) {
+  if (!raw) return null;
+  if (['supplier', 'middle', 'middle2', 'customer'].includes(raw)) return raw;
+  const map = {
+    A: 'supplier',
+    B: 'middle',
+    C: mode === 4 ? 'middle2' : 'customer',
+    D: 'customer',
+  };
+  return map[raw] || raw;
+}
+
+function getTransportLetter(raw = selectedTransport, mode = currentMode) {
+  const canonical = getCanonicalTransport(raw, mode);
+  if (canonical === 'supplier') return 'A';
+  if (canonical === 'middle') return 'B';
+  if (canonical === 'middle2') return 'C';
+  if (canonical === 'customer') return mode === 4 ? 'D' : 'C';
+  return 'A';
+}
+
+function getState() {
+  return {
+    company: currentCompany,
+    mode: currentMode,
+    mePos: mePosition,
+    countries: getSelectedCountries(),
+    transport: getCanonicalTransport(),
+    transportLetter: getTransportLetter(),
+    uidOverride: selectedUidOverride,
+    lang: currentLang,
+    theme: document.documentElement.getAttribute('data-theme') || 'light',
+  };
+}
+
+function setState(patch = {}) {
+  if (Object.prototype.hasOwnProperty.call(patch, 'company') && COMPANIES[patch.company]) {
+    currentCompany = patch.company;
+    MY_VAT_IDS = COMPANIES[currentCompany].vatIds;
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, 'mode')) currentMode = patch.mode;
+  if (Object.prototype.hasOwnProperty.call(patch, 'mePos')) mePosition = patch.mePos;
+  if (Object.prototype.hasOwnProperty.call(patch, 'transport')) {
+    selectedTransport = getCanonicalTransport(
+      patch.transport,
+      patch.mode ?? currentMode,
+    ) || selectedTransport;
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, 'uidOverride')) {
+    selectedUidOverride = patch.uidOverride || null;
+  }
+}
+
 // ── saveState / loadState ────────────────────────────────────────────
 function saveState() {
   try {
-    const s = {
-      company: currentCompany, mode: currentMode, mePos: mePosition,
-      countries: getSelectedCountries(), transport: selectedTransport,
-      uidOverride: selectedUidOverride, lang: currentLang,
-      theme: document.documentElement.getAttribute('data-theme') || 'light',
-    };
+    const s = getState();
     localStorage.setItem('rgr_v4_state', JSON.stringify(s));
   } catch(e) {}
 }
@@ -10783,17 +10898,18 @@ function loadState() {
     const s = JSON.parse(raw);
     if (s.theme) document.documentElement.setAttribute('data-theme', s.theme);
     if (s.lang) currentLang = 'de'; // EN nicht implementiert, immer DE erzwingen
-    if (s.company) {
-      currentCompany = s.company;
-      MY_VAT_IDS = COMPANIES[s.company].vatIds;
+    if (s.company && COMPANIES[s.company]) {
+      setState({ company: s.company });
       document.querySelectorAll('.co-pill button').forEach(b => {
         b.classList.toggle('active', b.textContent === s.company);
       });
     }
-    if (s.mode) currentMode = s.mode;
-    if (s.mePos) mePosition = s.mePos;
-    if (s.transport) selectedTransport = s.transport;
-    if (s.uidOverride) selectedUidOverride = s.uidOverride;
+    setState({
+      mode: s.mode || currentMode,
+      mePos: s.mePos || mePosition,
+      transport: s.transport,
+      uidOverride: s.uidOverride || null,
+    });
     return s;
   } catch(e) { return false; }
 }
@@ -11192,10 +11308,7 @@ function buildVergleichTab(baseCtx, baseEng) {
 
 // ── Reset ────────────────────────────────────────────────────────────
 function resetAll() {
-  selectedUidOverride = null;
-  currentMode = 3;
-  mePosition = 2;
-  selectedTransport = 'supplier';
+  setState({ uidOverride: null, mode: 3, mePos: 2, transport: 'supplier' });
   try { localStorage.removeItem('rgr_v4_state'); } catch(e) {}
   // reset party buttons
   document.querySelectorAll('#partyTopRow .party-btn').forEach((b,i) => b.classList.toggle('active', i===1));
@@ -11205,15 +11318,14 @@ function resetAll() {
 
 // ── Share link ───────────────────────────────────────────────────────
 function shareLink() {
-  const n = currentMode === 4 ? 4 : 3;
-  const countries = getSelectedCountries();
+  const state = getState();
   const params = new URLSearchParams({
-    co: currentCompany,
-    mode: currentMode,
-    transport: selectedTransport,
-    countries: countries.join(','),
-    mePos: mePosition,
-    ...(selectedUidOverride ? {uid: selectedUidOverride} : {}),
+    co: state.company,
+    mode: state.mode,
+    transport: state.transport,
+    countries: state.countries.join(','),
+    mePos: state.mePos,
+    ...(state.uidOverride ? {uid: state.uidOverride} : {}),
   });
   const url = `${location.origin}${location.pathname}?${params}`;
   navigator.clipboard?.writeText(url).then(() => {
@@ -11245,22 +11357,23 @@ function setParties(n, btn) {
 
   // Mode 5 = Lohnveredelung
   if (n === 5) {
-    currentMode = 5;
+    setState({ mode: 5, uidOverride: null });
     document.querySelectorAll('#partyTopRow .party-btn, #partyBtn5').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     $('mePosSection').style.display = 'none';
-    selectedUidOverride = null;
     saveState();
     renderAll();
     return;
   }
 
-  currentMode = n === 2 ? 2 : n === 4 ? 4 : 3;
+  setState({
+    mode: n === 2 ? 2 : n === 4 ? 4 : 3,
+    uidOverride: null,
+    transport: 'A',
+  });
   document.querySelectorAll('#partyTopRow .party-btn, #partyBtn5').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   $('mePosSection').style.display = n === 4 ? 'block' : 'none';
-  selectedUidOverride = null;
-  selectedTransport = 'A';
 
   // Reset country defaults for this mode+company
   const home = COMPANIES[currentCompany].home;
@@ -11405,8 +11518,7 @@ function renderChain() {
 
 // ── Transport ──────────────────────────────────────────────────────────
 function setT(t) {
-  selectedTransport = t;
-  selectedUidOverride = null;
+  setState({ transport: t, uidOverride: null });
   saveState();
   renderTransport();
   renderUidOverrideBlock();
@@ -11419,8 +11531,9 @@ function renderTransport() {
 
   // Mode 2 (EPROHA AT-Lager): only 2 options
   if (currentMode === 2) {
-    const aActive = selectedTransport==='A'||selectedTransport==='supplier';
-    const cActive = selectedTransport==='C'||selectedTransport==='customer';
+    const activeTransport = getCanonicalTransport();
+    const aActive = activeTransport === 'supplier';
+    const cActive = activeTransport === 'customer';
     $('transportList').innerHTML = `
       <label class="t-opt${aActive?' active':''}" onclick="setT('A')">
         <div class="radio"></div>
@@ -11439,8 +11552,7 @@ function renderTransport() {
     3: ['Lieferant','Zwischenhändler','Endkunde'],
     4: ['Lieferant','Zwischenhändler 1','Zwischenhändler 2','Endkunde']
   };
-  const UNMAP = { supplier:'A', middle:'B', customer:'C', middle2:'C' };
-  const activeLetter = UNMAP[selectedTransport] || selectedTransport;
+  const activeLetter = getTransportLetter();
   $('transportList').innerHTML = ['A','B','C','D'].slice(0,n).map((l,i) => `
     <label class="t-opt${activeLetter===l?' active':''}" onclick="setT('${l}')">
       <div class="radio"></div>
@@ -11452,7 +11564,7 @@ function renderTransport() {
 
 // ── UID Override block (Art. 36a lit. a/b) ────────────────────────────
 function setUidOverride(country) {
-  selectedUidOverride = country;
+  setState({ uidOverride: country });
   saveState();
   renderUidOverrideBlock();
   renderResult();
@@ -11463,7 +11575,7 @@ function renderUidOverrideBlock() {
   const dep = countries[0];
   const dest = countries[countries.length-1];
   const home = COMPANIES[currentCompany].home;
-  const transportIdx = ['A','B','C','D'].indexOf(selectedTransport);
+  const transportIdx = ['A','B','C','D'].indexOf(getTransportLetter());
   const isMiddle = transportIdx === mePosition - 1 && transportIdx > 0 && transportIdx < countries.length - 1;
 
   if (!isMiddle) {
@@ -11482,7 +11594,7 @@ function renderUidOverrideBlock() {
   if (!opts.length) { $('uidOverrideSection').style.display = 'none'; return; }
 
   const active = selectedUidOverride || opts[0].country;
-  if (!selectedUidOverride) selectedUidOverride = opts[0].country;
+  if (!selectedUidOverride) setState({ uidOverride: opts[0].country });
 
   $('uidOverrideSection').style.display = 'block';
   $('uidOverrideSection').innerHTML = `
@@ -11887,10 +11999,7 @@ function buildCtx() {
   const s4 = countries[countries.length-1];
   const dep  = s1;
   const dest = s4;
-  const transportMap = { A:'supplier', B:'middle', C: n===4?'middle2':'customer', D:'customer' };
-  const transportIdx = ['A','B','C','D'].indexOf(selectedTransport);
-  let transport = transportMap[selectedTransport] || 'supplier';
-  if (n === 3 && selectedTransport === 'C') transport = 'customer';
+  const transport = getCanonicalTransport(selectedTransport, n === 4 ? 4 : currentMode) || 'supplier';
 
   return {
     s1, s2, s3, s4, dep, dest,
@@ -11994,12 +12103,6 @@ function renderResult() {
   const s4 = countries[n-1];
 
   // Map v4 letter transport → v3.2 word transport
-  const transportMap = { A:'supplier', B:'middle', C: n===4?'middle2':'customer', D:'customer' };
-  selectedTransport = transportMap[selectedTransport] || selectedTransport;
-  if (!['supplier','middle','middle2','customer'].includes(selectedTransport)) {
-    selectedTransport = 'supplier';
-  }
-
   // Populate bridge DOM elements
   const setVal = (id, val) => { const el = $(id); if (el) el.innerHTML = `<option value="${val}" selected>${val}</option>`; };
   setVal('s1', s1); setVal('s2', s2); setVal('s3', s3); setVal('s4', s4);
@@ -12728,17 +12831,18 @@ function handleURLParams() {
   if (p.get('co')) {
     const co = p.get('co');
     if (COMPANIES[co]) {
-      currentCompany = co;
-      MY_VAT_IDS = COMPANIES[co].vatIds;
+      setState({ company: co });
       document.querySelectorAll('.co-pill button').forEach(b => {
         b.classList.toggle('active', b.textContent === co);
       });
     }
   }
-  if (p.get('mode')) currentMode = parseInt(p.get('mode')) || 3;
-  if (p.get('transport')) selectedTransport = p.get('transport');
-  if (p.get('mePos')) mePosition = parseInt(p.get('mePos')) || 2;
-  if (p.get('uid')) selectedUidOverride = p.get('uid');
+  setState({
+    mode: parseInt(p.get('mode')) || currentMode,
+    transport: p.get('transport') || selectedTransport,
+    mePos: parseInt(p.get('mePos')) || mePosition,
+    uidOverride: p.get('uid') || selectedUidOverride,
+  });
   if (p.get('theme')) document.documentElement.setAttribute('data-theme', p.get('theme'));
 }
 

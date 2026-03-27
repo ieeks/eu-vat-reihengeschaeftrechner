@@ -1,6 +1,6 @@
 # RGR TODO — Reihengeschäftsrechner v4.2
 
-Stand: 26.03.2026
+Stand: 27.03.2026
 
 ---
 
@@ -20,6 +20,15 @@ Stand: 26.03.2026
 
 ---
 
+## Session 11 — Decision Flow / UI-State
+
+- [x] **Decision Flow modernisiert** — steuerliche Kurzbegründung statt Debug-Stil
+- [x] **Dreiecks-Opportunity-Banner geschärft** — Nutzen + UID-Auswahl klarer
+- [x] **Minimaler UI-State-Helper** — `getState()` / `setState()` / Transport-Normalisierung
+- [ ] **Browserabnahme Decision Flow** — 3P / 4P / 2P / Lohn sowie Light/Dark manuell klicken
+
+---
+
 ## P1 — Wichtig
 
 - [ ] **Typeahead Länder-Picker** — Native select ersetzen
@@ -30,7 +39,7 @@ Stand: 26.03.2026
 
 ## P2 — Nice-to-have
 
-- [ ] **Code-Modularisierung** — IIFE-Module, AppState
+- [ ] **Code-Modularisierung** — IIFE-Module, tieferer AppState nach UI-Helper-Basis
 - [ ] **External Verify Button**
 - [ ] **Belegnachweis-Checkliste** (nur Expert)
 - [ ] **PDF-Export**

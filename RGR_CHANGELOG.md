@@ -2,6 +2,29 @@
 
 ---
 
+## v4.2 · 27.03.2026 — Session 11
+
+### Decision Flow / UI
+- `buildKurzbeschreibung()` von Bullet-/Debug-Stil auf professionellen `Decision Flow` umgestellt
+- Neue 4-Schritt-Struktur: Transportzuordnung, bewegte Lieferung, steuerliche Behandlung, restliche Lieferung
+- Eigene Lieferungen zusätzlich als kompakte SAP-/UID-Hinweise unterhalb des Decision Flow
+- Rechtsgrundlagen im Output nur noch subtil als Referenz-Chips
+
+### Dreiecksgeschäft Opportunity
+- Opportunity-Banner sprachlich und visuell auf praktische UID-Auswahl / Registrierungsvermeidung ausgerichtet
+- Banner erscheint weiterhin nur bei bestehender Opportunity-Erkennung
+- Keine Änderung an der zugrunde liegenden Steuer- oder Dreieckslogik
+
+### Minimaler UI-State-Refactor
+- Neue Helper `getState()`, `setState()`, `getCanonicalTransport()`, `getTransportLetter()`
+- Transport-Normalisierung aus `renderResult()` herausgezogen
+- Bestehende UI-Workflows auf kompatible State-Helper umgelegt
+
+### Nicht angefasst
+- VATEngine IIFE
+- analyze()
+- analyze2()
+
 ## v4.2 · 27.03.2026 — Session 10
 
 ### Projektstruktur / Repo-Rahmen
