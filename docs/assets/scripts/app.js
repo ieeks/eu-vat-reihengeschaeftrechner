@@ -8878,13 +8878,33 @@ function buildVergleichTab(baseCtx, baseEng) {
     return !!results[tr]?.trianglePossible;
   }
 
+  function scenarioRisks(tr) {
+    return results[tr]?.risks?.risks || [];
+  }
+
+  function registrationRisks(tr) {
+    return scenarioRisks(tr).filter(r =>
+      r.type === 'registration-required' ||
+      r.type === 'ic-acquisition-no-reg' ||
+      r.type === 'resting-buyer-no-uid'
+    );
+  }
+
+  function warningRisks(tr) {
+    return scenarioRisks(tr).filter(r =>
+      r.type === 'double-acquisition' ||
+      r.type === 'rc-blocked'
+    );
+  }
+
+  function uniqueCountries(risks) {
+    return [...new Set(risks.map(r => r.country).filter(Boolean))];
+  }
+
   // P0 warnings present
   function hasP0(tr) {
     if (!results[tr]) return false;
-    const risks = VATEngine.detectRegistrationRisk(
-      { ...baseCtx, transport: tr }, results[tr].movingIndex, results[tr].trianglePossible
-    );
-    return risks?.some(r => r.severity === 'P0');
+    return scenarioRisks(tr).some(r => r.severity === 'P0');
   }
 
   // Pill HTML helper
@@ -8978,6 +8998,62 @@ function buildVergleichTab(baseCtx, baseEng) {
     return ok ? pill('möglich ✓','teal') : pill('nicht möglich','gray');
   }
 
+  function statusCell(tr) {
+    const regs = registrationRisks(tr);
+    if (regs.length) return pill('ROT · nicht praktikabel','red');
+    const warns = warningRisks(tr);
+    if (warns.length) return pill('GELB · prüfen','amber');
+    if (triangleOk(tr)) return pill('GRÜN · bevorzugt','green');
+    return pill('GRÜN · möglich','green');
+  }
+
+  function registrationCell(tr) {
+    const regs = registrationRisks(tr);
+    if (!regs.length) return pill('keine zusätzliche','green');
+    return uniqueCountries(regs).map(country => pill(cn(country), 'red')).join(' ');
+  }
+
+  function reasonCell(tr) {
+    const regs = registrationRisks(tr);
+    if (regs.length) {
+      const first = regs[0];
+      if (first.type === 'registration-required') {
+        return `<span style="color:var(--red);">Ruhende Lieferung in <strong>${cn(first.country)}</strong> erfordert lokale Registrierung.</span>`;
+      }
+      if (first.type === 'ic-acquisition-no-reg') {
+        return `<span style="color:var(--red);">IG-Erwerb in <strong>${cn(first.country)}</strong> ohne UID/Registrierung.</span>`;
+      }
+      if (first.type === 'resting-buyer-no-uid') {
+        return `<span style="color:var(--red);">Ruhende Eingangsrechnung in <strong>${cn(first.country)}</strong> ohne lokale UID.</span>`;
+      }
+    }
+
+    const warns = warningRisks(tr);
+    if (warns.length) {
+      const first = warns[0];
+      if (first.type === 'double-acquisition') {
+        return `<span style="color:var(--amber);">Doppelerwerb-Risiko bis Besteuerungsnachweis in <strong>${cn(first.country)}</strong>.</span>`;
+      }
+      if (first.type === 'rc-blocked') {
+        return `<span style="color:var(--amber);">Reverse Charge lokal blockiert in <strong>${cn(first.country)}</strong>.</span>`;
+      }
+    }
+
+    if (triangleOk(tr)) {
+      return `<span style="color:var(--green);">Ohne zusätzliche Registrierung umsetzbar; Dreiecksgeschäft möglich.</span>`;
+    }
+    return `<span style="color:var(--green);">Ohne zusätzliche Registrierung für dich umsetzbar.</span>`;
+  }
+
+  function recommendationCell(tr) {
+    const regs = registrationRisks(tr);
+    if (regs.length) return `<span style="color:var(--red);font-weight:700;">Nicht wählen</span>`;
+    const warns = warningRisks(tr);
+    if (warns.length) return `<span style="color:var(--amber);font-weight:700;">Nur nach Prüfung</span>`;
+    if (triangleOk(tr)) return `<span style="color:var(--green);font-weight:700;">Bevorzugt</span>`;
+    return `<span style="color:var(--green);font-weight:700;">Möglich</span>`;
+  }
+
   // P0 risk
   function p0Cell(tr) {
     try {
@@ -9007,6 +9083,10 @@ function buildVergleichTab(baseCtx, baseEng) {
       ${rowDim('Stkz. / Behandlung', transports.map(tr => mySapCell(tr)))}
 
       ${sectionHdr('Compliance & Risiko')}
+      ${rowDim('Status', transports.map(tr => statusCell(tr)))}
+      ${rowDim('Registrierung', transports.map(tr => registrationCell(tr)))}
+      ${rowDim('Grund', transports.map(tr => reasonCell(tr)))}
+      ${rowDim('Empfehlung', transports.map(tr => recommendationCell(tr)))}
       ${rowDim('Dreiecks­geschäft', transports.map(tr => triCell(tr)))}
       ${rowDim('P0-Risiko', transports.map(tr => p0Cell(tr)))}
     </tbody>
