@@ -15,16 +15,16 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 - `Reihengeschaeftsrechner_22.html` — Legacy-Snapshot der früheren Single-File-App
 - `index.html` — schlanker Einstiegspunkt/Redirect auf `docs/`
 - `scripts/serve.mjs` — dependency-freier lokaler Static-Server + Strukturcheck
-- `netlify.toml` — statisches Hosting-Setup für Netlify
+- `.github/workflows/pages.yml` — GitHub-Pages-Deployment per Actions
 - `CLAUDE.md` — Entwicklerregeln und Architekturhinweise
 - `RGR_CHANGELOG.md` — Session-Änderungen
 - `RGR_TODO.md` — offener Backlog
 
 ## Hosting
-- Zielplattform: alternatives statisches Hosting, vorbereitet für Netlify
+- Zielplattform: GitHub Pages
 - Deployment-Artefakt: `docs/`
-- Netlify-Konfiguration: `netlify.toml`
-- GitHub Pages wurde technisch vorbereitet, konnte für das aktuelle private Repo aber nicht aktiviert werden
+- Workflow: `.github/workflows/pages.yml`
+- Live-URL: `https://ieeks.github.io/eu-vat-reihengeschaeftrechner/`
 
 ## Modi
 | 3P | Standard-Reihengeschäft (inkl. CH/GB Export) |

@@ -8,15 +8,15 @@
 - Statische Multi-File-App unter `docs/` angelegt (`index.html`, `assets/styles/app.css`, `assets/scripts/app.js`)
 - Root-`index.html` auf Redirect nach `docs/` umgestellt
 - `Reihengeschaeftsrechner_22.html` als Legacy-Snapshot beibehalten
-- `netlify.toml` für statisches Hosting mit Publish-Ordner `docs/` ergänzt
+- GitHub-Pages-Workflow `.github/workflows/pages.yml` ergänzt
 - `npm run check:pages` ergänzt und `scripts/serve.mjs` um Pages-Strukturcheck erweitert
 
 ### Doku
 - README + CLAUDE auf neue Multi-File-/Pages-Struktur aktualisiert
 
 ### Hosting-Status
-- GitHub Pages für das aktuelle private Repo per API versucht, aber von GitHub mit Plan-Hinweis abgelehnt
-- Repo daher auf providerneutrales Static-Hosting mit Netlify-Vorbereitung ausgerichtet
+- GitHub Pages ist jetzt im Workflow-Modus aktiv
+- Live-URL: `https://ieeks.github.io/eu-vat-reihengeschaeftrechner/`
 
 ### Nicht angefasst
 - VATEngine IIFE
