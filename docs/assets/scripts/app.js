@@ -5237,8 +5237,8 @@ function buildTrafficStatus(ctx, eng, options = {}) {
     return `<div class="traffic-status traffic-status-red" data-component="trafficStatus">
       <div class="traffic-status-light"></div>
       <div>
-        <div class="traffic-status-title">ACHTUNG GEHT NICHT</div>
-        <div class="traffic-status-body">In der aktuellen Konstellation ist das Geschäft nicht ohne zusätzliche Registrierung oder fehlende UID-Voraussetzungen umsetzbar. Bitte die Registrierungswarnungen prüfen.</div>
+        <div class="traffic-status-title">Problem vorhanden</div>
+        <div class="traffic-status-body">In der aktuellen Konstellation ist das Reihengeschäft für dich nicht ohne zusätzliche Registrierung oder fehlende UID-Voraussetzungen sauber umsetzbar. Bitte die Registrierungswarnungen prüfen.</div>
       </div>
     </div>`;
   }
@@ -5247,8 +5247,8 @@ function buildTrafficStatus(ctx, eng, options = {}) {
     return `<div class="traffic-status traffic-status-green" data-component="trafficStatus">
       <div class="traffic-status-light"></div>
       <div>
-        <div class="traffic-status-title">Reihengeschäft möglich · Dreiecksgeschäft angewendet</div>
-        <div class="traffic-status-body">Die Voraussetzungen sind erfüllt. Das Reihengeschäft kann in dieser Konstellation als Dreiecksgeschäft abgewickelt werden; eine Registrierung im Bestimmungsland ist nicht erforderlich.</div>
+        <div class="traffic-status-title">Kein Problem</div>
+        <div class="traffic-status-body">Das Reihengeschäft ist für dich in dieser Konstellation möglich. Zusätzlich greift die Dreiecksgeschäfts-Vereinfachung; eine Registrierung im Bestimmungsland ist nicht erforderlich.</div>
       </div>
     </div>`;
   }
@@ -5257,8 +5257,8 @@ function buildTrafficStatus(ctx, eng, options = {}) {
     return `<div class="traffic-status traffic-status-yellow" data-component="trafficStatus">
       <div class="traffic-status-light"></div>
       <div>
-        <div class="traffic-status-title">Reihengeschäft möglich · Dreiecksgeschäft per UID-Anpassung möglich</div>
-        <div class="traffic-status-body">Das Reihengeschäft ist in der aktuellen Grundstruktur möglich. Mit einer UID aus einem anderen Mitgliedstaat kann zusätzlich die Dreiecksgeschäfts-Vereinfachung angewendet und eine Registrierung im Bestimmungsland möglicherweise vermieden werden.<br>Bitte prüfen Sie, mit welcher UID der mittlere Unternehmer auftritt.</div>
+        <div class="traffic-status-title">Kein Problem</div>
+        <div class="traffic-status-body">Das Reihengeschäft ist für dich in der aktuellen Grundstruktur möglich. Optional kann mit einer UID aus einem anderen Mitgliedstaat zusätzlich die Dreiecksgeschäfts-Vereinfachung genutzt und eine Registrierung im Bestimmungsland möglicherweise vermieden werden.<br>Bitte prüfen Sie, mit welcher UID der mittlere Unternehmer auftritt.</div>
       </div>
     </div>`;
   }
@@ -5266,8 +5266,8 @@ function buildTrafficStatus(ctx, eng, options = {}) {
   return `<div class="traffic-status traffic-status-blue" data-component="trafficStatus">
     <div class="traffic-status-light"></div>
     <div>
-      <div class="traffic-status-title">Reihengeschäft möglich · kein Dreiecksgeschäft</div>
-      <div class="traffic-status-body">Die Lieferkette ist als Reihengeschäft auswertbar. Die Dreiecksgeschäfts-Vereinfachung greift in dieser Konstellation jedoch nicht. Grund: ${getTriangulationReason({ ctx, eng, options })}</div>
+      <div class="traffic-status-title">Kein Problem</div>
+      <div class="traffic-status-body">Das Reihengeschäft ist für dich in dieser Konstellation möglich. Die Dreiecksgeschäfts-Vereinfachung greift hier jedoch nicht. Grund: ${getTriangulationReason({ ctx, eng, options })}</div>
     </div>
   </div>`;
 }
