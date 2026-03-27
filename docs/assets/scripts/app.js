@@ -1310,7 +1310,7 @@ const VATEngine = (() => {
         if (altTransport) optionen += `⓵ ${altTransport}<br>`;
         optionen += `${altTransport ? '⓶' : '⓵'} ${lagerTipp}<br>`;
         optionen += `${altTransport ? '⓷' : '⓶'} Registrierung in ${ctx.nameOf(placeOfSupply)} beantragen<br>`;
-        if (dreieckMoeglich) optionen += `${altTransport ? '⓸' : '⓷'} Dreiecksgeschäft prüfen (Art. 141 MwStSystRL)<br>`;
+        if (dreieckMoeglich) optionen += `${altTransport ? '⓸' : '⓷'} Dreiecksgeschäft automatisch berücksichtigen (Art. 141 MwStSystRL)<br>`;
         risks.push({ type:'resting-buyer-no-uid', severity:'error', supply:label, country:placeOfSupply,
           message:`<strong>🚨 ${label}: Ruhende Lieferung in ${ctx.nameOf(placeOfSupply)} — keine ${placeOfSupply}-Registrierung!</strong><br>` +
             `Lieferant fakturiert ${r}% ${ctx.nameOf(placeOfSupply)}-MwSt. Ohne ${placeOfSupply}-UID kein Vorsteuerabzug → MwSt wird zum Kostenfaktor.<br>` +
@@ -5229,13 +5229,7 @@ function buildTrafficStatus(ctx, eng, options = {}) {
     </div>`;
   }
 
-  return `<div class="traffic-status traffic-status-green" data-component="trafficStatus">
-    <div class="traffic-status-light"></div>
-    <div>
-      <div class="traffic-status-title">ALLES OK</div>
-      <div class="traffic-status-body">Nach der aktuellen Konstellation ist das Geschäft in dieser Struktur umsetzbar. Bitte Rechnungshinweise, Belegnachweise und Meldepflichten wie ausgewiesen einhalten.</div>
-    </div>
-  </div>`;
+  return '';
 }
 
 function buildKurzbeschreibung(ctx, eng, options = {}) {
@@ -9330,14 +9324,15 @@ function renderContextToggles() {
 
   let h = `<div class="ctx-toggle-group">
     <div class="ctx-toggle-hdr">⚙ Analyse-Optionen</div>
+    <div class="ctx-toggle-sub">Optionale Einstellungen für die fachliche Einordnung des Geschäfts.</div>
     <div class="ctx-toggle-list">`;
 
   if (canTri) {
-    h += `<label class="ctx-item${ctxOpts.triangle?' active':''}" onclick="this.querySelector('input').click()">
+    h += `<label class="ctx-item${ctxOpts.triangle?' active':''}" onclick="this.querySelector('input').click()" title="Berücksichtigt automatisch die Dreiecksgeschäfts-Vereinfachung, wenn die Voraussetzungen erfüllt sind.">
       <div class="ctx-chk"></div>
-      <span>Dreiecksgeschäft prüfen</span>
+      <span>Dreiecksgeschäft automatisch berücksichtigen (empfohlen)</span>
       <span class="ctx-tag">Art. 141</span>
-      <input type="checkbox" ${ctxOpts.triangle?'checked':''} onchange="toggleCtxOpt('triangle',this)">
+      <input type="checkbox" aria-label="Dreiecksgeschäft automatisch berücksichtigen, wenn die Voraussetzungen erfüllt sind" title="Berücksichtigt automatisch die Dreiecksgeschäfts-Vereinfachung, wenn die Voraussetzungen erfüllt sind." ${ctxOpts.triangle?'checked':''} onchange="toggleCtxOpt('triangle',this)">
     </label>`;
   }
 
