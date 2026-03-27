@@ -9754,6 +9754,32 @@ function classifySuppliesNorm(ctx, movingIdx) {
   });
 }
 
+function simplifyBasisOutput(outputHtml) {
+  if (!outputHtml) return outputHtml;
+  const root = document.createElement('div');
+  root.innerHTML = outputHtml;
+
+  const hasPrimarySummary = !!root.querySelector('[data-component="buildKurzbeschreibung"]');
+  if (!hasPrimarySummary) return outputHtml;
+
+  const secondaryBlocks = [];
+  root.querySelectorAll('.hints:not(.reg-warnings)').forEach(node => {
+    if (node.closest('.kurz-box') || node.closest('.triangle-banner') || node.closest('.dreiecks-opportunity')) return;
+    secondaryBlocks.push(node.outerHTML);
+    node.remove();
+  });
+
+  if (secondaryBlocks.length) {
+    const panel = document.createElement('details');
+    panel.className = 'secondary-panel';
+    panel.innerHTML = `<summary class="secondary-panel-summary">Weitere Hinweise</summary>
+      <div class="secondary-panel-body">${secondaryBlocks.join('')}</div>`;
+    root.appendChild(panel);
+  }
+
+  return root.innerHTML;
+}
+
 // ── renderResult — master dispatcher ──────────────────────────────────
 function renderResult() {
   // ── Mode 5 (Lohnveredelung): bridge v4 panel → v3.2 analyzeLohn() ──────────
@@ -9839,7 +9865,7 @@ function renderResult() {
   }
 
   // Read output from bridge and write to v4 tab-basis
-  const output = rc?.innerHTML || '';
+  const output = simplifyBasisOutput(rc?.innerHTML || '');
 
   // Konsignationslager hint
   let extra = '';
