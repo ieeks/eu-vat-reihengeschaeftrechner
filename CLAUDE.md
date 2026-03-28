@@ -61,6 +61,12 @@ v4 UI Layer
   toggleDevMode() ← Dev-Overlay mit JS-Tooltip (v4.2)
 ```
 
+## Aktuelle P0-Baustelle
+
+- `buildVergleichTab()` ist fachlich noch nicht abgeschlossen
+- Erwartung: `⚖ Vergleich` muss bei `Status`, `Empfehlung`, Dreiecksgeschäft, Art. 41 und Registrierungslogik exakt mit der Hauptanalyse nach Szenariowechsel übereinstimmen
+- Änderungen am Vergleich nur minimal und mit echten Referenzfällen prüfen; keine neue Heuristik einführen, die vom Hauptstatus abweicht
+
 ## Output-Hierarchie
 
 ```

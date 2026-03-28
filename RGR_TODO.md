@@ -1,11 +1,12 @@
 # RGR TODO — Reihengeschäftsrechner v4.2
 
-Stand: 27.03.2026
+Stand: 28.03.2026
 
 ---
 
 ## P0 — Kritisch
 
+- [ ] **Vergleichsmodus fachlich harmonisieren** — `⚖ Vergleich` muss 1:1 mit Hauptanalyse konsistent sein (`Status`, `Empfehlung`, Dreieck / Art. 41 / Registrierungslogik, Szenariowechsel)
 - [ ] **Release v4.2** — Finale Browserabnahme der `docs/`-App
 - [ ] **3P CH/GB Browsertest** — B003a (AT→AT→CH middle), B003b (AT→DE→CH supplier), GB analog
 

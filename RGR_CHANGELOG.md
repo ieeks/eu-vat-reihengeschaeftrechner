@@ -2,6 +2,13 @@
 
 ---
 
+## v4.2 · 28.03.2026 — Session 15 (lokal, offen)
+
+### Doku / offene Baustelle
+- Vergleichsmodus `⚖ Vergleich` als `P0` markiert
+- Offene Prüfung dokumentiert: Vergleich muss bei `Status`, `Empfehlung`, Dreiecksgeschäft und Art.-41-/Registrierungslogik 1:1 mit der Hauptanalyse harmonisiert werden
+- Markdown-Doku auf den aktuellen lokalen Arbeitsstand ergänzt, ohne diese Baustelle fachlich als erledigt zu markieren
+
 ## v4.2 · 27.03.2026 — Session 14
 
 ### Primäres Ergebnis vereinfacht

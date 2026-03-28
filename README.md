@@ -44,6 +44,10 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 - **⚖ Vergleich-Tab** — Transport-Szenarien nebeneinander (Supplier/Middle/Customer)
 - **Experten-Modus** — 5 Tabs + Perspektivwechsel
 
+## Aktueller Fokus
+- `⚖ Vergleich-Tab` ist aktuell eine offene `P0`-Baustelle
+- Zielzustand: Vergleich muss bei `Status`, `Empfehlung`, Dreiecksgeschäft, Art. 41 und Registrierungslogik exakt dieselbe Bewertung liefern wie die Hauptanalyse nach einem Szenariowechsel
+
 ## Drittland-Support
 - **CH (Schweiz):** 2P und 3P, DAP/DDP, BAZG, EUSt 8,1%, FHA
 - **GB (Post-Brexit):** 2P und 3P, DAP/DDP, HMRC, UK VAT, TCA
