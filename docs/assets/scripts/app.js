@@ -9321,6 +9321,7 @@ function setT(t) {
 function renderTransport() {
   const countries = getSelectedCountries();
   const n = countries.length;
+  $('transportList').classList.toggle('transport-list-4p', currentMode === 4);
 
   // Mode 2 (EPROHA AT-Lager): only 2 options
   if (currentMode === 2) {

@@ -256,6 +256,7 @@ header {
   display: flex !important;
   height: calc(100vh - var(--hdr)) !important;
   overflow: hidden !important;
+  min-height: 0 !important;
 }
 
 /* LEFT */
@@ -264,10 +265,14 @@ header {
   border-right: 1px solid var(--border);
   background: var(--surface);
   display: flex !important; flex-direction: column !important; overflow: hidden !important;
+  min-height: 0 !important;
 }
 .pane-left-scroll {
   flex: 1 !important; overflow-y: auto !important; padding: 14px;
   display: flex !important; flex-direction: column !important; gap: 10px;
+  min-height: 0 !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* RIGHT */
@@ -412,6 +417,23 @@ header {
   background: var(--surface); padding: 2px 6px; border-radius: 3px;
 }
 .t-opt.active .t-role { color: var(--teal); background: var(--teal-dim); }
+
+.transport-list-4p { gap: 4px; }
+.transport-list-4p .t-opt {
+  padding: 6px 10px;
+  min-height: 44px;
+}
+.transport-list-4p .radio {
+  width: 12px;
+  height: 12px;
+}
+.transport-list-4p .t-label {
+  font-size: 0.76rem;
+}
+.transport-list-4p .t-role {
+  font-size: 0.56rem;
+  padding: 2px 5px;
+}
 
 /* UID collapsible */
 .uid-hdr-btn {
@@ -2197,4 +2219,85 @@ header {
       text-align: center;
     }
   }
-  .print-footer { display: none; }
+.print-footer { display: none; }
+
+@media (min-width: 769px) and (max-height: 860px) {
+  .pane-left-scroll {
+    padding: 10px !important;
+    gap: 8px !important;
+  }
+
+  .sec-hdr {
+    padding: 7px 11px;
+    font-size: 0.64rem;
+  }
+
+  .sec-body {
+    padding: 9px 11px;
+  }
+
+  .sub {
+    margin-bottom: 5px;
+    font-size: 0.65rem;
+  }
+
+  .party-btn {
+    padding: 6px 0;
+  }
+
+  #partyBtn5 {
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+
+  #mePosSection {
+    margin-top: 8px !important;
+  }
+
+  .me-pos-btn {
+    padding: 6px 8px;
+    font-size: 0.72rem;
+  }
+
+  .chain-bar {
+    margin-top: 8px;
+    padding: 6px 9px;
+  }
+
+  .t-opt {
+    padding: 5px 9px;
+    font-size: 0.75rem;
+  }
+
+  .t-role {
+    font-size: 0.55rem;
+    padding: 1px 5px;
+  }
+
+  #transportList.transport-list-4p {
+    max-height: 156px;
+    overflow-y: auto;
+    padding-right: 2px;
+    overscroll-behavior: contain;
+  }
+
+  #transportList.transport-list-4p .t-opt {
+    min-height: 40px;
+    padding: 4px 8px;
+  }
+
+  #transportList.transport-list-4p .t-role {
+    font-size: 0.53rem;
+    padding: 1px 4px;
+  }
+
+  .ctx-toggle-list {
+    padding: 6px;
+    gap: 4px;
+  }
+
+  .ctx-item {
+    padding: 6px 9px;
+    font-size: 0.76rem;
+  }
+}
