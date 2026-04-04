@@ -28,6 +28,11 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
+      - name: Inject git hash for cache-busting
+        run: |
+          HASH=$(git rev-parse --short HEAD)
+          sed -i "s/?v=[^\"']*/?v=${HASH}/g" docs/index.html
+
       - name: Upload static site
         uses: actions/upload-pages-artifact@v4
         with:
