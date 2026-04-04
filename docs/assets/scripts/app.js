@@ -4253,14 +4253,19 @@ function analyze2() {
       html += rH({type:'warn', icon:'🛃', text:`Ausfuhrnachweis (ATLAS/e-dec) erforderlich — Bestimmungsland ist Drittland (${cn(dsDest)}). Zollanmeldung in AT.`});
     } else {
       // EU-Bestimmungsland
-      html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:#F5A827;">Ausg: AF</strong> (IG-Lieferung AT 0% — Art. 6 Abs. 1 iVm. Art. 7 UStG 1994)`});
+      html += rH({type:'error', icon:'🆔', text:
+        `<strong>Voraussetzung IG-Lieferung: AT-Kunde muss ${cn(dsDest)}-UID mitteilen!</strong><br>
+        EPROHA kann nur dann <strong>0% (steuerfrei)</strong> fakturieren, wenn der AT-Kunde eine <strong>UID aus ${cn(dsDest)}</strong> auf der Rechnung ausweist (Art. 138 Abs. 1 lit. b MwStSystRL / § 7 UStG 1994).<br>
+        <strong style="color:var(--red);">Kein ${cn(dsDest)}-UID des Kunden → EPROHA muss 20% AT-MwSt in Rechnung stellen.</strong>`
+      });
+      html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:#F5A827;">Ausg: AF</strong> (IG-Lieferung AT 0% — Art. 6 Abs. 1 iVm. Art. 7 UStG 1994) · <em>nur wenn ${cn(dsDest)}-UID des Kunden vorliegt</em>`});
       html += rH({type:'ok', icon:'⚡', text:
         `Rechnung von EPROHA an AT-Kunde: <strong>0% MwSt (IG-Lieferung AT→${cn(dsDest)})</strong> gem. Art. 6 Abs. 1 iVm. Art. 7 UStG 1994 / Art. 138 MwStSystRL.<br>
-        AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong> · Kunden-UID (${cn(dsDest)}) des AT-Kunden erforderlich.`
+        AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong> · ${cn(dsDest)}-UID des AT-Kunden auf Rechnung anführen.`
       });
       html += rH({type:'warn', icon:'🆔', text:
-        `<strong>AT-Kunde braucht UID in ${cn(dsDest)}:</strong> Der ig. Erwerb entsteht im Bestimmungsland ${cn(dsDest)}. Liegt die UID des AT-Kunden im Land ${cn(dsDest)} vor → ${dsRate}% Erwerbsteuer durch AT-Kunden selbst abzuführen.<br>
-        <strong>Gibt AT-Kunde nur seine AT-UID an →</strong> Art.-41-Risiko: Erwerb gilt in AT als bewirkt, bis Besteuerung in ${cn(dsDest)} nachgewiesen wird.`
+        `<strong>AT-Kunde: ig. Erwerb in ${cn(dsDest)} abführen:</strong> Der ig. Erwerb entsteht im Bestimmungsland ${cn(dsDest)} → ${dsRate}% Erwerbsteuer durch AT-Kunden selbst abzuführen (UID aus ${cn(dsDest)} erforderlich).<br>
+        <strong>Gibt AT-Kunde nur AT-UID an →</strong> Art.-41-Risiko: Erwerb gilt zusätzlich in AT als bewirkt, bis Besteuerung in ${cn(dsDest)} nachgewiesen wird.`
       });
       html += rH({type:'warn', icon:'📦', text:
         `<strong>Belegnachweis:</strong> Gelangensbestätigung vom Warenempfänger in ${cn(dsDest)} einholen (§ 7 AT UStR) — bestätigt Ankunft in ${cn(dsDest)}. Alternativ: CMR-Frachtbrief mit Empfangsbestätigung.`
@@ -4282,7 +4287,7 @@ function analyze2() {
 
   // ── AT → AT (Inlandslieferung) ─────────────────────────────────────────────
   } else if (dest === 'AT') {
-    html += `<div class="mode2-flow">${buildFlowDiagram([{code:'AT',role:'EPROHA (Lager/Werk)'},{code:'AT',role:'Kunde'}], 0, 'AT', 'AT', false, -1, -1)}</div>`;
+    html += `<div class="mode2-flow">${buildFlowDiagram([{code:'AT',role:'EPROHA (Lager/Werk)'},{code:'AT',role:'Kunde'}], -1, 'AT', 'AT', false, -1, -1)}</div>`;
     html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:#F5A827;">Ausg: A2</strong> (Ausgangssteuer AT 20%) · <strong style="color:#F5A827;">Eing: V2</strong> (Vorsteuer AT 20%)`});
     html += rH({type:'ok', icon:'🇦🇹', text:`Inlandslieferung AT→AT. MwSt: <strong>20%</strong> auf Rechnung ausweisen. AT-UID: <strong>${myATVat||'ATU...'}</strong>`});
     html += rH({type:'info', icon:'📄', text:`Rechnungspflichtangaben gem. § 11 UStG AT. Kein Ausfuhrnachweis erforderlich.`});
