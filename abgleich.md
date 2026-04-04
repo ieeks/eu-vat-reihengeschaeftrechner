@@ -22,7 +22,7 @@ Quellen:
 | IG-Erwerbsort = Bestimmungsland (Ankunft der Ware) | korrekt | Art. 40 RL 2006/112/EG |
 | IG-Lieferung steuerfrei: Empfänger muss UID in anderem MS haben und mitteilen | korrekt | Art. 138 Abs. 1 lit. b RL 2006/112/EG |
 | Abgangsland-UID des Empfängers → Steuerbefreiung verweigert | korrekt — dep-UID des Käufers blockiert Art. 138 | Art. 138 Abs. 1 lit. b / Quick Fixes Exp. Notes S. 71 |
-| Art. 41 Doppelerwerb: dep-UID ausgenommen | **korrekt** — dep-UID löst kein ICA aus (Art. 36a Abs. 2 greift), daher kein Art. 41-Fall | Art. 41 / Quick Fixes Exp. Notes S. 63 |
+| Art. 41 Doppelerwerb: dep-UID ausgenommen | korrekt — dep-UID löst kein ICA aus (Art. 36a Abs. 2 greift) | Art. 41 / Quick Fixes Exp. Notes S. 63 |
 | Art. 41: nur bei „sonstiger" UID (weder dep noch dest) | korrekt — Tool warnt nur bei `usedUidCountry !== dep && !== dest` | Art. 41 RL 2006/112/EG / Exp. Notes S. 63 |
 | Transport durch Endabnehmer → kein Dreiecksgeschäft | `_detectTriangle3` line 1187 | Art. 141 lit. e RL 2006/112/EG |
 | Dreiecksgeschäft-Bedingungen a–e vollständig geprüft | alle 5 conditions | Art. 141 lit. a–e RL 2006/112/EG |
@@ -52,48 +52,32 @@ if (!!vatIds[dest]) return _noTriangle(
 
 **Was das Gesetz sagt:** Bedingung ist ausschließlich, dass B **nicht ansässig** (kein Sitz, keine feste Niederlassung) im Bestimmungsland ist. Eine reine Registrierung ohne Niederlassung ist nicht schädlich.
 
+**Wichtige Einschränkung des Bugs:** Der Fehler greift nur, wenn A und B aus **verschiedenen EU-Mitgliedstaaten** kommen (drei verschiedene Länder insgesamt). Sind A und B im selben Land (z.B. beide DE), ist das Dreiecksgeschäft ohnehin nicht anwendbar — das Tool hat in diesem Fall recht.
+
 **Belege — vierfach bestätigt:**
 1. Art. 141 lit. a RL 2006/112/EG Wortlaut: „nicht in diesem Mitgliedstaat **niedergelassen**"
 2. VwGH 15.12.2021, Ro 2020/15/0003: Registrierung allein blockiert nicht
 3. Rz 4150 UStR
 4. Quick Fixes Exp. Notes Beispiel 8 (S. 66): D ist in MS4 **und** MS5 registriert — Dreiecksgeschäft gilt dennoch, weil D „not established in MS5"
 
-**Auswirkung auf EPDE:** EPDE hat UIDs in SI, LV, EE, NL, BE, CZ, PL ohne dortige Niederlassung → Dreiecksgeschäfte nach diesen 7 Ländern fachlich falsch blockiert.
+**Auswirkung auf EPDE:** EPDE hat UIDs in SI, LV, EE, NL, BE, CZ, PL ohne dortige Niederlassung → Dreiecksgeschäfte nach diesen 7 Ländern fachlich falsch blockiert — aber **nur wenn der Lieferant (A) aus einem anderen EU-Land als DE kommt**.
 
 **Status:** Nicht behebbar (VATEngine IIFE).
-**Workaround:** Im Output-Layer bei `blocked-by-dest-vat` Hinweis einblenden: „Automatisch blockiert — fachlich nur schädlich bei Niederlassung (VwGH 15.12.2021, Ro 2020/15/0003)."
+
+**Workaround:** Im Output-Layer bei `blocked-by-dest-vat` Hinweis einblenden:
+> „Automatisch blockiert — fachlich nur schädlich bei Niederlassung im Bestimmungsland (VwGH 15.12.2021, Ro 2020/15/0003). Dreiecksgeschäft ggf. trotzdem anwendbar wenn A und B aus verschiedenen EU-Ländern kommen."
 
 ---
 
-### F2 — ~~Art. 41 dep-UID-Ausschluss~~ → KORREKTUR: Tool ist richtig
-
-**Ursprünglicher Befund** (aus BMF-PDF / Rz 3777): dep-UID-Ausschluss sei falsch.
-
-**Korrektur nach Quick Fixes Exp. Notes (S. 63):**
-Wenn der Zwischenhändler die dep-UID mitteilt, greift Art. 36a Abs. 2 → die Lieferung AN ihn wird zur Inlandslieferung, er tätigt selbst die IG-Lieferung. Es findet kein IG-Erwerb durch ihn statt → Art. 41 hat keinen Anknüpfungspunkt. Die dep-UID aus Art. 41 auszunehmen ist daher **korrekt**.
-
-Widerspruch zu Rz 3777 UStR möglich — österreichische Rz könnte einen anderen Sachverhalt meinen oder eine konservativere nationale Auslegung sein. Vorerst kein Handlungsbedarf.
-
-**Code-Zeile 1281:** `usedUidCountry !== dep && usedUidCountry !== dest` → **korrekt**.
-
----
-
-### F3 — Quick-Fix: manuell gewählte dep-UID ohne tatsächliche Registrierung (VATEngine, nicht anfassbar)
+### F3 — Quick-Fix: manuell gewählte dep-UID ohne tatsächliche Registrierung ⚠️ nicht relevant für Tool
 
 **Fundstelle:** `_applyQuickFix`, Zeilen 936–952
-```js
-const overrideIsDepUid = uidOverride === dep && !intermediaryResidentInDep && !hasDepVat;
-if (overrideIsDepUid) {
-  const movingIndex = Math.max(0, chainIndex - 1); // → L1 moving
-```
 
-**Problem:** Wenn User manuell eine dep-Land-UID wählt, aber die Partei dort weder ansässig noch registriert ist (`!hasDepVat`), ordnet das Tool L1 als bewegte Lieferung zu. Art. 36a Abs. 2 kennt keine solche Ausnahme — mitgeteilte dep-UID → immer L2 moving.
+**Problem (theoretisch):** Wenn ein User manuell eine dep-Land-UID wählt, aber die Partei dort weder ansässig noch registriert ist (`!hasDepVat`), ordnet das Tool fälschlicherweise L1 als bewegte Lieferung zu statt L2.
 
-**Quick Fixes Exp. Notes (S. 62–63):** Communication der dep-UID kann sogar informal erfolgen; keine Voraussetzung einer tatsächlichen Registrierung. Sobald mitgeteilt → Derogation greift → L2 moving.
+**Warum nicht relevant:** Im Tool ist **keine manuelle UID-Nummern-Eingabe möglich**. UIDs können nur aus dem vordefinierten COMPANIES-Datensatz gewählt werden. Ein Szenario, in dem eine dep-UID manuell eingetragen wird, die im Datensatz nicht als registriert hinterlegt ist, kann im normalen Betrieb nicht auftreten.
 
-**Auswirkung:** Randszenario (nur bei manueller UID-Wahl ohne tatsächliche dep-Registrierung im COMPANIES-Datensatz).
-
-**Status:** Nicht behebbar (VATEngine IIFE).
+**Status:** Akademischer Befund, kein Handlungsbedarf.
 
 ---
 
@@ -123,7 +107,7 @@ Seit 2020 kann eine fehlerhafte oder fehlende ZM die IG-Lieferungsbefreiung rüc
 
 ### G4 — Transportnachweis (Art. 45a IR): nicht modelliert
 
-Das Tool prüft nicht, ob ausreichende Transportnachweise vorliegen (CMR, Frachtbrief, Versicherung, Bankbelege etc.). Das ist bewusst außerhalb des Scope — Compliance-Checkliste, kein Berechnungsproblem.
+Das Tool prüft nicht, ob ausreichende Transportnachweise vorliegen (CMR, Frachtbrief, Versicherung, Bankbelege etc.). Bewusst außerhalb des Scope — Compliance-Checkliste, kein Berechnungsproblem.
 
 **Priorität:** Backlog / P3
 
@@ -133,25 +117,20 @@ Quick Fixes Exp. Notes S. 57–59: Wenn Ware in einem Lager zwischengelagert wir
 
 **Priorität:** P3
 
----
-
 ### G6 — Betrugs-/Missbrauchsvorbehalt (Art. 41/42): nicht modelliert
 
-**EuG T-646/24, Rn. 54–61 (dritte Vorlagefrage):**
+**EuG T-646/24, Rn. 54–61:**
 
-> Wenn festgestellt wird, dass der Erwerber wusste oder hätte wissen müssen, dass er an einem Missbrauch des Mehrwertsteuersystems mitgewirkt hat, können die Behörden des UID-MS
-> 1. die Art. 42/141-Vereinfachung verweigern **und**
-> 2. die Steuerbemessungsgrundlagen-Minderung nach Art. 41 Abs. 2 verweigern.
+Wenn festgestellt wird, dass der Erwerber wusste oder hätte wissen müssen, dass er an einem Missbrauch des Mehrwertsteuersystems mitgewirkt hat, können die Behörden des UID-MS (1) die Art. 42/141-Vereinfachung verweigern und (2) die Steuerbemessungsgrundlagen-Minderung nach Art. 41 Abs. 2 verweigern.
 
-Das Tool modelliert keinen Betrugs-/Missbrauchsvorbehalt. Das ist für ein internes Compliance-Tool für EPDE/EPROHA bewusst außerhalb des Scope — relevant ist das Urteil als Warnung: Dreiecksgeschäft-Vereinfachung ist nicht „wasserdicht" wenn Betrug in der Kette nachgewiesen wird.
+Für ein internes Compliance-Tool für EPDE/EPROHA kein Implementierungsbedarf. Relevant als Kontext: Dreiecksgeschäft-Vereinfachung ist nicht „wasserdicht" wenn Betrug in der Kette nachgewiesen wird.
 
-**Priorität:** P3 / Backlog (kein Implementierungsbedarf, aber Dokumentation sinnvoll)
+**Priorität:** P3 / Backlog
 
 ---
 
 ## Offene Entscheidungen
 
 1. **F1 Workaround einbauen?** Hinweis bei `blocked-by-dest-vat` im Output-Layer → (ja/nein)
-2. **F1 langfristig:** VATEngine braucht `establishments`-Datenmodell pro Partei (nicht nur für B), um Niederlassung von Registrierung zu trennen
-3. **F3:** Praktische Relevanz mit konkretem Szenario testen
-4. **G2:** Luxury-Trust-Warnblock bei aktivem Dreiecksgeschäft ergänzen?
+2. **F1 langfristig:** VATEngine braucht `establishments`-Datenmodell pro Partei, um Niederlassung von Registrierung zu trennen
+3. **G2:** Luxury-Trust-Warnblock bei aktivem Dreiecksgeschäft ergänzen?
