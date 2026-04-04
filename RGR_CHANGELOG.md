@@ -2,6 +2,16 @@
 
 ---
 
+## v4.2 · 04.04.2026 — Session 16+
+
+### Bugfixes (nach Session 16)
+
+- **Drop-Shipment AT→AT Diagramm:** `movingDeliveryIdx` `0` → `-1` — Inlandslieferung zeigte fälschlich „⚡ IG · 0%" statt neutralem `L1`
+- **Drop-Shipment EU: UID-Pflicht prominent** — neuer roter Fehler-Block ganz oben: AT-Kunde muss dest-UID (z.B. DE-UID) mitteilen, sonst fakturiert EPROHA 20% AT-MwSt (Art. 138 Abs. 1 lit. b)
+- **Cache-Busting automatisiert** — GitHub Actions Workflow ersetzt `?v=dev` in `index.html` beim Deploy durch den kurzen Git-Commit-Hash; kein manuelles Versionieren mehr nötig
+
+---
+
 ## v4.2 · 04.04.2026 — Session 16
 
 ### Bugfixes

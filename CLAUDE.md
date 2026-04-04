@@ -175,6 +175,7 @@ npm run check:pages
 - `Reihengeschaeftsrechner_22.html` nur noch als Legacy-Snapshot behalten
 - Server-Logik nur in `scripts/serve.mjs`
 - Ziel: statische Multi-File-App ohne Framework, per GitHub Pages deploybar
+- **Cache-Busting:** `index.html` enthält `?v=dev` als Platzhalter — GitHub Actions ersetzt beim Deploy automatisch mit kurzem Git-Hash
 
 ---
 
