@@ -5,6 +5,7 @@ Quellen:
 - Österreichisches BMF-Schulungsunterlagen August 2024 (PDF)
 - EU-Mehrwertsteuerrichtlinie 2006/112/EG (Primärrecht, EU.html)
 - EU-Kommission Explanatory Notes on 2020 Quick Fixes (DG TAXUD, Dezember 2019, 85 S.) — nicht rechtsverbindlich, aber maßgebliche Auslegungshilfe
+- EuG T-646/24, MS Ključarovci v. Republika Slovenija, 03.12.2025 (ECLI:EU:T:2025:1081) — primäre Rechtsprechung zur 4P-Kette und Art. 141 lit. c
 
 ---
 
@@ -27,6 +28,8 @@ Quellen:
 | Dreiecksgeschäft-Bedingungen a–e vollständig geprüft | alle 5 conditions | Art. 141 lit. a–e RL 2006/112/EG |
 | RC-Schuldnerschaft beim Käufer (Art. 197) | korrekt | Art. 197 RL 2006/112/EG |
 | ZM-Pflicht Dreiecksgeschäft-Kennzeichnung | condition e (met:false als Warnung) | § 18a Abs. 7 UStG / Art. 42 + 265 RL |
+| Art. 141 lit. c: Ware geht direkt an Endabnehmer (C's Kunde D), nicht physisch zu C | Bedingung gilt als erfüllt — korrekt | EuG T-646/24, Rn. 48+50 |
+| 4P-Kette: Dreiecksgeschäft-Vereinfachung auf B anwendbar | Tool hat 4P-Modus (`_detectTriangle4`) | EuG T-646/24, Rn. 38+50 |
 | EuGH C-247/21 Luxury Trust: Pflichtangaben materiell | Warnung in Output vorhanden | EuGH C-247/21 |
 | EuGH C-430/09 Euro Tyre: UID-Zeitpunkt entscheidend | Hinweis in Quick-Fix-Output | EuGH C-430/09 |
 | EuGH C-628/16 Kreuzmayr: mitgeteilte UID entscheidet | Hinweis in Quick-Fix-Output | EuGH C-628/16 |
@@ -129,6 +132,20 @@ Das Tool prüft nicht, ob ausreichende Transportnachweise vorliegen (CMR, Fracht
 Quick Fixes Exp. Notes S. 57–59: Wenn Ware in einem Lager zwischengelagert wird und zum Zeitpunkt der Einlagerung noch kein Vertrag mit dem nächsten Käufer besteht, liegt eine Kettenunterbrechung vor → zwei separate IG-Transporte. Das Tool modelliert dies nicht (keine Warehouse-Break-Erkennung).
 
 **Priorität:** P3
+
+---
+
+### G6 — Betrugs-/Missbrauchsvorbehalt (Art. 41/42): nicht modelliert
+
+**EuG T-646/24, Rn. 54–61 (dritte Vorlagefrage):**
+
+> Wenn festgestellt wird, dass der Erwerber wusste oder hätte wissen müssen, dass er an einem Missbrauch des Mehrwertsteuersystems mitgewirkt hat, können die Behörden des UID-MS
+> 1. die Art. 42/141-Vereinfachung verweigern **und**
+> 2. die Steuerbemessungsgrundlagen-Minderung nach Art. 41 Abs. 2 verweigern.
+
+Das Tool modelliert keinen Betrugs-/Missbrauchsvorbehalt. Das ist für ein internes Compliance-Tool für EPDE/EPROHA bewusst außerhalb des Scope — relevant ist das Urteil als Warnung: Dreiecksgeschäft-Vereinfachung ist nicht „wasserdicht" wenn Betrug in der Kette nachgewiesen wird.
+
+**Priorität:** P3 / Backlog (kein Implementierungsbedarf, aber Dokumentation sinnvoll)
 
 ---
 
