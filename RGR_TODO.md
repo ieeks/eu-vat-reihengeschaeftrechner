@@ -1,12 +1,13 @@
 # RGR TODO — Reihengeschäftsrechner v4.2
 
-Stand: 28.03.2026
+Stand: 04.04.2026
 
 ---
 
 ## P0 — Kritisch
 
 - [ ] **Vergleichsmodus fachlich harmonisieren** — `⚖ Vergleich` muss 1:1 mit Hauptanalyse konsistent sein (`Status`, `Empfehlung`, Dreieck / Art. 41 / Registrierungslogik, Szenariowechsel)
+- [x] **Lokale UI-/Code-Änderungen bewusst nachziehen** — Session 16 committed/pushed (04.04.2026)
 - [ ] **Release v4.2** — Finale Browserabnahme der `docs/`-App
 - [ ] **3P CH/GB Browsertest** — B003a (AT→AT→CH middle), B003b (AT→DE→CH supplier), GB analog
 
@@ -56,6 +57,7 @@ Stand: 28.03.2026
 
 ## P1 — Wichtig
 
+- [ ] **Drop-Shipment Browserabnahme** — Mode 2 / EPROHA / Kunde=AT / Warenempfänger=DE (und Drittland) manuell prüfen
 - [ ] **Typeahead Länder-Picker** — Native select ersetzen
 - [ ] **REAL_CASES_2026 Tests** — HU→DE EXW, Sappi DE→EPDE→IT, BG→AT→BG
 - [ ] **Vergleich-Tab: Struktur-Dimension** — 3P/4P/Dreieck als zweite Achse

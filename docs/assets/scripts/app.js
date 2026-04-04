@@ -101,7 +101,7 @@ const SAP_TAX_MAP = {
       'rc':                   { out:'CB', in:'SI',  desc:'RC SI: Lieferant muss 22% ausweisen (čl. 76 ZDDV-1)' },
     },
     CH: {
-      'export':               { out:'D0', in:null,  desc:'Ausfuhr DE→CH 0% (§ 6 UStG)' },
+      'export':               { out:'G0', in:null,  desc:'Ausfuhr DE→CH 0% (§ 6 UStG)' },
     },
     IT: {
       'rc':                   { out:'IC', in:null,  desc:'Inversione contabile IT 0% (Art. 17 DPR 633)' },
@@ -124,9 +124,10 @@ const SAP_TAX_MAP = {
       'domestic':             { out:'DS', in:'VD',  desc:'Ausgangssteuer DE 19% / Vorsteuer DE 19%' },
       'ic-exempt':            { out:'DH', in:null,  desc:'IG-Lieferung 0% (Erwerbsteuer 0%) — UID DE' },
       'ic-acquisition':       { out:null, in:'VH',  desc:'IG-Erwerb DE 19%' },
+      'export':               { out:'D0', in:null,  desc:'Ausfuhr DE→CH 0% (§ 6 UStG) — nur bei DE-UID' },
     },
     CH: {
-      'export':               { out:'D0', in:null,  desc:'Ausfuhr AT→CH 0%' },
+      'export':               { out:'A0', in:null,  desc:'Ausfuhr AT→CH 0%' },
       'domestic':             { out:'B5', in:'IB',  desc:'CH-MWST 8,1% Ausgang / Vorsteuer CH 8,1%' },
     },
     IT: {
@@ -196,6 +197,7 @@ let devMode           = false;
 let activeInvSupply   = 0;
 let activeRpaSupply   = 0;
 let uidPanelOpen      = false;
+let dropShipDest      = null;   // Mode 2: Warenempfänger-Land bei Drop-Shipment (null = kein Drop-Shipment)
 
 // Country helpers
 const EU_MAP   = Object.fromEntries(EU.map(c => [c.code, c]));
@@ -237,7 +239,7 @@ const BMF_ABGLEICH = {
 // Bei ic-exempt / dreiecks richtet sich das Kennzeichen nach dem UID-Land (AF vs. DH),
 // nicht nach dem Lieferland. Reihenfolge: expliziter uidCountry-Hint > selectedUidOverride > home.
 function _sapEffectiveCountry(company, country, treatment, uidCountry) {
-  const uidTreatments = ['ic-exempt', 'ic-acquisition', 'dreiecks'];
+  const uidTreatments = ['ic-exempt', 'ic-acquisition', 'dreiecks', 'export'];
   if (!uidTreatments.includes(treatment)) return country;
   const home = COMPANIES[company]?.home || country;
   const uidLand = uidCountry || selectedUidOverride || home;
@@ -785,7 +787,7 @@ function _v32_rebuildUI() {
 // Bei ic-exempt / dreiecks richtet sich das Kennzeichen nach dem UID-Land (AF vs. DH),
 // nicht nach dem Lieferland. Reihenfolge: expliziter uidCountry-Hint > selectedUidOverride > home.
 function _sapEffectiveCountry(company, country, treatment, uidCountry) {
-  const uidTreatments = ['ic-exempt', 'ic-acquisition', 'dreiecks'];
+  const uidTreatments = ['ic-exempt', 'ic-acquisition', 'dreiecks', 'export'];
   if (!uidTreatments.includes(treatment)) return country;
   const home = COMPANIES[company]?.home || country;
   const uidLand = uidCountry || selectedUidOverride || home;
@@ -1273,10 +1275,12 @@ const VATEngine = (() => {
 
       // (C) Art. 41 double-acquisition risk — only if truly cross-border
       if (isMoving && iAmTheBuyer && dep !== dest) {
-        const nonDestIds = Object.keys(vatIds).filter(c => c !== dest && c !== dep);
-        if (nonDestIds.length > 0) {
+        const usedUidCountry = ctx.transport === 'middle' && ctx.uidOverride
+          ? ctx.uidOverride
+          : companyHome;
+        if (usedUidCountry && usedUidCountry !== dest && usedUidCountry !== dep && vatIds[usedUidCountry]) {
           risks.push({ type:'double-acquisition', severity:'warning', supply:label, country:dest,
-            message:`⚠ ${natLaw('3d')}: Andere UID (${nonDestIds.join('/')}) → Doppelerwerb-Risiko bis Nachweis der Besteuerung in ${ctx.nameOf(dest)}.`,
+            message:`⚠ ${natLaw('3d')}: Andere UID (${usedUidCountry}) → Doppelerwerb-Risiko bis Nachweis der Besteuerung in ${ctx.nameOf(dest)}.`,
             legalBasis:`${natLaw('3d')} / EuGH C-696/20` });
         }
       }
@@ -2140,7 +2144,7 @@ function runRiskChecks(s1, s2, s3, s4, dep, dest) {
   if (s1 === s2 && isEU(s1) && _effectiveBUid === s1) {
     risks.push(`<strong>Lieferant und Zwischenhändler beide in ${cn(s1)}:</strong> L1 = Inlandslieferung.`);
   }
-  if (dep !== dest && isEU(dep) && isEU(dest)) {
+  if (expertMode && dep !== dest && isEU(dep) && isEU(dest)) {
     infos.push(`<strong>EuGH C-245/04 EMAG:</strong> In dieser Kette kann exakt <em>eine</em> Lieferung steuerfrei als IG-Lieferung behandelt werden.`);
   }
   if (risks.length === 0 && infos.length === 0) {
@@ -4218,6 +4222,64 @@ function analyze2() {
     // Konsignationslager CH
     html += buildKonsiLagerCH(myCHVat, 'AT');
 
+  // ── AT → AT + Drop-Shipment (Warenempfänger ≠ AT) ─────────────────────────
+  } else if (dest === 'AT' && dropShipDest && dropShipDest !== 'AT') {
+    const dsDest = dropShipDest;
+    const dsDestVat = COMPANIES['EPROHA'].vatIds[dsDest];
+    const dsRate = rate(dsDest);
+    const isNonEUDest = isNonEU(dsDest);
+
+    html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--amber);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">
+      📦 Drop-Shipment — Direktlieferung an Endkunden des Kunden
+    </div>`;
+
+    html += `<div class="mode2-flow">${buildFlowDiagram(
+      [{code:'AT',role:'EPROHA (Lager)'},{code:'AT',role:'Kunde (AT)'},{code:dsDest,role:'Warenempfänger'}],
+      0, 'AT', dsDest, false, -1, -1
+    )}</div>`;
+
+    html += `<div style="padding:12px 16px;background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.25);border-radius:var(--r-md);margin-bottom:14px;font-size:0.78rem;color:var(--tx-2);line-height:1.7;">
+      <strong style="color:var(--teal);">Konstellation:</strong>
+      EPROHA (AT) fakturiert an <strong>AT-Kunden</strong> · Ware geht direkt nach ${flag(dsDest)} <strong>${cn(dsDest)}</strong> (Warenempfänger = Kunde des Kunden).<br>
+      ${isNonEUDest
+        ? `${flag(dsDest)} ${cn(dsDest)} ist <strong>kein EU-Mitglied</strong> — Ausfuhrlieferung, keine IG-Lieferung.`
+        : `Die Lieferung von EPROHA an den AT-Kunden ist trotzdem eine <strong>innergemeinschaftliche Lieferung</strong> (Ware gelangt physisch nach ${cn(dsDest)}).`}
+    </div>`;
+
+    if (isNonEUDest) {
+      // Drittland
+      html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:#F5A827;">Ausg: A0</strong> (Ausfuhr AT 0% — § 7 UStG AT / Art. 146 MwStSystRL)`});
+      html += rH({type:'ok', icon:'🇦🇹', text:`Rechnung an AT-Kunden: <strong>0% MwSt (Ausfuhrlieferung)</strong>. AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>.`});
+      html += rH({type:'warn', icon:'🛃', text:`Ausfuhrnachweis (ATLAS/e-dec) erforderlich — Bestimmungsland ist Drittland (${cn(dsDest)}). Zollanmeldung in AT.`});
+    } else {
+      // EU-Bestimmungsland
+      html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:#F5A827;">Ausg: AF</strong> (IG-Lieferung AT 0% — Art. 6 Abs. 1 iVm. Art. 7 UStG 1994)`});
+      html += rH({type:'ok', icon:'⚡', text:
+        `Rechnung von EPROHA an AT-Kunde: <strong>0% MwSt (IG-Lieferung AT→${cn(dsDest)})</strong> gem. Art. 6 Abs. 1 iVm. Art. 7 UStG 1994 / Art. 138 MwStSystRL.<br>
+        AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong> · Kunden-UID (${cn(dsDest)}) des AT-Kunden erforderlich.`
+      });
+      html += rH({type:'warn', icon:'🆔', text:
+        `<strong>AT-Kunde braucht UID in ${cn(dsDest)}:</strong> Der ig. Erwerb entsteht im Bestimmungsland ${cn(dsDest)}. Liegt die UID des AT-Kunden im Land ${cn(dsDest)} vor → ${dsRate}% Erwerbsteuer durch AT-Kunden selbst abzuführen.<br>
+        <strong>Gibt AT-Kunde nur seine AT-UID an →</strong> Art.-41-Risiko: Erwerb gilt in AT als bewirkt, bis Besteuerung in ${cn(dsDest)} nachgewiesen wird.`
+      });
+      html += rH({type:'warn', icon:'📦', text:
+        `<strong>Belegnachweis:</strong> Gelangensbestätigung vom Warenempfänger in ${cn(dsDest)} einholen (§ 7 AT UStR) — bestätigt Ankunft in ${cn(dsDest)}. Alternativ: CMR-Frachtbrief mit Empfangsbestätigung.`
+      });
+      html += rH({type:'info', icon:'📝', text:`ZM-Meldung: EPROHA meldet IG-Lieferung in der Zusammenfassenden Meldung (UID des AT-Kunden + Betrag). Frist: 25. des Folgemonats.`});
+      if (dsDestVat) {
+        html += rH({type:'info', icon:'🆔', text:`EPROHA hat eigene UID in ${cn(dsDest)}: <strong>${dsDestVat}</strong> — ig. Erwerb entstünde bei Verwendung dieser UID direkt in ${cn(dsDest)} (Saldo 0).`});
+      }
+      html += rH({type:'info', icon:'💡', text:
+        `<strong>Rechnungsweg AT-Kunde → DE Endkunde:</strong> Der AT-Kunde fakturiert separat an seinen ${cn(dsDest)}-Endkunden. Da der AT-Kunde den ig. Erwerb in ${cn(dsDest)} tätigt, kann er dort eine Inlandslieferung (${dsRate}% ${cn(dsDest)}-MwSt) oder unter Umständen IG-Lieferung weiterberechnen.`
+      });
+    }
+
+    if (isAbholung) {
+      html += rH({type:'warn', icon:'🚗', text:
+        `<strong>Abholung durch AT-Kunden (EXW):</strong> Lieferort = AT-Lager. Bei Abholung muss AT-Kunde die Ware selbst nach ${cn(dsDest)} bringen — Belegnachweis wird schwieriger. Gelangensbestätigung vom AT-Kunden / Spediteur einfordern.`
+      });
+    }
+
   // ── AT → AT (Inlandslieferung) ─────────────────────────────────────────────
   } else if (dest === 'AT') {
     html += `<div class="mode2-flow">${buildFlowDiagram([{code:'AT',role:'EPROHA (Lager/Werk)'},{code:'AT',role:'Kunde'}], 0, 'AT', 'AT', false, -1, -1)}</div>`;
@@ -5288,7 +5350,6 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
   const risks = eng.risks?.risks || [];
   const hasBlockingRegistrationRisk = risks.some(r =>
     r.type === 'registration-required' ||
-    r.type === 'double-acquisition' ||
     r.type === 'ic-acquisition-no-reg' ||
     r.type === 'resting-buyer-no-uid'
   );
@@ -5325,7 +5386,7 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
   function formatOwnUidCode(s) {
     const pos = s.placeOfSupply || (s.isMoving ? ctx.dep : ctx.dest);
     if (selectedUidOverride && MY_VAT_IDS[selectedUidOverride]) return selectedUidOverride;
-    if (s.iAmTheBuyer && s.isMoving) return myVat(ctx.dest) ? ctx.dest : (myVat(pos) ? pos : COMPANIES[currentCompany].home);
+    if (s.iAmTheBuyer && s.isMoving) return myVat(ctx.dest) ? ctx.dest : COMPANIES[currentCompany].home;
     if (s.iAmTheSeller && s.isMoving) return myVat(ctx.dep) ? ctx.dep : COMPANIES[currentCompany].home;
     return myVat(pos) ? pos : COMPANIES[currentCompany].home;
   }
@@ -8665,6 +8726,7 @@ function setCompany(co, btn) {
   currentCompany = co;
   MY_VAT_IDS = COMPANIES[co].vatIds;
   selectedUidOverride = null;
+  dropShipDest = null;
   document.querySelectorAll('.co-pill button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   // Mode 2 only for EPROHA — reset to 3 if EPDE selected
@@ -8897,6 +8959,14 @@ function buildVergleichTab(baseCtx, baseEng) {
     );
   }
 
+  function blockingStatusRisks(tr) {
+    return scenarioRisks(tr).filter(r =>
+      r.type === 'registration-required' ||
+      r.type === 'ic-acquisition-no-reg' ||
+      r.type === 'resting-buyer-no-uid'
+    );
+  }
+
   function uniqueCountries(risks) {
     return [...new Set(risks.map(r => r.country).filter(Boolean))];
   }
@@ -8932,6 +9002,9 @@ function buildVergleichTab(baseCtx, baseEng) {
     if (t === 'domestic') return pill(`Inland${rateStr}`, 'amber') + (mv ? ' ' + pill('bewegend','teal') : ' ' + pill('ruhend','gray'));
     if (t === 'export') return pill('Ausfuhr 0%', 'green');
     if (t === 'rc')     return pill(`RC${rateStr}`, 'violet');
+    if (t === 'registration-required') return pill('Registrierung nötig', 'red') + (mv ? ' ' + pill('bewegend','teal') : ' ' + pill('ruhend','gray'));
+    if (t === 'ic-acquisition-no-reg') return pill('IG-Erwerb ohne Reg.', 'red') + (mv ? ' ' + pill('bewegend','teal') : ' ' + pill('ruhend','gray'));
+    if (t === 'resting-buyer-no-uid') return pill('UID fehlt', 'red') + (mv ? ' ' + pill('bewegend','teal') : ' ' + pill('ruhend','gray'));
     return pill(t + rateStr, 'gray');
   }
 
@@ -8999,8 +9072,8 @@ function buildVergleichTab(baseCtx, baseEng) {
   }
 
   function statusCell(tr) {
-    const regs = registrationRisks(tr);
-    if (regs.length) return pill('ROT · nicht praktikabel','red');
+    const blocking = blockingStatusRisks(tr);
+    if (blocking.length) return pill('ROT · Problem','red');
     const warns = warningRisks(tr);
     if (warns.length) return pill('GELB · prüfen','amber');
     if (triangleOk(tr)) return pill('GRÜN · bevorzugt','green');
@@ -9046,8 +9119,8 @@ function buildVergleichTab(baseCtx, baseEng) {
   }
 
   function recommendationCell(tr) {
-    const regs = registrationRisks(tr);
-    if (regs.length) return `<span style="color:var(--red);font-weight:700;">Nicht wählen</span>`;
+    const blocking = blockingStatusRisks(tr);
+    if (blocking.length) return `<span style="color:var(--red);font-weight:700;">Nicht wählen</span>`;
     const warns = warningRisks(tr);
     if (warns.length) return `<span style="color:var(--amber);font-weight:700;">Nur nach Prüfung</span>`;
     if (triangleOk(tr)) return `<span style="color:var(--green);font-weight:700;">Bevorzugt</span>`;
@@ -9518,20 +9591,53 @@ function toggleCtxOpt(k, cb) {
 }
 
 function renderContextToggles() {
-  let h = `<div class="ctx-toggle-group">
-    <div class="ctx-toggle-hdr">⚙ Analyse-Optionen</div>
-    <div class="ctx-toggle-sub">Optionale Einstellungen für die fachliche Einordnung des Geschäfts.</div>
-    <div class="ctx-toggle-list">`;
+  const el = $('contextToggles');
 
-  h += `<label class="ctx-item${ctxOpts.konsi?' active':''}" onclick="this.querySelector('input').click()">
-    <div class="ctx-chk"></div>
-    <span>Konsignationslager</span>
-    <span class="ctx-tag">§ 6b</span>
-    <input type="checkbox" ${ctxOpts.konsi?'checked':''} onchange="toggleCtxOpt('konsi',this)">
-  </label>`;
-  h += `</div></div>`;
+  // Mode 2 + Kunde = AT → Drop-Shipment-Sektion anzeigen
+  if (currentMode === 2 && currentCompany === 'EPROHA') {
+    const cp1 = $('cp-1');
+    const kundeCountry = cp1?.value || 'IT';
+    if (kundeCountry === 'AT') {
+      const activeDS = !!dropShipDest;
+      const opts = EU.filter(c => !c.nonEU && c.code !== 'AT')
+        .map(c => `<option value="${c.code}"${dropShipDest===c.code?' selected':''}>${flag(c.code)} ${cn(c.code)}</option>`)
+        .join('');
+      el.innerHTML = `<div class="sec" style="margin-top:0;border-top:1px solid var(--border-light);">
+        <div class="sec-hdr">📦 Drop-Shipment</div>
+        <div class="sec-body">
+          <div class="sub" style="margin-bottom:8px;">Ware geht direkt an Endkunden des Kunden?</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <button class="party-btn${activeDS?' active':''}" onclick="setDropShip(document.getElementById('dsDestPicker').value)">
+              Ja · Direktlieferung an Warenempfänger
+            </button>
+            <button class="party-btn${!activeDS?' active':''}" onclick="clearDropShip()">
+              Nein · Abholung / Inland AT
+            </button>
+          </div>
+          ${activeDS ? `<div class="sub" style="margin-bottom:4px;">Warenempfänger-Land (Bestimmungsland)</div>
+          <div class="picker-wrap">
+            <select id="dsDestPicker" onchange="setDropShip(this.value)" style="width:100%;">
+              ${opts}
+            </select>
+          </div>` : `<select id="dsDestPicker" style="display:none;">${opts}</select>`}
+        </div>
+      </div>`;
+      return;
+    }
+  }
 
-  $('contextToggles').innerHTML = h;
+  el.innerHTML = '';
+}
+
+function setDropShip(country) {
+  dropShipDest = country || 'DE';
+  renderContextToggles();
+  renderResult();
+}
+function clearDropShip() {
+  dropShipDest = null;
+  renderContextToggles();
+  renderResult();
 }
 
 function renderLohnPanel() { /* no-op: Lohnveredelung panel is now static HTML in #lohnPanel, shown via renderAll() */ }

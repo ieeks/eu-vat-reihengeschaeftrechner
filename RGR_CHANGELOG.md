@@ -2,6 +2,48 @@
 
 ---
 
+## v4.2 · 04.04.2026 — Session 16
+
+### Bugfixes
+
+- **SAP-Kennzeichen Exports korrigiert**
+  - EPDE › CH › export: `D0` → `G0` (Ausfuhr DE→CH, § 6 UStG)
+  - EPROHA › DE › export: neu mit `D0` (nur bei DE-UID)
+  - EPROHA › CH › export: `D0` → `A0` (bei AT-UID)
+  - `_sapEffectiveCountry`: `'export'` zu `uidTreatments` ergänzt — SAP-Lookup für Ausfuhr läuft jetzt durch das UID-Land (DE→D0, AT→A0)
+- **Art. 41 Doppelerwerb-Prüfung präzisiert** — von „alle nicht-dest UIDs" auf tatsächlich verwendete UID (`usedUidCountry`) umgestellt; dep-UID korrekt ausgenommen (Art. 36a Abs. 2 / Quick Fixes Exp. Notes S. 63)
+- **`formatOwnUidCode` buyer-moving korrigiert** — UID-Inkonsistenz L1 (DE248554278) vs. L2 (ATU36513402) behoben; Fallback direkt zu `companyHome` statt über intermediäres `myVat(pos)`
+- **`buildKurzbeschreibung`**: `double-acquisition` aus `hasBlockingRegistrationRisk` entfernt — Art.-41-Warnung blockiert grünen Top-Status nicht mehr
+
+### Neue Features
+
+- **Drop-Shipment Mode 2 (EPROHA, Kunde=AT)** — Direktlieferung aus AT-Lager an Endkunden des AT-Kunden (Warenempfänger in EU oder Drittland)
+  - UI-Toggle in `renderContextToggles()` mit Warenempfänger-Picker
+  - `analyze2()`: neuer Branch für `dest=AT && dropShipDest !== AT`
+  - Dreieck-Fluss-Diagramm, SAP-Codes (AF / A0), Art.-41-Hinweis, Belegnachweis, ZM-Hinweise
+  - State: `dropShipDest`, `setDropShip()`, `clearDropShip()`
+
+### UI / Dev
+
+- **Chain-Logo ⛓ aus Header entfernt**
+- **`data-component` Attribute** auf alle Input-Sektionen (Dev Mode Hover-Tags): Struktur, Warenkette, Transport, UidOverride, AnalyseOptionen, Lohnveredelung, UidStatus
+- **EMAG-Hinweis** (EuGH C-245/04): nur noch im Expert-Modus sichtbar
+- **`buildVergleichTab`**: `blockingStatusRisks()` Helper (ohne `double-acquisition`); `statusCell`/`recommendationCell` harmonisiert; neue `pill`-Typen für Registration-/UID-Fehler
+
+### Doku
+
+- **`abgleich.md`** neu — Rechtsabgleich Tool vs. EU MwStSystRL, Quick Fixes Notes, EuG T-646/24
+  - F1: Dreiecksgeschäft-Block bei reiner Registrierung fachlich falsch (VATEngine IIFE, nicht behebbar)
+  - F3: Quick-Fix dep-UID ohne Registration — akademisch, nicht relevant für Tool
+  - Art. 41 dep-UID-Ausschluss: korrekt bestätigt (Quick Fixes Exp. Notes S. 63)
+  - EuG T-646/24: 4P-Kette und Art. 141 lit. c bestätigt
+
+### Nicht angefasst
+- VATEngine IIFE
+- analyze()
+
+---
+
 ## v4.2 · 28.03.2026 — Session 15 (lokal, offen)
 
 ### Doku / offene Baustelle

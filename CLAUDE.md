@@ -16,6 +16,7 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 | `README.md` | User-facing Übersicht |
 | `RGR_CHANGELOG.md` | Änderungsprotokoll |
 | `RGR_TODO.md` | Offene Punkte & Backlog |
+| `abgleich.md` | Rechtsabgleich Tool vs. EU MwStSystRL / Rechtsprechung |
 | `index.html` | Einstiegspunkt für lokalen Server / Redirect |
 | `package.json` | Start- und Check-Skripte |
 | `scripts/serve.mjs` | Dependency-freier lokaler Static-Server |
@@ -50,8 +51,10 @@ docs/assets/scripts/app.js
   computeTaxCH() ← export/import/domestic-l1/domestic-l2-ch
   computeTaxGB() ← export/domestic-l1/domestic-l2-gb (NEU v4.2)
   analyzeLohn() ← sup===con → Inland-Sonderfall (v4.1)
+  analyze2() ← Mode 2 EPROHA; enthält Drop-Shipment-Branch (dest=AT + dropShipDest≠AT)
   buildVergleichTab() ← ⚖ Vergleich-Tab (v4.1)
   simplifyBasisOutput() ← sekundäre Hints in Desktop-Panel bündeln
+  setDropShip(country) / clearDropShip() ← Drop-Shipment State für Mode 2
 
 Reihengeschaeftsrechner_22.html
   Legacy-Referenz, nicht wieder zur Hauptquelle machen
@@ -119,10 +122,11 @@ getTransportLetter()  → UI-Brücke für Transport-Buttons / Labels
 ## SAP-Badge Logik
 ```
 badge-ig      → treatment ic-exempt / ic-acquisition
-badge-export  → treatment export → A0 (AT) / G0 (DE)
+badge-export  → treatment export → A0 (EPROHA AT-UID) / D0 (EPROHA DE-UID) / G0 (EPDE DE→CH)
 badge-rc      → treatment rc
 badge-resting → treatment domestic
 ```
+Export-Routing: `_sapEffectiveCountry` enthält 'export' in `uidTreatments` → SAP-Lookup über UID-Land
 
 ## Header
 ```
@@ -139,10 +143,11 @@ toggleDevMode() → data-dev="true" auf <html>
 #dev-tooltip → position:fixed im body, folgt mousemove
 _devTipShow() → composedPath() + instanceof Element + parentElement-Fallback
 Getaggte Komponenten: data-component="..."
-  buildFlowDiagram, buildKurzbeschreibung, buildDeliveryBox,
-  buildLegalRefs, buildPerspektivwechsel, buildMeldepflichten,
-  buildVergleichTab, reg-warnings, resultContextBar,
-  quickFix (Art. 36a)
+  Output: buildFlowDiagram, buildKurzbeschreibung, buildDeliveryBox,
+          buildLegalRefs, buildPerspektivwechsel, buildMeldepflichten,
+          buildVergleichTab, reg-warnings, resultContextBar, quickFix (Art. 36a)
+  Input:  input.Structur, input.Warenkette, input.Transport, input.UidOverride,
+          input.AnalyseOptionen, input.Lohnveredelung, input.UidStatus
 ```
 
 ## Drittland-Routing (3P)
@@ -175,7 +180,8 @@ npm run check:pages
 
 ## 🚫 NEVER TOUCH
 - VATEngine IIFE
-- analyze(), analyze2()
+- analyze()
+- analyze2() Kernpfade — neue Branches (z.B. Drop-Shipment) dürfen ergänzt werden, bestehende Pfade nicht anfassen
 
 ## Kritische Regeln
 1. `#partyTopRow .party-btn` — nie global

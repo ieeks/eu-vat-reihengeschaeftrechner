@@ -18,7 +18,6 @@
      HEADER
 ═══════════════════════════════════════════════════════════════════════ -->
 <header>
-  <div class="h-logo">⛓</div>
   <span class="h-title">Reihengeschäftsrechner</span>
   <span class="h-ver" id="versionBadge">v4.0</span>
   <div class="h-div"></div>
@@ -71,7 +70,7 @@
     <div class="pane-left-scroll">
 
       <!-- Struktur -->
-      <div class="sec" id="strukturSec">
+      <div class="sec" id="strukturSec" data-component="input.Structur">
         <div class="sec-hdr">👥 Struktur</div>
         <div class="sec-body">
           <div class="sub">Wie viele Parteien?</div>
@@ -97,7 +96,7 @@
       </div>
 
       <!-- Warenkette -->
-      <div class="sec">
+      <div class="sec" data-component="input.Warenkette">
         <div class="sec-hdr">🔗 Warenkette</div>
         <div class="sec-body">
           <div class="sub">Länder der Parteien</div>
@@ -107,7 +106,7 @@
       </div>
 
       <!-- Transport -->
-      <div class="sec">
+      <div class="sec" data-component="input.Transport">
         <div class="sec-hdr">🚛 Transport</div>
         <div class="sec-body">
           <div class="sub">Wer organisiert den Transport?</div>
@@ -116,15 +115,15 @@
       </div>
 
       <!-- UID Override (contextual, only when transport=middle) -->
-      <div id="uidOverrideSection" style="display:none;">
+      <div id="uidOverrideSection" style="display:none;" data-component="input.UidOverride">
         <!-- filled by renderUidOverride() -->
       </div>
 
       <!-- Analyse-Optionen (context-sensitive, no static options box) -->
-      <div id="contextToggles"></div>
+      <div id="contextToggles" data-component="input.AnalyseOptionen"></div>
 
       <!-- Lohnveredelung panel (Modus 5 — shown when currentMode===5) -->
-      <div id="lohnPanel" style="display:none;">
+      <div id="lohnPanel" style="display:none;" data-component="input.Lohnveredelung">
         <div class="sec">
           <div class="sec-hdr">🔧 Lohnveredelung — Modus 5</div>
           <div class="sec-body">
@@ -167,7 +166,7 @@
       </div>
 
       <!-- UID Status (reference, collapsible — moved to bottom) -->
-      <div class="sec" id="uidSec">
+      <div class="sec" id="uidSec" data-component="input.UidStatus">
         <button class="uid-hdr-btn" onclick="toggleUIDs()">
           <span class="uid-hdr-label">🆔 UID-Status</span>
           <span class="uid-hdr-chips" id="uidChips"></span>
