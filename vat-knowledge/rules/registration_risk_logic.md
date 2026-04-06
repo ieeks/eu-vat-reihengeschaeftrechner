@@ -21,6 +21,10 @@ Bewegte Lieferung, ich bin Käufer, IG-Erwerb in dest, keine dest-UID.
 isMoving && iAmTheBuyer && dep !== dest && dest !== companyHome && !vatIds[dest]
 ```
 Dreiecksgeschäft kann mitigieren: `triangleResult.beneficiary === companyHome`.
+`triangleMitigates` prüft:
+`triangleResult.primary?.beneficiary === companyHome`
+OR `triangleResult.beneficiary === companyHome`
+(beide Felder, nicht nur `beneficiary`)
 
 ### (C) double-acquisition — severity: 'warning'
 Art. 41 MwStSystRL: Andere UID als dest verwendet → Doppelerwerb-Risiko.
@@ -28,6 +32,10 @@ Art. 41 MwStSystRL: Andere UID als dest verwendet → Doppelerwerb-Risiko.
 isMoving && iAmTheBuyer && dep !== dest
 && usedUidCountry !== dest && usedUidCountry !== dep && vatIds[usedUidCountry]
 ```
+`usedUidCountry` wird NUR bei `transport=middle` + `uidOverride`
+aus `ctx.uidOverride` bestimmt. In allen anderen Fällen = `companyHome`.
+`uidOverride` außerhalb von `transport=middle` hat keinen Einfluss
+auf Risk-Type C.
 
 ### (D) rc-blocked — severity: 'warning'
 `_checkRCBlock()` positiv (blocked:true) + ich bin Verkäufer.

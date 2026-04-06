@@ -16,7 +16,7 @@ Art. 197 (Steuerschuld geht auf C über, Reverse Charge).
 - **C-247/21 Luxury Trust**: Fehlende Pflichtangaben auf Rechnung = materieller
   Mangel, nicht rückwirkend heilbar → `luxuryTrustWarning` im Return-Objekt
 - **EuG T-646/24**: Dreiecksgeschäft auch in 4-Parteien-Ketten anwendbar →
-  `_detectTriangle4()` implementiert first3/last3/mid3
+  `_detectTriangle4()` implementiert first3/last3
 
 ## Implementierung — _detectTriangle3()
 1. `transport === 'customer'` → sofort `_noTriangle()` (lit. e verletzt)

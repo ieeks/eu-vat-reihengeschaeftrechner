@@ -86,7 +86,7 @@ Details: `rules/rc_country_rules.md`
 | **LV** | Art. 141 PVN likums | RC blockiert wenn Lieferant LV-registriert |
 | **EE** | KMSS § 41¹ | RC blockiert wenn Lieferant EE-registriert |
 | **IT** | Art. 17 Abs. 2 DPR 633/1972 | **Umkehrlogik**: RC möglich wenn NICHT registriert |
-| **DE** | § 13b UStG | RC gilt NICHT für Warenlieferungen (nur Werklieferungen) |
+| **DE** | § 13b UStG | DE-RC-Prüfung liegt in `computeTax()` (Rendering-Layer), nicht in `_checkRCBlock()` (VATEngine) |
 
 ---
 
@@ -139,6 +139,6 @@ uidOverride > selectedUidOverride > companyHome
 - [`moving_supply_logic.md`](rules/moving_supply_logic.md) — Entscheidungsbaum transport→movingIndex, lit. a/b/c Automatik
 - [`uid_usage_rules.md`](rules/uid_usage_rules.md) — UID-Hierarchie, _sapEffectiveCountry(), Euro Tyre / Kreuzmayr
 - [`triangle_conditions.md`](rules/triangle_conditions.md) — Art. 141 lit. a–e Code-Mapping, first3/last3/mid3, NL-Sonderfall
-- [`rc_country_rules.md`](rules/rc_country_rules.md) — _checkRCBlock() für BE/PL/CZ/SI/LV/EE/IT/DE mit Return-Objekten
+- [`rc_country_rules.md`](rules/rc_country_rules.md) — _checkRCBlock() für BE/PL/CZ/SI/LV/EE/IT; DE-RC-Prüfung liegt in `computeTax()` (Rendering-Layer), nicht in `_checkRCBlock()` (VATEngine). Engine kennt keinen DE-spezifischen RC-Block.
 - [`registration_risk_logic.md`](rules/registration_risk_logic.md) — 6 Risk-Types A–F, triangleMitigatesReg, severity-Werte
 - [`place_of_supply.md`](rules/place_of_supply.md) — Art. 32/36 MwStSystRL, num-Signal, Inland-Sonderfall, Export-Check

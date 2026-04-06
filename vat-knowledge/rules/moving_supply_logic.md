@@ -54,4 +54,5 @@ Jedes Ergebnis enthält exakt:
 ## transport='middle2' — 4-Parteien Sonderfall
 2. Zwischenhändler (C/U3) transportiert → `chainIndex=2`.
 lit. c Standard: keine dep-UID → L2 bewegend (`chainIndex-1=1`).
-lit. b: dep-UID mitgeteilt → L3 bewegend (`chainIndex=2`).
+lit. a: dep-UID mitgeteilt → movingIndex = chainIndex-1 = L2
+(nicht L3 — _applyQuickFix setzt movingIndex = chainIndex-1).

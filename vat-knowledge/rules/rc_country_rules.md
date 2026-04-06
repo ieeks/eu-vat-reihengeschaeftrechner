@@ -40,11 +40,8 @@ else → { blocked:false, rcEligible:true, rcNote:... }
 Keine IT-UID = RC möglich, keine Registrierungspflicht für Lieferant.
 
 ### DE — § 13b UStG
-```js
-const deReg = pos === 'DE' && hasVat('DE') && iAmTheSeller;
-```
-`deReg`-Check in `_checkRCBlock()`: DE-UID + Lieferant → `blocked:true`.
-DE-UID + Warenlieferung → 19% MwSt, RC nur bei Werklieferungen (§ 13b Abs. 2 Nr. 1).
+DE-RC-Prüfung liegt in `computeTax()` (Rendering-Layer), nicht in `_checkRCBlock()` (VATEngine).
+Engine kennt keinen DE-spezifischen RC-Block.
 
 ## Return-Objekte
 | Feld | Typ | Bedeutung |

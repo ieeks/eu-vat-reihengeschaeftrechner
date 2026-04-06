@@ -22,13 +22,9 @@ Steuerbefreiung der innergemeinschaftlichen Lieferung.
 **Kritisch**: § 13b gilt in DE nur für Werklieferungen und sonstige Leistungen,
 NICHT für reine Warenlieferungen (§ 13b Abs. 2 Nr. 1; UStAE Abschn. 13b.1).
 
-## Implementierung — _checkRCBlock()
-```js
-const deReg = pos === 'DE' && hasVat('DE') && iAmTheSeller;
-```
-`deReg`-Check passiert in `_checkRCBlock()` (nicht in `computeTax()`).
-Wenn `deReg` true → RC bei Warenlieferung blockiert, Lieferant muss 19% DE-MwSt ausweisen.
-`_checkRCBlock()` gibt in diesem Fall `{ blocked: true, ... }` zurück.
+## Implementierung — DE-RC-Prüfung
+DE-RC-Prüfung liegt in `computeTax()` (Rendering-Layer), nicht in `_checkRCBlock()` (VATEngine).
+Engine kennt keinen DE-spezifischen RC-Block.
 
 ## COMPANIES['EPDE']
 ```js

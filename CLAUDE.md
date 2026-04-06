@@ -201,6 +201,7 @@ npm run check:pages
 11. Decision Flow nur aus bestehendem Engine-Output ableiten, keine neue Steuerlogik erfinden
 12. Neue Änderungen primär in `docs/` umsetzen; Legacy-Single-File nicht wieder zur Hauptquelle machen
 13. Hosting-Dokumentation auf tatsächlichen GitHub-Pages-Stand halten
+14. DE-RC-Logik liegt in `computeTax()` (Rendering-Layer), nicht in `_checkRCBlock()` (VATEngine). Engine hat keinen DE-Branch. § 13b UStG wird im Rendering geprüft.
 
 ## Tests
 ```bash

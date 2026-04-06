@@ -97,5 +97,8 @@ in _detectTriangle3() und _detectTriangle4().
 **Aktueller Stand**: `establishments`-Array existiert in COMPANIES-Objekten,
 wird aber in `_detectTriangle3()` und `_detectTriangle4()` **nie verwendet** —
 dort gilt weiterhin `vatIds[dest]`.
-Einzige aktive Verwendung von `establishments` im Code: `_checkRCBlock()` BE-Branch
-(`!establishments.includes('BE')`). Alle anderen Stellen nutzen `vatIds`.
+`establishments` aktiv verwendet in:
+1. `_checkRCBlock()` → BE-Branch (hasEstablishment('BE'))
+2. `classifySupplies()` → sellerEstablished-Check:
+   `establishments.includes(pos) || (from===companyHome && companyHome===pos)`
+   → beeinflusst RC, Inlandslieferung, Registrierungspflicht
