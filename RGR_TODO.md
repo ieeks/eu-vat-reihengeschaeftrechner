@@ -61,6 +61,19 @@ Stand: 06.04.2026
 - [ ] **Typeahead Länder-Picker** — Native select ersetzen
 - [ ] **REAL_CASES_2026 Tests** — HU→DE EXW, Sappi DE→EPDE→IT, BG→AT→BG, BG→DE→BG Inland-Hint prüfen
 - [ ] **Vergleich-Tab: Struktur-Dimension** — 3P/4P/Dreieck als zweite Achse
+- [ ] **VATEngine: establishments-Datenmodell pro Partei** —
+  Niederlassung von Registrierung trennen. Aktuell kennt die Engine
+  nur vatIds (hat UID / hat keine UID). Langfristig braucht jede
+  Partei ein establishments-Array das angibt wo echter Sitz /
+  feste Betriebsstätte vorliegt (nicht nur UID-Registrierung).
+  Relevant für Art. 141 lit. a (_detectTriangle3/4),
+  Art. 194 RC-Blockierung (_checkRCBlock BE-Branch).
+  Erst nach steuerrechtlicher Freigabe implementieren.
+  Datenmodell-Vorschlag:
+    `COMPANIES['EPDE'].establishments = ['DE']`
+    `COMPANIES['EPROHA'].establishments = ['AT']`
+  Dann: `vatIds[dest]`-Check → `establishments.includes(dest)`
+  in `_detectTriangle3()` und `_detectTriangle4()`.
 
 ---
 
