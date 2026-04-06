@@ -4167,7 +4167,7 @@ function analyze2() {
       html += `<div style="padding:14px 18px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.35);border-radius:var(--r-md);margin-bottom:14px;line-height:1.7;">
         <div style="font-size:0.82rem;font-weight:600;color:var(--red);margin-bottom:6px;">🆔 Voraussetzung IG-Lieferung</div>
         <div style="font-size:0.78rem;color:var(--tx-1);">
-          AT-Kunde muss <strong>${cn(dsDest)}-UID</strong> mitteilen — sonst fakturiert EPROHA <strong>20% AT-MwSt</strong>.<br>
+          AT-Kunde muss eine gültige <strong>EU-UID aus einem anderen Mitgliedstaat (nicht AT)</strong> mitteilen — sonst fakturiert EPROHA <strong>20% AT-MwSt</strong>.<br>
           <span style="color:var(--tx-2);">Art. 138 Abs. 1 lit. b MwStSystRL / § 7 UStG 1994</span>
         </div>
       </div>`;
