@@ -2408,9 +2408,37 @@ function analyzeInland(ctx) {
   // ── Registrierungs-/RC-Banner VOR allem anderen ─────────────────────────────
   let regBanner = '';
   if (meStatus === 'needsReg') {
-    regBanner = `<div class="hints" style="margin-bottom:12px;">${rH({type:'warn', icon:'🚨', text:
-      `<strong>Registrierungspflicht in ${cn(land)} (${r}%)!</strong><br>
-      Du hast keine ${cn(land)}-UID — steuerliche Registrierung erforderlich.`})}</div>`;
+    regBanner = `<div style="padding:14px 16px;
+      background:rgba(248,81,73,0.08);
+      border:2px solid rgba(248,81,73,0.4);
+      border-radius:var(--r-md);margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:14px;height:14px;border-radius:50%;
+          background:var(--red);flex-shrink:0;"></div>
+        <div style="font-weight:700;font-size:0.85rem;color:var(--red);">
+          Problem vorhanden
+        </div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--tx-2);line-height:1.7;">
+        Dieses Reihengeschäft ist in der aktuellen Konstellation
+        für dich nicht ohne weiteres umsetzbar:
+        <div style="display:flex;gap:8px;align-items:baseline;margin-top:6px;">
+          <span style="color:var(--red);flex-shrink:0;">🚨</span>
+          <span><strong>Registrierungspflicht in ${cn(land)} (${r}%)</strong>
+          — EPDE hat keine ${cn(land)}-UID. Ohne Registrierung kann
+          die Ausgangsrechnung (L2) nicht korrekt mit lokaler MwSt
+          ausgestellt werden.</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:baseline;margin-top:6px;">
+          <span style="color:var(--tx-3);flex-shrink:0;">💡</span>
+          <span><strong>Optionen:</strong>
+          Registrierung in ${cn(land)} beantragen —
+          oder Warenfluss unterbrechen (Ware zuerst ins DE-Lager,
+          dann separater Verkauf) —
+          oder Kunde übernimmt Einfuhr selbst (Incoterms EXW/FCA).</span>
+        </div>
+      </div>
+    </div>`;
   } else if (meStatus === 'itRC') {
     regBanner = `<div class="hints" style="margin-bottom:12px;">
       ${rH({type:'ok', icon:'✅', text:`<strong>Keine ${cn(land)}-Registrierung erforderlich</strong> — Inversione contabile (Art. 17 Abs. 2 DPR 633/1972): Käufer schuldet IVA. <em>Voraussetzung: B2B.</em>`})}
