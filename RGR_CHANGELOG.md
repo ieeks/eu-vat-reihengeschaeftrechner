@@ -2,6 +2,31 @@
 
 ---
 
+## v4.2 · 06.04.2026 — Session 19
+
+### Bugfixes
+
+- **buildTrafficStatus: kein roter Block bei GB/CH** — Guard am Funktionsanfang; falls `ctx.dest` oder `ctx.dep` GB/CH ist, gibt die Funktion sofort `''` zurück. EU-Fälle unberührt.
+- **buildKurzbeschreibung ruhende Lieferung: Rollen-Label** — `intro`-Satz zeigt `(A)` / `(B)` / `(C)` hinter Flagge + Land via `PL(indexOf)`.
+- **Registrierung-Summary: Ampelfarben** — `warn: true` (rot + ⚠️) bei Registrierungsrisiko; `ok: true` (grün) bei „Keine Registrierung erforderlich" — gilt für alle drei Branches (hasBlockingRisk / dreiecks / else).
+
+### UI / GB-CH-Pfad
+
+- **UID-Override-Block: Auto-Collapse** — Block öffnet sich immer beim Transport-Wechsel zu B; nach UID-Auswahl klappt Body automatisch zu; Header-Klick öffnet zum Ändern.
+- **serve.mjs defaultEntry → docs/index.html** — lokaler Dev-Server zeigt jetzt direkt die `docs/`-App auf Port 4173.
+- **buildGBExportResult / buildCHExportResult: verschlankt** — Header-Banner, Delivery-Boxen und TLDR-Box entfernt; `buildKurzbeschreibung` übernimmt L1/L2/SAP. Hints-Block bleibt (Ausfuhrnachweis, Exporteur, TCA/FHA). Nordirland + UK VAT Registration nur noch bei expertMode.
+- **buildCHExportResult: ⚖️ Transportzuordnung + ✅ Keine ZM** — redundante Hints entfernt.
+- **buildKurzbeschreibung step4: DAP/DDP-Panel bei GB/CH** — für Drittland-Destinationen ersetzt Schritt 4 „Restliche Lieferung" durch ein 2-Spalten-Grid DAP/EXW (teal) vs DDP (amber) mit UID-Anzeige wenn vorhanden.
+- **buildKurzbeschreibung UID-Chip** — UID wird jetzt als Teal-Chip im Mono-Font dargestellt statt als Fließtext.
+- **buildKurzbeschreibung Rechnungshinweis Ausfuhr** — bei `iAmTheSeller && vatTreatment==='export'` + dep=AT/DE erscheint 📄-Zeile mit gesetzlichem Rechnungstext (§ 7 UStG AT / § 4 Nr. 1a i. V. m. § 6 UStG DE). Kein Text bei dep außerhalb AT/DE.
+- **Dev-Mode data-component** — neue Tags: `buildRiskPanel`, `dreiecksDisclaimer`, `deliveryDetails` (4×), `buildCHExportResult`, `buildGBExportResult`.
+
+### Nicht angefasst
+- VATEngine IIFE
+- analyze()
+
+---
+
 ## v4.2 · 06.04.2026 — Session 18
 
 ### Bugfixes / UI

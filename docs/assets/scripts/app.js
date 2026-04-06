@@ -2078,12 +2078,12 @@ function runRiskChecks(s1, s2, s3, s4, dep, dest) {
     infos.push(`<strong>EuGH C-245/04 EMAG:</strong> In dieser Kette kann exakt <em>eine</em> Lieferung steuerfrei als IG-Lieferung behandelt werden.`);
   }
   if (risks.length === 0 && infos.length === 0) {
-    return `<div class="risk-panel ok"><div class="risk-panel-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'"><span>✅</span><span>Keine offensichtlichen Strukturrisiken erkannt</span></div></div>`;
+    return `<div class="risk-panel ok" data-component="buildRiskPanel"><div class="risk-panel-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'"><span>✅</span><span>Keine offensichtlichen Strukturrisiken erkannt</span></div></div>`;
   }
   let body = '';
   risks.forEach(r => { body += `<div class="hint hint-warn"><span class="hint-icon">⚠️</span><span>${r}</span></div>`; });
   infos.forEach(i => { body += `<div class="hint hint-info"><span class="hint-icon">ℹ️</span><span>${i}</span></div>`; });
-  return `<div class="risk-panel">
+  return `<div class="risk-panel" data-component="buildRiskPanel">
     <div class="risk-panel-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none'">
       <span>⚠️ Strukturprüfung</span>
       <span class="risk-count">${risks.length} Risiko${risks.length!==1?'en':''} · ${infos.length} Hinweis${infos.length!==1?'e':''}</span>
@@ -4925,43 +4925,7 @@ function buildCHExportResult(ctx, eng) {
   // ── Kurzbeschreibung mit SAP-Codes ────────────────────────────────────────
   html += buildKurzbeschreibung(ctx, eng);
 
-  html += `<div style="padding:14px 16px; background:rgba(251,191,36,0.06);
-    border:1px solid rgba(251,191,36,0.3); border-radius:var(--r-md); margin-bottom:16px;">
-    <div style="color:var(--amber); font-weight:700; font-size:0.8rem; margin-bottom:6px;">
-      🇨🇭 Export-Reihengeschäft · EU → Schweiz (Drittland)
-    </div>
-    <div style="color:var(--tx-2); font-size:0.78rem; line-height:1.7;">
-      <strong>${cn(s1)}</strong> → <strong>${cn(s2)}</strong> → <strong>${cn(s4)}</strong> ·
-      Abgang: <strong>${cn(dep)}</strong> · Bestimmung: <strong>CH (Drittland)</strong><br>
-      Schweiz ist kein EU-MS — kein IG-Vorgang, kein Dreiecksgeschäft, keine ZM.
-    </div>
-  </div>`;
-
-  // ── Delivery-Boxen ────────────────────────────────────────────────────────
-  {
-    const myCode = COMPANIES[currentCompany].home;
-    const myHomVat = COMPANIES[currentCompany].vatIds[myCode];
-    const l1Moving = movingL1;
-    // L1: ruhend (domestic in dep) oder bewegend (export)
-    const l1tax = computeTaxCH(l1Moving ? 'export' : 'domestic-l1', s1, s2, myCode);
-    const l2tax = computeTaxCH(l1Moving ? 'domestic-l2-ch' : 'export', s2, s4, myCode);
-    html += buildDeliveryBox('L1', s1, s2, l1Moving, l1tax, myCode, dest, false, dep);
-    html += buildDeliveryBox('L2', s2, s4, !l1Moving, l2tax, myCode, dest, false, l1Moving ? dest : dep);
-  }
-
-  html += `<div class="tldr-box" style="margin-bottom:16px;">
-    <div class="tldr-header">⚡ KURZFASSUNG · Transportzuordnung: ${movingL1 ? 'L1 bewegend' : 'L2 bewegend'}</div>
-    <div class="tldr-row"><span class="tldr-label">${movingL1 ? 'L1' : 'L2'}</span>
-      <span><strong>Bewegte Lieferung = Ausfuhr</strong> · ${cn(dep)} → CH · <strong>0% steuerfrei</strong> (${exportLaw})</span></div>
-    <div class="tldr-row"><span class="tldr-label">${movingL1 ? 'L2' : 'L1'}</span>
-      <span>Ruhende Lieferung · Lieferort = <strong>${movingL1 ? 'CH (CH-Recht gilt)' : cn(dep) + ' · ' + rate(dep) + '% MwSt'}</strong></span></div>
-    <div class="tldr-row"><span class="tldr-label">🛃</span>
-      <span>Ausfuhrnachweis: EX-Ausfuhranmeldung (ATLAS/AES) + Ausgangsvermerk Pflicht</span></div>
-    <div class="tldr-row"><span class="tldr-label">❌</span>
-      <span>Kein Dreiecksgeschäft · Keine ZM · Kein Intrastat</span></div>
-  </div>`;
-
-  html += `<div class="hints" style="margin-bottom:12px;">`;
+  html += `<div class="hints" data-component="buildCHExportResult" style="margin-bottom:12px;">`;
 
   html += rH({type:'warn', icon:'🛃', text:
     `<strong>Ausfuhrnachweis Pflicht (${exportLaw})</strong><br>
@@ -5002,17 +4966,6 @@ function buildCHExportResult(ctx, eng) {
     Bei EU-Ursprungsware kann Zoll entfallen → <strong>EUR.1 Warenverkehrsbescheinigung</strong> oder Lieferantenerklärung erforderlich.`
   });
 
-  html += rH({type:'ok', icon:'✅', text:
-    `<strong>Keine ZM</strong> (CH kein EU-MS) · <strong>Kein Intrastat</strong> · <strong>Kein Dreiecksgeschäft</strong> (Art. 141 MwStSystRL = EU only).`
-  });
-
-  html += rH({type:'info', icon:'⚖️', text:
-    `<strong>Transportzuordnung (§ 3 Abs. 6a UStG)</strong>: ${movingL1
-      ? `L1 bewegend → Lieferort L1 = ${cn(dep)}, steuerfreie Ausfuhr. L2 ruhend: Lieferort = CH (CH-Recht).`
-      : `L2 bewegend → Lieferort L2 = ${cn(dep)}, steuerfreie Ausfuhr. L1 ruhend in ${cn(dep)}: ${rate(dep)}% lokale MwSt.`
-    }`
-  });
-
   html += `</div>`;
   html += buildLegalRefs(['chain'], true);
   return html;
@@ -5040,43 +4993,7 @@ function buildGBExportResult(ctx, eng) {
   // ── Kurzbeschreibung mit SAP-Codes ────────────────────────────────────────
   html += buildKurzbeschreibung(ctx, eng);
 
-  // Header
-  html += `<div style="padding:14px 16px; background:rgba(251,191,36,0.06);
-    border:1px solid rgba(251,191,36,0.3); border-radius:var(--r-md); margin-bottom:16px;">
-    <div style="color:var(--amber); font-weight:700; font-size:0.8rem; margin-bottom:6px;">
-      🇬🇧 Export-Reihengeschäft · EU → Großbritannien (Post-Brexit)
-    </div>
-    <div style="color:var(--tx-2); font-size:0.78rem; line-height:1.7;">
-      <strong>${cn(s1)}</strong> → <strong>${cn(s2)}</strong> → <strong>${cn(s4)}</strong> ·
-      Abgang: <strong>${cn(dep)}</strong> · Bestimmung: <strong>GB (Drittland)</strong><br>
-      GB ist seit 31.01.2020 kein EU-MS — kein IG-Vorgang, kein Dreiecksgeschäft, keine ZM.
-    </div>
-  </div>`;
-
-  // ── Delivery-Boxen ────────────────────────────────────────────────────────
-  {
-    const myCodeGB = COMPANIES[currentCompany].home;
-    const l1GBMoving = movingL1;
-    const l1taxGB = computeTaxGB(l1GBMoving ? 'export' : 'domestic-l1', s1, s2, myCodeGB);
-    const l2taxGB = computeTaxGB(l1GBMoving ? 'domestic-l2-gb' : 'export', s2, s4, myCodeGB);
-    html += buildDeliveryBox('L1', s1, s2, l1GBMoving, l1taxGB, myCodeGB, dest, false, dep);
-    html += buildDeliveryBox('L2', s2, s4, !l1GBMoving, l2taxGB, myCodeGB, dest, false, l1GBMoving ? dest : dep);
-  }
-
-  // TLDR
-  html += `<div class="tldr-box" style="margin-bottom:16px;">
-    <div class="tldr-header">⚡ KURZFASSUNG · Transportzuordnung: ${movingL1 ? 'L1 bewegend' : 'L2 bewegend'}</div>
-    <div class="tldr-row"><span class="tldr-label">${movingL1 ? 'L1' : 'L2'}</span>
-      <span><strong>Bewegte Lieferung = Ausfuhr</strong> · ${cn(dep)} → GB · <strong>0% steuerfrei</strong> (${exportLaw})</span></div>
-    <div class="tldr-row"><span class="tldr-label">${movingL1 ? 'L2' : 'L1'}</span>
-      <span>Ruhende Lieferung · Lieferort = <strong>${movingL1 ? 'GB (UK-Recht)' : cn(dep) + ' · ' + rate(dep) + '% MwSt'}</strong></span></div>
-    <div class="tldr-row"><span class="tldr-label">🛃</span>
-      <span>Ausfuhrnachweis: EX-Ausfuhranmeldung (ATLAS/AES) + Ausgangsvermerk Pflicht</span></div>
-    <div class="tldr-row"><span class="tldr-label">❌</span>
-      <span>Kein Dreiecksgeschäft · Keine ZM · Kein Intrastat</span></div>
-  </div>`;
-
-  html += `<div class="hints" style="margin-bottom:12px;">`;
+  html += `<div class="hints" data-component="buildGBExportResult" style="margin-bottom:12px;">`;
 
   html += rH({type:'warn', icon:'🛃', text:
     `<strong>Ausfuhrnachweis Pflicht (${exportLaw})</strong><br>
@@ -5105,26 +5022,20 @@ function buildGBExportResult(ctx, eng) {
     });
   }
 
-  html += rH({type:'info', icon:'🇬🇧', text:
+  if (expertMode) html += rH({type:'info', icon:'🇬🇧', text:
     `<strong>GB-seitig: Einfuhr durch UK-Käufer (DAP/EXW) oder durch dich (DDP)</strong><br>
     DAP/EXW: UK-Käufer meldet bei HMRC an, zahlt 20% UK Import VAT + Zoll — keine UK-Pflichten für dich.<br>
     DDP: Du meldest in UK an → <strong>UK VAT Registration bei HMRC erforderlich</strong> (du hast keine → DDP vermeiden).`
   });
 
   html += rH({type:'info', icon:'🤝', text:
-    `<strong>UK-EU Trade and Cooperation Agreement (TCA, ab 01.01.2021)</strong><br>
-    Bei EU-Ursprungsware kann Zoll entfallen → <strong>Ursprungserklärung auf Rechnung</strong> (REX-System) erforderlich.<br>
-    Nur bei tatsächlichem EU-Ursprung (nicht bloß EU-Lagerung).`
+    `<strong>TCA:</strong> Bei EU-Ursprungsware kann Zoll entfallen — Ursprungserklärung auf Rechnung (REX) erforderlich.`
   });
 
-  html += rH({type:'warn', icon:'⚠️', text:
+  if (expertMode) html += rH({type:'warn', icon:'⚠️', text:
     `<strong>Nordirland-Ausnahme (Windsor Framework)</strong><br>
     NI hat EU-MwSt-Sonderstatus — Lieferungen EU↔NI = IG-Lieferungen (EU-Engine verwenden, nicht GB-Pfad).<br>
     GB-Pfad gilt nur für England, Schottland, Wales.`
-  });
-
-  html += rH({type:'ok', icon:'✅', text:
-    `<strong>Keine ZM</strong> (GB kein EU-MS) · <strong>Kein Intrastat</strong> · <strong>Kein Dreiecksgeschäft</strong> (Art. 141 MwStSystRL = EU only).`
   });
 
   html += `</div>`;
@@ -5410,6 +5321,12 @@ function getTriangulationReason(result) {
 
 function buildTrafficStatus(ctx, eng, options = {}) {
   if (!eng || !eng.supplies || !eng.supplies.length) return '';
+
+  // Drittland GB/CH: keine EU-IG-Warnungen anzeigen
+  const _dest = ctx?.dest;
+  const _dep  = ctx?.dep;
+  if (_dest && (isGB(_dest) || isCH(_dest))) return '';
+  if (_dep  && (isGB(_dep)  || isCH(_dep)))  return '';
   const risks = eng.risks?.risks || [];
   const hasBlockingRegistrationRisk = options.hasBlockingRegistrationRisk || risks.some((r) =>
     r.type === 'registration-required' ||
@@ -5567,7 +5484,33 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
         lines.push(`<div class="decision-own-line"><span class="decision-own-dot">•</span><span>${s.isMoving ? 'Bewegte' : 'Ruhende'} Lieferung ${flag(s.from)} ${cn(s.from)} → ${flag(s.to)} ${cn(s.to)}</span></div>`);
         if (badge) lines.push(`<div class="decision-own-line"><span class="decision-own-dot">⚙</span><span>${badge}</span></div>`);
         if (uid) {
-          lines.push(`<div class="decision-own-line"><span class="decision-own-dot">🆔</span><span>${flag(uidCode)} <strong>${uid}</strong> · ${s.iAmTheBuyer ? 'gegenüber dem Lieferanten verwenden' : 'auf der Ausgangsrechnung ausweisen'}</span></div>`);
+          const uidLabel = s.iAmTheBuyer
+            ? 'gegenüber dem Lieferanten verwenden'
+            : 'auf der Ausgangsrechnung ausweisen';
+          lines.push(`<div class="decision-own-line">
+            <span class="decision-own-dot">🆔</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;">
+              <span style="display:inline-flex;align-items:center;gap:5px;
+                padding:2px 9px;border-radius:4px;
+                background:rgba(45,212,191,0.12);
+                border:1px solid rgba(45,212,191,0.35);
+                font-family:var(--mono);font-size:0.62rem;font-weight:700;
+                color:var(--teal);">
+                ${flag(uidCode)} ${uid}
+              </span>
+              <span style="font-size:0.7rem;color:var(--tx-3);">
+                ${uidLabel}
+              </span>
+            </span>
+          </div>`);
+        }
+        if (s.iAmTheSeller && s.vatTreatment === 'export') {
+          const exportText = ctx.dep === 'AT'
+            ? 'Steuerfreie Ausfuhrlieferung gemäß § 7 UStG 1994'
+            : ctx.dep === 'DE'
+            ? 'Steuerfreie Ausfuhrlieferung gemäß § 4 Nr. 1a i.\u202fV.\u202fm. § 6 UStG'
+            : null;
+          if (exportText) lines.push(`<div class="decision-own-line"><span class="decision-own-dot">📄</span><span style="font-size:0.7rem;color:var(--tx-2);font-style:italic;">${exportText}</span></div>`);
         }
         return `<div class="decision-own-note">
           <div class="decision-own-head">
@@ -5613,7 +5556,11 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
   const restText = remainingSupplies.length
     ? remainingSupplies.map((s, i) => {
         const pos = s.placeOfSupply || (movIdx === 0 ? ctx.dest : ctx.dep);
-        const intro = `Die Lieferung ${flag(s.from)} ${cn(s.from)} → ${flag(s.to)} ${cn(s.to)} ist eine ruhende Lieferung.`;
+        const fromIdx = ctx.parties.indexOf(s.from);
+        const toIdx   = ctx.parties.indexOf(s.to);
+        const fromLbl = fromIdx >= 0 ? ` (${PL(fromIdx)})` : '';
+        const toLbl   = toIdx   >= 0 ? ` (${PL(toIdx)})`   : '';
+        const intro = `Die Lieferung ${flag(s.from)} ${cn(s.from)}${fromLbl} → ${flag(s.to)} ${cn(s.to)}${toLbl} ist eine ruhende Lieferung.`;
         if (dreiecks && s.iAmTheSeller) {
           return `${intro} Ort der Lieferung ist <strong>${cn(pos)}</strong>; aufgrund der Dreiecksgeschäftsvereinfachung erfolgt die Besteuerung dort über Reverse Charge.`;
         }
@@ -5630,7 +5577,67 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
       }).join(' ')
     : 'Neben der bewegten Lieferung ist keine weitere ruhende Lieferung zu würdigen.';
 
-  const step4 = {
+  const _isGBDest = ctx.dest && isGB(ctx.dest);
+  const _isCHDest = ctx.dest && isCH(ctx.dest);
+  const _myCHVat  = COMPANIES[currentCompany].vatIds['CH'];
+  const _myGBVat  = COMPANIES[currentCompany].vatIds['GB'];
+
+  const step4 = (_isGBDest || _isCHDest) ? {
+    title: 'Incoterms — DAP oder DDP?',
+    body: _isGBDest ? `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+        <div style="padding:8px 10px;background:rgba(45,212,191,0.07);
+          border:1px solid rgba(45,212,191,0.25);border-radius:var(--r);">
+          <div style="font-weight:700;font-size:0.75rem;color:var(--teal);
+            margin-bottom:4px;">✅ DAP / EXW — empfohlen</div>
+          <div style="font-size:0.72rem;color:var(--tx-2);line-height:1.6;">
+            GB-Kunde = Importeur<br>
+            Kunde zahlt UK Import VAT + Zoll ans HMRC<br>
+            Du brauchst keine GB VAT Registration<br>
+            Ausfuhrnachweis (ATLAS) bei dir
+          </div>
+        </div>
+        <div style="padding:8px 10px;background:rgba(245,168,39,0.07);
+          border:1px solid rgba(245,168,39,0.25);border-radius:var(--r);">
+          <div style="font-weight:700;font-size:0.75rem;color:var(--amber);
+            margin-bottom:4px;">⚠️ DDP — nur wenn nötig</div>
+          <div style="font-size:0.72rem;color:var(--tx-2);line-height:1.6;">
+            Du = Importeur in GB<br>
+            Du zahlst UK Import VAT + Zoll<br>
+            ${_myGBVat
+              ? `GB VAT: <strong style="color:var(--teal)">${_myGBVat}</strong>`
+              : `⚠️ GB VAT Registration bei HMRC erforderlich`}<br>
+            Fiscal Representative ggf. nötig
+          </div>
+        </div>
+      </div>` : `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+        <div style="padding:8px 10px;background:rgba(45,212,191,0.07);
+          border:1px solid rgba(45,212,191,0.25);border-radius:var(--r);">
+          <div style="font-weight:700;font-size:0.75rem;color:var(--teal);
+            margin-bottom:4px;">✅ DAP / EXW — empfohlen</div>
+          <div style="font-size:0.72rem;color:var(--tx-2);line-height:1.6;">
+            CH-Kunde = Einführer<br>
+            Kunde zahlt EUSt 8,1% + Zoll ans BAZG<br>
+            Du brauchst keine CH-MWST-Registrierung<br>
+            Ausfuhrnachweis (ATLAS/e-dec) bei dir
+          </div>
+        </div>
+        <div style="padding:8px 10px;background:rgba(245,168,39,0.07);
+          border:1px solid rgba(245,168,39,0.25);border-radius:var(--r);">
+          <div style="font-weight:700;font-size:0.75rem;color:var(--amber);
+            margin-bottom:4px;">⚠️ DDP — nur wenn nötig</div>
+          <div style="font-size:0.72rem;color:var(--tx-2);line-height:1.6;">
+            Du = Einführer in CH<br>
+            Du zahlst EUSt 8,1% → als Vorsteuer abziehbar<br>
+            ${_myCHVat
+              ? `CH-UID: <strong style="color:var(--teal)">${_myCHVat}</strong>`
+              : `⚠️ CH-MWST-Registrierung erforderlich`}<br>
+            Steuervertreter CH (Art. 67 MWSTG) pflicht
+          </div>
+        </div>
+      </div>`,
+  } : {
     title: 'Restliche Lieferung',
     body: restText,
   };
@@ -5646,17 +5653,20 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
     if (hasBlockingRegistrationRisk) {
       items.push({
         label: 'Registrierung',
-        value: `In der aktuellen Struktur zusätzliche Registrierung prüfen`,
+        value: `⚠️ In der aktuellen Struktur zusätzliche Registrierung prüfen`,
+        warn: true,
       });
     } else if (dreiecks) {
       items.push({
         label: 'Registrierung',
         value: `Keine Registrierung im Bestimmungsland erforderlich`,
+        ok: true,
       });
     } else {
       items.push({
         label: 'Registrierung',
         value: `Keine zusätzliche Registrierung aus dem Primärergebnis ersichtlich`,
+        ok: true,
       });
     }
 
@@ -5695,9 +5705,9 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
     }
 
     return items.slice(0, 3).map(item => `
-      <div class="summary-item">
+      <div class="summary-item"${item.warn ? ' style="border-left:3px solid var(--red,#ef4444);padding-left:10px;margin-left:-10px"' : ''}>
         <div class="summary-label">${item.label}</div>
-        <div class="summary-value">${item.value}</div>
+        <div class="summary-value"${item.warn ? ' style="color:var(--red);font-weight:600"' : item.ok ? ' style="color:var(--green);font-weight:600"' : ''}>${item.value}</div>
       </div>
     `).join('');
   })();
@@ -5748,7 +5758,7 @@ function buildDreiecksDisclaimer(uidCountry, uidNumber, dest, isAT) {
   const zmLaw       = isAT ? '§ 21 Abs. 3 UStG AT' : '§ 18a UStG';
   const invLaw      = isAT ? '§ 25 Abs. 4 UStG AT' : '§ 25b Abs. 2 / § 14a Abs. 7 UStG';
   const uidDisplay  = uidNumber ? `${uidCountry}-UID: <strong>${uidNumber}</strong>` : `${cn(uidCountry)}-UID`;
-  return `<div class="dreiecks-disclaimer fade">
+  return `<div class="dreiecks-disclaimer fade" data-component="dreiecksDisclaimer">
     <div class="dreiecks-disclaimer-hdr">⚠ Hinweis zur Umsetzung — Dreiecksgeschäft</div>
     <div class="dreiecks-disclaimer-body">
       Dieses Ergebnis (${dreiecksLaw}) gilt nur wenn alle drei Bedingungen erfüllt sind:
@@ -6175,7 +6185,7 @@ function analyze() {
       html += buildMeldepflichten(ctx, eng);
       html += buildLegalRefs(['chain','dreiecks','igLib','vatGuide'], true);
     } else if (dreiecks) {
-      html += `<div class="detail-collapse"><div class="detail-collapse-hdr" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📦 Details pro Lieferung <span class="detail-toggle">▸</span></div><div class="detail-collapse-body">`;
+      html += `<div class="detail-collapse" data-component="deliveryDetails"><div class="detail-collapse-hdr" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📦 Details pro Lieferung <span class="detail-toggle">▸</span></div><div class="detail-collapse-body">`;
       html += buildDreiecks3Result(s1, s2, s4, dep, dest);
       html += `</div></div>`;
       // Disclaimer für klassisches Dreiecksgeschäft (UID = companyHome)
@@ -6185,7 +6195,7 @@ function analyze() {
       html += buildMeldepflichten(ctx, eng);
       html += buildLegalRefs(['chain','dreiecks','igLib','vatGuide'].concat(selectedTransport==='middle'?['quickfix']:[]), true);
     } else {
-      html += `<div class="detail-collapse"><div class="detail-collapse-hdr" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📦 Details pro Lieferung <span class="detail-toggle">▸</span></div><div class="detail-collapse-body">`;
+      html += `<div class="detail-collapse" data-component="deliveryDetails"><div class="detail-collapse-hdr" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📦 Details pro Lieferung <span class="detail-toggle">▸</span></div><div class="detail-collapse-body">`;
       html += buildNormal3Result(s1, s2, s4, dep, dest, movingL1, middleNote, dreiecksBlockedByVat);
       html += `</div></div>`;
       html += buildInvoiceSnapshot(ctx, eng);
@@ -6299,11 +6309,11 @@ function analyze() {
     if (engRiskHtml) html += `<div class="hints" style="margin-bottom:12px;">${engRiskHtml}</div>`;
 
     if (dreiecks) {
-      html += `<div class="detail-collapse"><div class="detail-collapse-hdr" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📦 Details pro Lieferung <span class="detail-toggle">▸</span></div><div class="detail-collapse-body">`;
+      html += `<div class="detail-collapse" data-component="deliveryDetails"><div class="detail-collapse-hdr" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📦 Details pro Lieferung <span class="detail-toggle">▸</span></div><div class="detail-collapse-body">`;
       html += buildDreiecks4Result(s1, s2, s3, s4, dep, dest, movingIndex, meCode);
       html += `</div></div>`;
     } else {
-      html += `<div class="detail-collapse"><div class="detail-collapse-hdr" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📦 Details pro Lieferung <span class="detail-toggle">▸</span></div><div class="detail-collapse-body">`;
+      html += `<div class="detail-collapse" data-component="deliveryDetails"><div class="detail-collapse-hdr" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">📦 Details pro Lieferung <span class="detail-toggle">▸</span></div><div class="detail-collapse-body">`;
       html += buildNormal4Result(s1, s2, s3, s4, dep, dest, movingIndex, meCode);
       html += `</div></div>`;
     }
@@ -9652,6 +9662,9 @@ function setUidOverride(country) {
   setState({ uidOverride: country });
   saveState();
   renderUidOverrideBlock();
+  // Nach Auswahl zuklappen
+  const body = $('uidOverrideSection')?.querySelector('.uid-override-body');
+  if (body) body.style.display = 'none';
   renderResult();
 }
 
@@ -9682,9 +9695,10 @@ function renderUidOverrideBlock() {
   if (!selectedUidOverride) setState({ uidOverride: opts[0].country });
 
   $('uidOverrideSection').style.display = 'block';
+
   $('uidOverrideSection').innerHTML = `
     <div class="uid-override-block">
-      <div class="uid-override-hdr">⚖️ UID-Wahl Art. 36a (Zwischenhändler)</div>
+      <div class="uid-override-hdr" onclick="const b=this.nextElementSibling;b.style.display=b.style.display==='none'?'':'none';" style="cursor:pointer">⚖️ UID-Wahl Art. 36a (Zwischenhändler)</div>
       <div class="uid-override-body">
         ${opts.map(o => `
           <div class="uid-opt${active===o.country?' active':''}" onclick="setUidOverride('${o.country}')">
