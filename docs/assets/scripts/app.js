@@ -2446,7 +2446,16 @@ function analyzeInland(ctx) {
     </div>`;
   }
 
-  let html = regBanner + `<div style="padding:14px 16px; background:rgba(251,191,36,0.06);
+  const s4EqHint = (s1 === s4) ? `<div class="hint hint-info" style="margin-bottom:10px;">
+    <span class="hint-icon">ℹ️</span>
+    <span>Die Pfeile zeigen die <strong>Vertragsparteien</strong>
+    (${cn(s1)} → ${cn(s2)} → ${cn(s4)}) —
+    <strong>nicht den physischen Warenweg</strong>.
+    Die Ware verbleibt in <strong>${cn(land)}</strong>,
+    EPDE tritt nur als Zwischenhändler auf ohne
+    dass die Ware Deutschland berührt.</span>
+  </div>` : '';
+  let html = s4EqHint + regBanner + `<div style="padding:14px 16px; background:rgba(251,191,36,0.06);
     border:1px solid rgba(251,191,36,0.3); border-radius:var(--r-md); margin-bottom:16px;">
     <div style="color:var(--amber); font-weight:700; font-size:0.8rem; margin-bottom:6px;">
       ⚠️ Inlands-Reihengeschäft · Abgangsland = Bestimmungsland (${cn(land)})
@@ -2569,6 +2578,9 @@ function analyzeInland(ctx) {
       <div class="delivery-header">
         <div>
           <span class="delivery-title">L${lNum}: ${cn(fromParty.code)} → ${cn(toParty.code)}</span>
+          <span style="font-size:0.68rem;color:var(--tx-3);margin-left:6px;">
+            (Lieferort: ${flag(land)} ${cn(land)})
+          </span>
           <span class="badge badge-resting" style="margin-left:8px;">○ Ruhende Lieferung</span>
           ${badge}
           ${inlandSAP}
