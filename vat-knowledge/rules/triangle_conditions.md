@@ -38,3 +38,58 @@ In `buildVergleichTab()` (Z. 8884) pro Transport-Szenario einzeln berechnet.
 `dest === 'NL' && s1 === 'NL'` → Art. 37c Wet OB 1968 Bedingung (3):
 Ware darf nicht aus dem MS kommen, der B die NL-UID erteilt hat.
 Da B die NL-UID von NL hat und Ware aus NL kommt → blockiert (Z. 1165).
+
+---
+
+## Bewusste Design-Entscheidung: UID = Blockierung (konservative Auslegung)
+
+### Was der Code macht
+```js
+// _detectTriangle3()
+if (!!vatIds[dest]) return _noTriangle(
+  'Art. 141 lit. a: B hat USt-ID in ' + dest + ' → Vereinfachung blockiert.',
+  'blocked-by-dest-vat'
+);
+
+// _detectTriangle4()
+const bHasDestVat = !!vatIds[dest];
+```
+
+### Warum das so bleibt — NICHT ÄNDERN
+
+Art. 141 lit. a MwStSystRL sagt dem Wortlaut nach "nicht niedergelassen"
+(kein Sitz, keine feste Niederlassung) — nicht "keine UID".
+
+Es gibt daher eine liberalere Rechtsauffassung (VwGH 15.12.2021
+Ro 2020/15/0003, UStR Rz 4150, Quick Fixes Explanatory Notes
+Beispiel 8 S. 66) die besagt: eine bloße Registrierung ohne
+Niederlassung blockiert Art. 141 nicht.
+
+**Diese liberale Auslegung wird bewusst NICHT implementiert.**
+
+Grund: Steuerrechtliche Beratung (2024) hat explizit bestätigt dass
+die bestehende SI-Registrierung von EPDE dazu führt dass
+verpflichtend mit slowenischer MwSt fakturiert werden muss.
+Die nationalen Finanzbehörden (insb. SI, PL, CZ) folgen
+mehrheitlich der strengen Auslegung. Bei Betriebsprüfung
+würde die liberale Position ein erhebliches Nachforderungsrisiko
+bedeuten.
+
+**Das Tool wählt bewusst die compliance-sichere Option.**
+
+### Betroffene Länder für EPDE
+SI, LV, EE, NL, BE, CZ, PL — alle mit UID aber ohne Niederlassung.
+In diesen 7 Ländern blockiert die UID das Dreiecksgeschäft,
+auch wenn Art. 141 lit. a dem Wortlaut nach nur "niedergelassen"
+verlangt.
+
+### Betroffene Länder für EPROHA
+DE, CH — UID ohne Niederlassung (echter Sitz nur AT).
+
+### Wenn diese Entscheidung revidiert werden soll
+Nur nach erneuter steuerrechtlicher Beratung und expliziter
+Freigabe. Dann establishments-Array in COMPANIES verwenden:
+- EPDE: establishments = ['DE']
+- EPROHA: establishments = ['AT']
+Und vatIds[dest]-Check durch establishments.includes(dest) ersetzen
+in _detectTriangle3() und _detectTriangle4().
