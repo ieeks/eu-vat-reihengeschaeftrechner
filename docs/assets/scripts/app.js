@@ -4267,7 +4267,6 @@ function analyze2() {
             <div class="decision-step-body">
               Rechnung mit <strong>AT-UID: ${COMPANIES['EPROHA'].vatIds['AT'] || '—'}</strong>
               + <strong>20% MwSt</strong> ausweisen.${sapBadge('AT', 'domestic', 'seller')}
-              <br>Rechnungspflichtangaben: § 11 UStG AT.
               UVA-Meldung monatlich / quartalsweise (§ 21 UStG AT).
             </div>
             <div class="decision-step-refs">
@@ -4280,7 +4279,7 @@ function analyze2() {
     </div>`;
     html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:#F5A827;">Ausg: A2</strong> (Ausgangssteuer AT 20%) · <strong style="color:#F5A827;">Eing: V2</strong> (Vorsteuer AT 20%)`});
     html += rH({type:'ok', icon:'🇦🇹', text:`Inlandslieferung AT→AT. MwSt: <strong>20%</strong> auf Rechnung ausweisen. AT-UID: <strong>${myATVat||'ATU...'}</strong>`});
-    html += rH({type:'info', icon:'📄', text:`Rechnungspflichtangaben gem. § 11 UStG AT. Kein Ausfuhrnachweis erforderlich.`});
+
     if (isAbholung) {
       html += rH({type:'info', icon:'🚗', text:
         `<strong>Abholung durch Kunden (EXW):</strong> Lieferort = AT-Lager. ` +
@@ -4426,9 +4425,6 @@ function analyze2() {
               <div class="decision-step-body">
                 EPROHA fakturiert an ${cn(dest)}-Kunden mit <strong>0% MwSt</strong>
                 und eigener <strong>AT-UID: ${_atVat}</strong>.${sapBadge('AT', 'ic-exempt', 'seller', 'AT')}
-                <br>Belegnachweis: Gelangensbestätigung oder CMR
-                (§ 7 Abs. 5 UStG AT / Art. 45a DVO 282/2011).
-                ZM-Meldung bis 25. Folgemonat (§ 21 Abs. 3 UStG AT).
               </div>
               <div class="decision-step-refs">
                 <span class="decision-ref">§ 11 UStG AT</span>
@@ -4444,7 +4440,6 @@ function analyze2() {
     html += rH({type:'ok', icon:'⚡', text:`Innergemeinschaftliche Lieferung (AT→${cn(dest)}). Rechnung: <strong>0% MwSt (steuerfrei)</strong> gem. Art. 6 Abs. 1 iVm. Art. 7 UStG 1994 / Art. 138 MwStSystRL.`});
     html += rH({type:'ok', icon:'🆔', text:`AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>. Kunden-UID (${cn(dest)}) auf Rechnung: erforderlich + im MIAS prüfen.`});
     html += rH({type:'warn', icon:'⚠️', text:`<strong>Kunden-UID prüfen:</strong> Liegt keine gültige UID des Kunden aus ${cn(dest)} vor, entfällt die Steuerbefreiung. In diesem Fall: <strong>20% österreichische MwSt</strong> auf die Rechnung (Inlandslieferung AT). Auf ${cn(dest)}-Registrierung des Kunden bestehen oder 20% AT fakturieren bis UID nachgereicht wird.`});
-    html += rH({type:'info', icon:'📋', text:`Rechnungstext: <em>„Steuerfreie ig. Lieferung gem. Art. 6 Abs. 1 iVm. Art. 7 UStG 1994 / Art. 138 MwStSystRL"</em>`});
     html += rH({type:'warn', icon:'📦', text:`Belegnachweis: <strong>Gelangensbestätigung</strong> oder CMR-Frachtbrief mit Empfangsbestätigung aufbewahren (§ 17f UStDV analog / § 7 AT UStR).`});
 
     // ── Art. 17 MwStSystRL — Warnung Bearbeitung vor Transport ──────────────
