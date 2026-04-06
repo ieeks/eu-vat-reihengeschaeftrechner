@@ -1,6 +1,6 @@
 # Registrierungsrisiken — detectRegistrationRisk()
 
-## Funktion (Z. 1239)
+## Funktion
 ```js
 detectRegistrationRisk(ctx, classifiedSupplies, triangleResult)
 ```
@@ -50,6 +50,18 @@ triangleResult?.possible && placeOfSupply === dest
 ```
 Dreiecksgeschäft neutralisiert Registrierungspflicht nur wenn der Lieferort
 im Bestimmungsland liegt (= ruhende Lieferung nach der Warenbewegung).
+
+## Risk-Type Strings (Code-Mapping)
+Die Labels A–F entsprechen diesen `type`-Strings im `risks[]`-Array:
+
+| Label | `type` String | severity |
+|---|---|---|
+| (A) | `'registration-required'` | `'error'` |
+| (B) | `'ic-acquisition-no-reg'` | `'error'` |
+| (C) | `'double-acquisition'` | `'warning'` |
+| (D) | `'rc-blocked'` | `'warning'` |
+| (E) | `'rc-country-specific'` | `'info'` |
+| (F) | `'resting-buyer-no-uid'` | `'error'` |
 
 ## severity-Werte
 | Wert | Bedeutung | UI-Darstellung |

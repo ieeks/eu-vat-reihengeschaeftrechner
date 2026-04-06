@@ -17,14 +17,14 @@ Im Code über `invIG()` als Hinweis auf Gelangensbestätigung/CMR referenziert.
 ## EuGH-Rechtsprechung
 - **C-430/09 Euro Tyre**: Zeitpunkt der UID-Mitteilung entscheidend — muss VOR
   Transportbeginn gegenüber Vorlieferanten erfolgen. Implementiert als
-  `euroTyreNote` in allen `_applyQuickFix()`-Returns (Z. 950, 964, 984, 1008)
+  `euroTyreNote` in allen `_applyQuickFix()`-Returns
 - **C-628/16 Kreuzmayr**: Falsche UID-Angaben entziehen dem Vorlieferanten den
-  Vertrauensschutz. Implementiert als `kreuzmayerNote` (Z. 951, 965, 1009)
+  Vertrauensschutz. Implementiert als `kreuzmayerNote`
 
 ## Implementierung
-- `_applyQuickFix()` (Z. 922): Prüft `uidOverride`, `intermediaryResidentInDep`,
+- `_applyQuickFix()`: Prüft `uidOverride`, `intermediaryResidentInDep`,
   `hasDepVat` → bestimmt lit. a / b / c Variante
-- `buildVATContext()` (Z. 3823): Baut den Kontext inkl. `uidOverride` und
+- `buildVATContext()`: Baut den Kontext inkl. `uidOverride` und
   `vatIds` aus UI-State, wird an `VATEngine.run(ctx)` übergeben
 - Quick-Fix-Ergebnis enthält `quickFixApplied: true/false` +
   `quickFixVariant: 'departure-id' | 'dest-or-other-id' | 'lit-c'`

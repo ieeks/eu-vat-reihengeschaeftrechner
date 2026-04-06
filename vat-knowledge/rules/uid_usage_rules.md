@@ -4,13 +4,13 @@
 ```
 uidOverride > selectedUidOverride > companyHome
 ```
-- `uidOverride`: Aus UI manuell gewählte UID, in `buildVATContext()` (Z. 3833)
+- `uidOverride`: Aus UI manuell gewählte UID, in `buildVATContext()`
   als `selectedUidOverride` aus globalem State übernommen
 - `selectedUidOverride`: Globale Variable, gesetzt durch UID-Selector oder
   Dreiecksgeschäft-Opportunity-Button
 - `companyHome`: `COMPANIES[currentCompany].home` — Fallback
 
-## _sapEffectiveCountry() (Z. 241 / 789)
+## _sapEffectiveCountry()
 Bei `treatment ∈ ['ic-exempt','ic-acquisition','dreiecks','export']`:
 → UID-Land statt Lieferort für SAP-Lookup verwenden.
 ```js
@@ -18,10 +18,16 @@ uidLand = uidCountry || selectedUidOverride || home
 return SAP_TAX_MAP[company]?.[uidLand]?.[treatment] ? uidLand : country
 ```
 
-## selectedUidOverride — Wann setzen, wie durchreichen
-- Gesetzt in: `applyDreiecksUid()` → `setState({ uidOverride })` → `renderResult()`
-- Gelesen in: `buildVATContext()` → `uidOverride: selectedUidOverride`
-- Weitergereicht an: `VATEngine.run(ctx)` → alle Engine-Funktionen
+## selectedUidOverride — globale Variable
+```js
+let selectedUidOverride = null;  // globaler Scope
+```
+- **Definiert**: globaler Scope in app.js
+- **Gesetzt durch**: `setUidOverride(country)` im UI-Layer
+- **Resettet bei**: `setT()`, `onCC()`, `setCompany()`, `resetAll()`
+- **Durchgereicht via**: `buildVATContext()` → `ctx.uidOverride`
+- **Verwendet in**: `_applyQuickFix()`, `_detectTriangle3()`, `_detectTriangle4()`,
+  `buildKurzbeschreibung()`, `buildNormal3Result()`
 
 ## EuGH-Rechtsprechung
 - **C-430/09 Euro Tyre**: Zeitpunkt der UID-Mitteilung entscheidend — muss vor
@@ -30,14 +36,14 @@ return SAP_TAX_MAP[company]?.[uidLand]?.[treatment] ? uidLand : country
 - **C-628/16 Kreuzmayr**: Falsche UID-Angabe → Vertrauensschutz des Vorlieferanten
   entfällt. Als `kreuzmayerNote` in `_applyQuickFix()`-Returns
 
-## Implementierung in buildKurzbeschreibung() (Z. 5342)
-`formatOwnUidCode(s)` (Z. 5391): Bestimmt aktive UID pro Supply:
+## Implementierung in buildKurzbeschreibung()
+`formatOwnUidCode(s)`: Bestimmt aktive UID pro Supply:
 ```
 selectedUidOverride → iAmTheBuyer+moving: dest → iAmTheSeller+moving: dep
 → myVat(pos) ? pos : companyHome
 ```
 
-## summaryItems 'Aktive UID' (Z. 5510–5529)
+## summaryItems 'Aktive UID'
 | Bedingung | Anzeige |
 |---|---|
 | `selectedUidOverride` gesetzt | `flag(override) + vatId` |

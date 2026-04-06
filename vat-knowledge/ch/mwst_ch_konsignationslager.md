@@ -21,13 +21,15 @@ Eigentumswechsel erst bei Entnahme durch Kunden. Zwei steuerliche Phasen.
 Einlagerung unter Zollaufsicht setzt EUSt aus bis zur Entnahme.
 Liquiditätsvorteil bei großen Lagerbeständen. BAZG-Bewilligung erforderlich.
 
-## Implementierung — buildKonsiLagerCH(myCHVat, myCode) (Z. 2742)
+## Implementierung — buildKonsiLagerCH(myCHVat, myCode)
+- `myCHVat = COMPANIES['EPROHA'].vatIds['CH']` — wird vom Aufrufer als Parameter
+  übergeben. `null` wenn EPROHA keine CH-Registrierung hat.
 - Baut 2-Phasen-Grid (Phase 1: Einlagerung, Phase 2: Lieferung)
-- `myCHVat`: CH-UID von EPROHA — wenn vorhanden, grünes ✅; sonst ⚠️-Warnung
+- `myCHVat`: wenn vorhanden, grünes ✅; sonst ⚠️-Warnung
 - `invoiceP2`: Rechnungspflichtangaben Phase 2 (CH-UID, CHF, 8.1%)
 - UID-Status: `chVat || null` — steuert Warnungen und Pflichtangaben
 - Zolllager-Hinweis, Lagervertrag-Hinweis, Bestandsführung-Hinweis als `rH()`
 
 ## Aufruf
-- `analyzeCH()` (Z. 2908): Wird bei EU→CH nach dem DAP/DDP-Grid angehängt
-- `analyze2()` (Z. 4223): Wird bei AT→CH nach den Incoterms-Karten angehängt
+- `analyzeCH()`: Wird bei EU→CH nach dem DAP/DDP-Grid angehängt
+- `analyze2()`: Wird bei AT→CH nach den Incoterms-Karten angehängt

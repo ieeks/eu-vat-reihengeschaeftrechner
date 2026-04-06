@@ -18,14 +18,14 @@ Art. 197 (Steuerschuld geht auf C über, Reverse Charge).
 - **EuG T-646/24**: Dreiecksgeschäft auch in 4-Parteien-Ketten anwendbar →
   `_detectTriangle4()` implementiert first3/last3/mid3
 
-## Implementierung — _detectTriangle3() (Z. 1133)
+## Implementierung — _detectTriangle3()
 1. `transport === 'customer'` → sofort `_noTriangle()` (lit. e verletzt)
 2. `usedUidCountry === s1` → blockiert (B nutzt UID aus Land des Lieferanten)
 3. `vatIds[dest]` → `'blocked-by-dest-vat'` (lit. a verletzt)
 4. `s4 !== dest` → blockiert (lit. c verletzt)
 5. NL-Sonderfall: `dest === 'NL' && s1 === 'NL'` → Art. 37c Wet OB 1968
 
-## Implementierung — _detectTriangle4() (Z. 1184)
+## Implementierung — _detectTriangle4()
 - **last3**: `s2→s3→s4`, Bedingung: `movingIndex===1 && s4===dest && !bHasDestVat`
   → `deRecognized:true`, klassisch anerkannt
 - **first3**: `s1→s2→s3`, Bedingung: `movingIndex===0 && !bHasDestVat`

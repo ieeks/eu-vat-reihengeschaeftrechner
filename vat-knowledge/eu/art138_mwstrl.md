@@ -16,9 +16,9 @@ Zwei nicht-widersprüchliche Nachweise (CMR, Versicherung, Bankbeleg etc.)
 begründen Vermutung der Beförderung. Widerlegbar durch Finanzverwaltung.
 
 ## Implementierung
-- `classifySupplies()` (Z. 1015): `isICMoving`-Branch setzt `vatTreatment = 'ic-exempt'`
-- Bedingung: `isMoving && isCrossEU` (Z. 1034) — beide Länder EU, dep ≠ dest
-- `invIG(mc, acquisitionCountry, depCountry)` (Z. 1809): Rechnungspflichtangaben
+- `classifySupplies()`: `isICMoving`-Branch setzt `vatTreatment = 'ic-exempt'`
+- Bedingung: `isMoving && isCrossEU` — beide Länder EU, dep ≠ dest
+- `invIG(mc, acquisitionCountry, depCountry)`: Rechnungspflichtangaben
   für steuerfreie IG-Lieferung — UID beider Parteien, Befreiungshinweis, Belegnachweis
 
 ## Variablen in classifySupplies
@@ -31,4 +31,4 @@ begründen Vermutung der Beförderung. Widerlegbar durch Finanzverwaltung.
 ## Belegnachweis-Hinweise
 - `invIG()` liefert: Lieferanten-UID, Erwerber-UID (Pflicht!), Befreiungshinweis,
   Rechtsgrundlage via `natLaw('ig.exempt')`, Gelangensbestätigung/CMR via `natLaw('proof')`
-- Kein gesetzlich fixierter Wortlaut — „sinngemäß ausreichend" (Z. 1817)
+- Kein gesetzlich fixierter Wortlaut — „sinngemäß ausreichend"

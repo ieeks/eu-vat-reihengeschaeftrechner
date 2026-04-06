@@ -8,7 +8,7 @@
 | `'middle'` | Quick Fix mit `chainIndex=1` | via `_applyQuickFix()` |
 | `'middle2'` | Quick Fix mit `chainIndex=2` | via `_applyQuickFix()` |
 
-## _applyQuickFix() — Entscheidungslogik (Z. 922)
+## _applyQuickFix() — Entscheidungslogik
 
 ### Manuelle Logik (uidOverride gesetzt)
 ```
@@ -40,6 +40,16 @@ Jedes Ergebnis enthält exakt:
   euroTyreNote,       // EuGH C-430/09 Hinweis
   kreuzmayerNote }    // EuGH C-628/16 Hinweis (nicht bei lit. c)
 ```
+
+## transport='middle' — chainIndex nach Mode
+`chainIndex` wird in `determineMovingSupply()` transport==='middle' Branch gesetzt:
+
+| Mode | chainIndex | Formel | Beispiel |
+|---|---|---|---|
+| Mode 3 (3P) | immer `1` | konstant | B transportiert → L1 oder L2 |
+| Mode 4 (4P) | `ctx.mePosition - 1` | variabel | mePosition=2 → chainIndex=1; mePosition=3 → chainIndex=2 |
+
+`mePosition`: 1-basierter Index der eigenen Position in der Kette (1=Lieferant, 2=erster ZH, 3=zweiter ZH, 4=Endabnehmer).
 
 ## transport='middle2' — 4-Parteien Sonderfall
 2. Zwischenhändler (C/U3) transportiert → `chainIndex=2`.

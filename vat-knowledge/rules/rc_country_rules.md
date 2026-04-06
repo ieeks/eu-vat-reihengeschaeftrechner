@@ -1,6 +1,6 @@
 # Reverse Charge — Länderspezifische Regeln
 
-## _checkRCBlock(pos, ctx, iAmTheSeller) (Z. 1090)
+## _checkRCBlock(pos, ctx, iAmTheSeller)
 Prüft ob RC im Land `pos` blockiert oder speziell geregelt ist.
 Return: `{ blocked, reason, rcEligible, rcNote }`
 
@@ -40,8 +40,11 @@ else → { blocked:false, rcEligible:true, rcNote:... }
 Keine IT-UID = RC möglich, keine Registrierungspflicht für Lieferant.
 
 ### DE — § 13b UStG
-Kein expliziter Block in `_checkRCBlock()`, aber `deReg`-Check in `computeTax()`
-(Z. 3067): DE-UID + Warenlieferung → 19% MwSt, RC nur bei Werklieferungen.
+```js
+const deReg = pos === 'DE' && hasVat('DE') && iAmTheSeller;
+```
+`deReg`-Check in `_checkRCBlock()`: DE-UID + Lieferant → `blocked:true`.
+DE-UID + Warenlieferung → 19% MwSt, RC nur bei Werklieferungen (§ 13b Abs. 2 Nr. 1).
 
 ## Return-Objekte
 | Feld | Typ | Bedeutung |

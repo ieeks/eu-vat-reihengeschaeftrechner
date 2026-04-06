@@ -16,8 +16,8 @@ Transport durch Lieferant → L1 bewegend. Transport durch Endabnehmer → letzt
   Standardregel greift, L vor ZH bewegend (`quickFixVariant: 'lit-c'`)
 
 ## Implementierung
-- `determineMovingSupply()` (Z. 884): Dispatch auf `transport`-Wert
-- `_applyQuickFix(ctx, chainIndex, label)` (Z. 922): Kernlogik lit. a/b/c
+- `determineMovingSupply()`: Dispatch auf `transport`-Wert
+- `_applyQuickFix(ctx, chainIndex, label)`: Kernlogik lit. a/b/c
 
 ## Schlüsselvariablen
 | Variable | Bedeutung |
@@ -34,3 +34,6 @@ Transport durch Lieferant → L1 bewegend. Transport durch Endabnehmer → letzt
   sonst lit. b mit `_litBVatCountry`-Fallback-Kette
 - Return-Objekt enthält immer: `movingIndex`, `rationale`, `legalBasis`,
   `quickFixApplied`, `quickFixVariant`, `euroTyreNote`, `kreuzmayerNote`
+- **`euroTyreNote`**: gesetzt bei lit. a, lit. b UND lit. c — immer vorhanden
+- **`kreuzmayerNote`**: gesetzt bei lit. a und lit. b — NICHT bei lit. c
+  (lit. c = kein uidOverride → kein Vertrauensschutz-Risiko durch falsche UID)

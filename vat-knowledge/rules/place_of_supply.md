@@ -2,22 +2,22 @@
 
 ## Art. 32 MwStSystRL — Bewegte Lieferung
 Lieferort = Ort, wo Beförderung/Versendung beginnt (Abgangsland).
-Im Code: `classifySupplies()` (Z. 1028): `if (isMoving) placeOfSupply = dep`.
+Im Code: `classifySupplies()`: `if (isMoving) placeOfSupply = dep`.
 
 ## Art. 36 MwStSystRL — Ruhende Lieferung
 - **Vor der Bewegung**: Lieferort = Abgangsland (dep)
-  → `if (i < movingIndex) placeOfSupply = dep` (Z. 1029)
+  → `if (i < movingIndex) placeOfSupply = dep`
 - **Nach der Bewegung**: Lieferort = Bestimmungsland (dest)
-  → `else placeOfSupply = dest` (Z. 1030)
+  → `else placeOfSupply = dest`
 
-## Implementierung in classifySupplies() (Z. 1015)
+## Implementierung in classifySupplies()
 ```js
 if (isMoving)             placeOfSupply = dep;
 else if (i < movingIndex) placeOfSupply = dep;   // ruhend VOR Bewegung
 else                      placeOfSupply = dest;   // ruhend NACH Bewegung
 ```
 
-## num-Signal in computeTax() (Z. 2970)
+## num-Signal in computeTax()
 Legacy-Interface für Rendering-Funktionen:
 | `num` | Bedeutung | `pos` |
 |---|---|---|
@@ -33,12 +33,12 @@ const pos = (num === 'before' || num === 1) ? dep
 
 ## Inland-Sonderfall: dep === dest
 Wenn Abgangsland = Bestimmungsland → kein IG-Sachverhalt.
-`VATEngine.run()` (Z. 1332): Gibt `_depEqDest: true` zurück mit Fehlertext.
-→ `analyzeInland(ctx)` (Z. 2445): Alle Lieferungen sind Inlandslieferungen
+`VATEngine.run()`: Gibt `_depEqDest: true` zurück mit Fehlertext.
+→ `analyzeInland(ctx)`: Alle Lieferungen sind Inlandslieferungen
 mit lokaler MwSt (`rate(land)`).
 
 ## Nicht-EU (Export)
-`isExport = isMoving && dep !== dest && !isNonEU(dep) && isNonEU(dest)` (Z. 1033)
+`isExport = isMoving && dep !== dest && !isNonEU(dep) && isNonEU(dest)`
 → `vatTreatment = 'export'`, 0% MwSt, Ausfuhrlieferung.
 Drittland-Routing: `hasCH`/`hasGB`-Checks dispatchen vor der EU-Engine
 zu `analyzeCH()`, `buildCHExportResult()`, `buildGBExportResult()`.

@@ -7,28 +7,28 @@
 Zwischenhändler teilt Abgangsland-UID mit, nicht dort ansässig/registriert →
 Lieferung an den ZH ist die bewegte Lieferung.
 Im Code: `quickFixVariant: 'departure-id'`, `legalBasis` enthält
-`'§ 3 Abs. 6a S. 4 Nr. 1 UStG'` (Z. 946).
+`'§ 3 Abs. 6a S. 4 Nr. 1 UStG'`.
 
 ## Satz 4 Nr. 2 (entspricht lit. b)
 Andere UID mitgeteilt → Lieferung ab dem ZH ist die bewegte Lieferung.
 Im Code: `quickFixVariant: 'dest-or-other-id'`, `legalBasis` enthält
-`'§ 3 Abs. 6a S. 4 Nr. 2 UStG'` (Z. 960, 1004).
+`'§ 3 Abs. 6a S. 4 Nr. 2 UStG'`.
 
 ## § 4 Nr. 1b iVm. § 6a UStG — IG-Lieferung DE
 Steuerbefreiung der innergemeinschaftlichen Lieferung.
-`natLaw('ig.exempt')` bei `isDE` → `'§ 4 Nr. 1 lit. b iVm. § 6a UStG'` (Z. 1764).
+`natLaw('ig.exempt')` bei `isDE` → `'§ 4 Nr. 1 lit. b iVm. § 6a UStG'`.
 
 ## § 13b UStG — Reverse Charge nur Werklieferungen
 **Kritisch**: § 13b gilt in DE nur für Werklieferungen und sonstige Leistungen,
 NICHT für reine Warenlieferungen (§ 13b Abs. 2 Nr. 1; UStAE Abschn. 13b.1).
 
-## Implementierung — _checkRCBlock() (Z. 1090)
+## Implementierung — _checkRCBlock()
+```js
+const deReg = pos === 'DE' && hasVat('DE') && iAmTheSeller;
 ```
-deReg = pos === 'DE' && hasVat('DE') && iAmTheSeller
-```
-Wenn `deReg` true → `_checkRCBlock()` gibt kein explizites `blocked:true` zurück,
-aber in `computeTax()` (Z. 3067) blockiert der `deReg`-Check RC bei Warenlieferung:
-Lieferant mit DE-UID muss 19% DE-MwSt ausweisen.
+`deReg`-Check passiert in `_checkRCBlock()` (nicht in `computeTax()`).
+Wenn `deReg` true → RC bei Warenlieferung blockiert, Lieferant muss 19% DE-MwSt ausweisen.
+`_checkRCBlock()` gibt in diesem Fall `{ blocked: true, ... }` zurück.
 
 ## COMPANIES['EPDE']
 ```js
