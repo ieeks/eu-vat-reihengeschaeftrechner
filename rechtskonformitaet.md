@@ -1,6 +1,6 @@
-# PDF × Tool Abgleich — Reihengeschäftsrechner v4.2
+# Rechtskonformität & Design-Entscheidungen — Reihengeschäftsrechner v4.2
 
-Stand: 04.04.2026  
+Stand: 06.04.2026  
 Quellen:
 - Österreichisches BMF-Schulungsunterlagen August 2024 (PDF)
 - EU-Mehrwertsteuerrichtlinie 2006/112/EG (Primärrecht, EU.html)
@@ -36,36 +36,32 @@ Quellen:
 
 ---
 
-## ❌ Fehler
+## 🔒 Bewusste Abweichungen (konservative Auslegung)
 
-### F1 — Dreiecksgeschäft: Registrierung ≠ Niederlassung (VATEngine, nicht anfassbar)
+### D1 — Dreiecksgeschäft: UID = Blockierung statt Niederlassung = Blockierung
 
-**Fundstelle:** `_detectTriangle3`, Zeile 1159
-```js
-if (!!vatIds[dest]) return _noTriangle(
-  'Art. 141 lit. a: B hat USt-ID in ' + dest + ' → Vereinfachung blockiert.',
-  'blocked-by-dest-vat'
-);
-```
+**Fundstelle:** `_detectTriangle3` / `_detectTriangle4`, `buildNormal3Result`
 
-**Was das Tool macht:** Blockiert das Dreiecksgeschäft, sobald B *irgendeine* UID im Bestimmungsland hat.
+**Was das Gesetz sagt:** Art. 141 lit. a spricht von „nicht **niedergelassen**" (kein Sitz, keine feste Niederlassung). Eine bloße Registrierung ohne Niederlassung wäre nach liberaler Lesart nicht schädlich.
 
-**Was das Gesetz sagt:** Bedingung ist ausschließlich, dass B **nicht ansässig** (kein Sitz, keine feste Niederlassung) im Bestimmungsland ist. Eine reine Registrierung ohne Niederlassung ist nicht schädlich.
-
-**Wichtige Einschränkung des Bugs:** Der Fehler greift nur, wenn A und B aus **verschiedenen EU-Mitgliedstaaten** kommen (drei verschiedene Länder insgesamt). Sind A und B im selben Land (z.B. beide DE), ist das Dreiecksgeschäft ohnehin nicht anwendbar — das Tool hat in diesem Fall recht.
-
-**Belege — vierfach bestätigt:**
+**Liberale Belege (vier Quellen):**
 1. Art. 141 lit. a RL 2006/112/EG Wortlaut: „nicht in diesem Mitgliedstaat **niedergelassen**"
 2. VwGH 15.12.2021, Ro 2020/15/0003: Registrierung allein blockiert nicht
 3. Rz 4150 UStR
-4. Quick Fixes Exp. Notes Beispiel 8 (S. 66): D ist in MS4 **und** MS5 registriert — Dreiecksgeschäft gilt dennoch, weil D „not established in MS5"
+4. Quick Fixes Exp. Notes Beispiel 8 (S. 66): D ist in MS4 **und** MS5 registriert — Dreiecksgeschäft gilt dennoch
 
-**Auswirkung auf EPDE:** EPDE hat UIDs in SI, LV, EE, NL, BE, CZ, PL ohne dortige Niederlassung → Dreiecksgeschäfte nach diesen 7 Ländern fachlich falsch blockiert — aber **nur wenn der Lieferant (A) aus einem anderen EU-Land als DE kommt**.
+**Warum das Tool trotzdem auf UID-Vorhandensein prüft:**
+Steuerrechtliche Beratung (2024) hat explizit bestätigt, dass die SI-Registrierung von EPDE zur Pflicht führt, mit slowenischer MwSt zu fakturieren. Die nationalen Finanzbehörden (insb. SI, PL, CZ) folgen mehrheitlich der strengen Auslegung. Die liberale Position trägt bei Betriebsprüfung ein erhebliches Nachforderungsrisiko.
 
-**Status:** Nicht behebbar (VATEngine IIFE).
+**Das Tool wählt bewusst die compliance-sichere Option.**
 
-**Workaround:** Im Output-Layer bei `blocked-by-dest-vat` Hinweis einblenden:
-> „Automatisch blockiert — fachlich nur schädlich bei Niederlassung im Bestimmungsland (VwGH 15.12.2021, Ro 2020/15/0003). Dreiecksgeschäft ggf. trotzdem anwendbar wenn A und B aus verschiedenen EU-Ländern kommen."
+**Betroffene Länder EPDE:** SI, LV, EE, NL, BE, CZ, PL — UID ohne Niederlassung → Dreiecksgeschäft blockiert  
+**Betroffene Länder EPROHA:** DE, CH — UID ohne Niederlassung (echter Sitz nur AT)
+
+**Output-Transparenz (Session 18):** `buildNormal3Result` zeigt im Expertenmodus bei `blocked-by-dest-vat` einen erklärenden Hinweis:
+> „Konservative Auslegung (Art. 141 lit. a MwStSystRL): Das Tool blockiert Dreiecksgeschäfte sobald eine UID im Bestimmungsland vorliegt — auch ohne dortige Niederlassung. Steuerrechtlich bestätigt für [Unternehmen]. Liberalere Auslegung (VwGH Ro 2020/15/0003) existiert, wird aber bewusst nicht angewendet."
+
+**Langfristiger Revisionspfad:** `establishments`-Array in COMPANIES → `vatIds[dest]`-Check durch `establishments.includes(dest)` ersetzen in `_detectTriangle3()` und `_detectTriangle4()`. Nur nach erneuter steuerrechtlicher Beratung.
 
 ---
 
@@ -131,6 +127,5 @@ Für ein internes Compliance-Tool für EPDE/EPROHA kein Implementierungsbedarf. 
 
 ## Offene Entscheidungen
 
-1. **F1 Workaround einbauen?** Hinweis bei `blocked-by-dest-vat` im Output-Layer → (ja/nein)
-2. **F1 langfristig:** VATEngine braucht `establishments`-Datenmodell pro Partei, um Niederlassung von Registrierung zu trennen
-3. **G2:** Luxury-Trust-Warnblock bei aktivem Dreiecksgeschäft ergänzen?
+1. **G2:** Luxury-Trust-Warnblock bei aktivem Dreiecksgeschäft ergänzen?
+2. **D1 langfristig:** VATEngine braucht `establishments`-Datenmodell pro Partei — erst nach steuerrechtlicher Freigabe (Backlog in RGR_TODO.md P1)

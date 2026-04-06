@@ -17,6 +17,7 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 - `scripts/serve.mjs` — dependency-freier lokaler Static-Server + Strukturcheck
 - `.github/workflows/pages.yml` — GitHub-Pages-Deployment per Actions
 - `vat-knowledge/` — 16 Markdown-Dateien + Index (EU/AT/DE/CH Steuerrecht ↔ Code)
+- `rechtskonformitaet.md` — Rechtsabgleich + bewusste Abweichungen (konservative Auslegung)
 - `CLAUDE.md` — Entwicklerregeln und Architekturhinweise
 - `RGR_CHANGELOG.md` — Session-Änderungen
 - `RGR_TODO.md` — offener Backlog

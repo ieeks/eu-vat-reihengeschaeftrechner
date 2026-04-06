@@ -16,7 +16,7 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 | `README.md` | User-facing Übersicht |
 | `RGR_CHANGELOG.md` | Änderungsprotokoll |
 | `RGR_TODO.md` | Offene Punkte & Backlog |
-| `abgleich.md` | Rechtsabgleich Tool vs. EU MwStSystRL / Rechtsprechung |
+| `rechtskonformitaet.md` | Rechtsabgleich + bewusste Abweichungen (konservative Auslegung) |
 | `vat-knowledge/` | 16 Markdown-Dateien + Index — EU/AT/DE/CH Steuerrecht ↔ Code-Mapping |
 | `vat-knowledge/CLAUDE-vat-knowledge.md` | Pflichtlektüre-Index vor VATEngine-Änderungen |
 | `index.html` | Einstiegspunkt für lokalen Server / Redirect |
