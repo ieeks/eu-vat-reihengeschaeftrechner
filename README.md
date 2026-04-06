@@ -16,6 +16,7 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 - `index.html` — schlanker Einstiegspunkt/Redirect auf `docs/`
 - `scripts/serve.mjs` — dependency-freier lokaler Static-Server + Strukturcheck
 - `.github/workflows/pages.yml` — GitHub-Pages-Deployment per Actions
+- `vat-knowledge/` — 16 Markdown-Dateien + Index (EU/AT/DE/CH Steuerrecht ↔ Code)
 - `CLAUDE.md` — Entwicklerregeln und Architekturhinweise
 - `RGR_CHANGELOG.md` — Session-Änderungen
 - `RGR_TODO.md` — offener Backlog
@@ -45,8 +46,9 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 - **Experten-Modus** — 5 Tabs + Perspektivwechsel
 
 ## Aktueller Fokus
-- `⚖ Vergleich-Tab` ist aktuell eine offene `P0`-Baustelle
-- Zielzustand: Vergleich muss bei `Status`, `Empfehlung`, Dreiecksgeschäft, Art. 41 und Registrierungslogik exakt dieselbe Bewertung liefern wie die Hauptanalyse nach einem Szenariowechsel
+- `⚖ Vergleich-Tab` ist fachlich harmonisiert (Session 17) — finale Browserabnahme offen
+- `/vat-knowledge/` Wissensbasis: 16 Markdown-Dateien (EU/AT/DE/CH Recht ↔ Code-Mapping)
+- Drop-Shipment EU: prominenter UID-Pflicht-Block vor Diagramm (Mobile-first)
 
 ## Drittland-Support
 - **CH (Schweiz):** 2P und 3P, DAP/DDP, BAZG, EUSt 8,1%, FHA

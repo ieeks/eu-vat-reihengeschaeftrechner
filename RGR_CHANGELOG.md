@@ -2,6 +2,20 @@
 
 ---
 
+## v4.2 · 06.04.2026 — Session 18
+
+### Bugfixes / UI
+
+- **Drop-Shipment EU: UID-Pflicht prominent vor Diagramm** — neuer gestylter Block (`background:rgba(239,68,68,0.08)`) ersetzt alten `rH({type:'error'})`. Steht jetzt VOR `buildFlowDiagram()`, damit Mobile-User die Voraussetzung sofort sehen
+- **Drop-Shipment EU: UID-Pflicht generisch formuliert** — „AT-Kunde muss ${cn(dsDest)}-UID mitteilen" → „AT-Kunde muss eine gültige EU-UID aus einem anderen Mitgliedstaat (nicht AT) mitteilen"
+- **2P analyze2: Rechnungspflichtangaben entfernt** — redundante Detailtexte (§ 11 UStG AT, Belegnachweis, ZM, Rechnungstext) aus Decision-Steps und rH-Hints entfernt; Details stehen bereits im Expertenmodus (RPA-Section)
+
+### Nicht angefasst
+- VATEngine IIFE
+- analyze()
+
+---
+
 ## v4.2 · 06.04.2026 — Session 17
 
 ### Bugfixes

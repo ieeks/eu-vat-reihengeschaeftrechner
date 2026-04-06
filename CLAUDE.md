@@ -17,6 +17,8 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 | `RGR_CHANGELOG.md` | Änderungsprotokoll |
 | `RGR_TODO.md` | Offene Punkte & Backlog |
 | `abgleich.md` | Rechtsabgleich Tool vs. EU MwStSystRL / Rechtsprechung |
+| `vat-knowledge/` | 16 Markdown-Dateien + Index — EU/AT/DE/CH Steuerrecht ↔ Code-Mapping |
+| `vat-knowledge/CLAUDE-vat-knowledge.md` | Pflichtlektüre-Index vor VATEngine-Änderungen |
 | `index.html` | Einstiegspunkt für lokalen Server / Redirect |
 | `package.json` | Start- und Check-Skripte |
 | `scripts/serve.mjs` | Dependency-freier lokaler Static-Server |
@@ -66,8 +68,8 @@ v4 UI Layer
 
 ## Aktuelle P0-Baustelle
 
-- `buildVergleichTab()` ist fachlich noch nicht abgeschlossen
-- Erwartung: `⚖ Vergleich` muss bei `Status`, `Empfehlung`, Dreiecksgeschäft, Art. 41 und Registrierungslogik exakt mit der Hauptanalyse nach Szenariowechsel übereinstimmen
+- `buildVergleichTab()` ist in Session 17 fachlich harmonisiert worden (statusCell/recommendationCell/reasonCell/art41Cell + dreiecksOpportunity pro Szenario)
+- Offen: Finale Browserabnahme der `docs/`-App (Release v4.2)
 - Änderungen am Vergleich nur minimal und mit echten Referenzfällen prüfen; keine neue Heuristik einführen, die vom Hauptstatus abweicht
 
 ## Output-Hierarchie
