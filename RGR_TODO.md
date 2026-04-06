@@ -59,7 +59,7 @@ Stand: 06.04.2026
 
 - [ ] **Drop-Shipment Browserabnahme** — Mode 2 / EPROHA / Kunde=AT / Warenempfänger=DE (und Drittland) manuell prüfen; UID-Pflicht-Block vor Diagramm verifizieren
 - [ ] **Typeahead Länder-Picker** — Native select ersetzen
-- [ ] **REAL_CASES_2026 Tests** — HU→DE EXW, Sappi DE→EPDE→IT, BG→AT→BG
+- [ ] **REAL_CASES_2026 Tests** — HU→DE EXW, Sappi DE→EPDE→IT, BG→AT→BG, BG→DE→BG Inland-Hint prüfen
 - [ ] **Vergleich-Tab: Struktur-Dimension** — 3P/4P/Dreieck als zweite Achse
 
 ---

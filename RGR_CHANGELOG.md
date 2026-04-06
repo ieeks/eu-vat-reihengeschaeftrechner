@@ -10,6 +10,11 @@
 - **Drop-Shipment EU: UID-Pflicht generisch formuliert** — „AT-Kunde muss ${cn(dsDest)}-UID mitteilen" → „AT-Kunde muss eine gültige EU-UID aus einem anderen Mitgliedstaat (nicht AT) mitteilen"
 - **2P analyze2: Rechnungspflichtangaben entfernt** — redundante Detailtexte (§ 11 UStG AT, Belegnachweis, ZM, Rechnungstext) aus Decision-Steps und rH-Hints entfernt; Details stehen bereits im Expertenmodus (RPA-Section)
 
+- **buildTrafficStatus RED: konkrete Risiken** — generischer Text ersetzt durch Liste mit Land + Steuersatz + Konsequenz pro Risikotyp (`registration-required` / `ic-acquisition-no-reg` / `resting-buyer-no-uid`)
+- **analyzeInland regBanner: prominenter RED-Block** — `needsReg`-Banner konsistent mit `buildTrafficStatus` RED-Branch; zeigt Registrierungspflicht + 3 Handlungsoptionen statt einfachem `rH`-Hint
+- **analyzeInland: Lieferort in Delivery-Titeln** — `buildInlandCard()` zeigt jetzt `(Lieferort: 🇧🇬 Bulgarien)` neben den Vertragsparteien — verhindert Fehlinterpretation des Warenwegs
+- **analyzeInland: BG→DE→BG-Erklärung** — bei `s1 === s4` erscheint Info-Hint: „Pfeile zeigen Vertragsparteien, nicht physischen Warenweg, Ware berührt Deutschland nicht"
+
 ### Nicht angefasst
 - VATEngine IIFE
 - analyze()

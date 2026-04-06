@@ -17,6 +17,7 @@
 | SAP-Codes / `_sapEffectiveCountry()` | `rules/uid_usage_rules.md` |
 | `buildKurzbeschreibung()` / `summaryItems` | `rules/uid_usage_rules.md` |
 | `buildVergleichTab()` | `rules/triangle_conditions.md` + `rules/registration_risk_logic.md` |
+| `buildTrafficStatus()` / `analyzeInland()` regBanner | `rules/registration_risk_logic.md` |
 | `analyze2()` / EPROHA AT-Lager | `at/ustg_at_reihengeschaeft.md` |
 | `analyzeCH()` / `computeTaxCH()` | `ch/mwst_ch_ort_lieferung.md` |
 | `buildKonsiLagerCH()` | `ch/mwst_ch_konsignationslager.md` |
