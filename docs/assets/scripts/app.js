@@ -1461,7 +1461,7 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
 
   const svg = `
   <div class="flow-diagram">
-    <div class="flow-title">📦 Warenfluss &amp; Fakturierung · Dreiecksgeschäft</div>
+    <div class="flow-title">📦 Warenfluss &amp; Fakturierung${isDreiecks ? ' · Dreiecksgeschäft' : ''}</div>
     <div class="flow-diagram-body">
     <svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block;margin:0 auto;overflow:visible;">
       <defs>
