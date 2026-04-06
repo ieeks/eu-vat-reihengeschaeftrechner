@@ -2,6 +2,31 @@
 
 ---
 
+## v4.2 · 06.04.2026 — Session 17
+
+### Bugfixes
+
+- **„Aktive UID" in buildKurzbeschreibung() korrigiert** — summaryItems-Fallback zeigte immer companyHome-UID (z.B. DE449663039 für EPDE), auch wenn EPDE Käufer auf einer bewegten IG-Lieferung war und die dest-UID korrekt wäre. Neue Logik: Käufer auf bewegter L → dest-UID, Verkäufer → dep-UID, Fallback → companyHome
+- **Duplikat-Funktionen entfernt** — `_sapEffectiveCountry`, `getSapCode`, `getSapDesc`, `sapBadge`, `sapBadgeBoth` waren ab ~Z. 789 identisch zu Z. 241 dupliziert (SyntaxError im strict mode). Zweiter Block entfernt, ebenso `setMePosition` no-op-Duplikat bei ~Z. 8695
+- **buildVergleichTab() — 5 Diskrepanzen zur Hauptanalyse behoben:**
+  1. `statusCell()`: YELLOW für `warningRisks` (rc-blocked, double-acquisition) entfernt — Hauptanalyse kennt diesen Status nicht; stattdessen `dreiecksOpportunity`-Logik ergänzt
+  2. `statusCell()` + `recommendationCell()`: `dreiecksOpportunity` pro Szenario berechnet (GELB „UID wählen" / GRÜN „bevorzugt ∆")
+  3. `p0Cell()` → `art41Cell()`: Alte Prüfung auf `severity==='P0'` (existiert im Engine nie → immer grün) ersetzt durch echten `double-acquisition`-Check
+  4. `reasonCell()`: Text für `dreiecksOpportunity`-Fall und nicht-blockierende Warnungen ergänzt; rc-blocked/double-acquisition als Info statt als Blocker
+  5. Neue Helper `getDreiecksOpp(tr)` / `getDreiecksApplied(tr)` berechnen Dreiecks-Chance pro Transport-Szenario analog zu `buildKurzbeschreibung()`
+
+### Neue Features
+
+- **2P-Modus AT→EU: Strukturierte 4-Schritte-Analyse** — `analyze2()` AT→EU-Branch zeigt jetzt Decision-Flow-Grid (Transportzuordnung / Bewegte Lieferung / Steuerliche Behandlung / Fakturierung & Pflichten) analog zum 3P-Modus in `buildKurzbeschreibung()`
+- **2P-Modus AT→AT: Ergebnis-Summary + 2-Schritte-Analyse** — Summary-Card mit 20% MwSt-Anzeige + Decision-Grid (Steuerliche Behandlung / Fakturierung & UID) vor den bestehenden rH()-Hints
+
+### Doku
+
+- **`/vat-knowledge/`-Wissensbasis erstellt** — 16 Markdown-Dateien (EU-Recht, AT, DE, CH, Implementierungsregeln) mit Code-Bezug (Funktionsname, Variablen, Edge Cases)
+- **`CLAUDE-vat-knowledge.md`** — Zentraler Index mit 5 Regeln: Pflichtlektüre-Tabelle, gesperrte Funktionen, Smoke-Tests, RC-Kurzreferenz, UID-Logik
+
+---
+
 ## v4.2 · 04.04.2026 — Session 16+
 
 ### Bugfixes (nach Session 16)
