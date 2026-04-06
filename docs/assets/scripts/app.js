@@ -4163,6 +4163,16 @@ function analyze2() {
       📦 Drop-Shipment — Direktlieferung an Endkunden des Kunden
     </div>`;
 
+    if (!isNonEUDest) {
+      html += `<div style="padding:14px 18px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.35);border-radius:var(--r-md);margin-bottom:14px;line-height:1.7;">
+        <div style="font-size:0.82rem;font-weight:600;color:var(--red);margin-bottom:6px;">🆔 Voraussetzung IG-Lieferung</div>
+        <div style="font-size:0.78rem;color:var(--tx-1);">
+          AT-Kunde muss <strong>${cn(dsDest)}-UID</strong> mitteilen — sonst fakturiert EPROHA <strong>20% AT-MwSt</strong>.<br>
+          <span style="color:var(--tx-2);">Art. 138 Abs. 1 lit. b MwStSystRL / § 7 UStG 1994</span>
+        </div>
+      </div>`;
+    }
+
     html += `<div class="mode2-flow">${buildFlowDiagram(
       [{code:'AT',role:'EPROHA (Lager)'},{code:'AT',role:'Kunde (AT)'},{code:dsDest,role:'Warenempfänger'}],
       0, 'AT', dsDest, false, -1, -1
@@ -4183,11 +4193,6 @@ function analyze2() {
       html += rH({type:'warn', icon:'🛃', text:`Ausfuhrnachweis (ATLAS/e-dec) erforderlich — Bestimmungsland ist Drittland (${cn(dsDest)}). Zollanmeldung in AT.`});
     } else {
       // EU-Bestimmungsland
-      html += rH({type:'error', icon:'🆔', text:
-        `<strong>Voraussetzung IG-Lieferung: AT-Kunde muss ${cn(dsDest)}-UID mitteilen!</strong><br>
-        EPROHA kann nur dann <strong>0% (steuerfrei)</strong> fakturieren, wenn der AT-Kunde eine <strong>UID aus ${cn(dsDest)}</strong> auf der Rechnung ausweist (Art. 138 Abs. 1 lit. b MwStSystRL / § 7 UStG 1994).<br>
-        <strong style="color:var(--red);">Kein ${cn(dsDest)}-UID des Kunden → EPROHA muss 20% AT-MwSt in Rechnung stellen.</strong>`
-      });
       html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:#F5A827;">Ausg: AF</strong> (IG-Lieferung AT 0% — Art. 6 Abs. 1 iVm. Art. 7 UStG 1994) · <em>nur wenn ${cn(dsDest)}-UID des Kunden vorliegt</em>`});
       html += rH({type:'ok', icon:'⚡', text:
         `Rechnung von EPROHA an AT-Kunde: <strong>0% MwSt (IG-Lieferung AT→${cn(dsDest)})</strong> gem. Art. 6 Abs. 1 iVm. Art. 7 UStG 1994 / Art. 138 MwStSystRL.<br>
