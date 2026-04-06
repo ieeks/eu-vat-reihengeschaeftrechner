@@ -6132,7 +6132,31 @@ function analyze() {
     if (engRiskHtml) html += `<div class="hints" style="margin-bottom:12px;">${engRiskHtml}</div>`;
 
     if (dreiecksBlockedByVat) {
-      html += rH({ type:'orange', icon:'⚠️', text: eng.triangle.reason });
+      const blockedDest = ctx?.dest || document.getElementById('dest')?.value;
+      const hasDestUid = blockedDest && MY_VAT_IDS[blockedDest];
+      const isOnlyRegistered = hasDestUid &&
+        !(COMPANIES[currentCompany].establishments || []).includes(blockedDest);
+
+      const baseText = `<strong>Dreiecksgeschäft blockiert</strong> —
+        ${cn(blockedDest)}-UID (${MY_VAT_IDS[blockedDest]}) vorhanden.<br>
+        Konsequenz: L2 mit <strong>${rate(blockedDest)}%
+        ${cn(blockedDest)}-MwSt</strong> ausweisen.
+        ${sapBadge(blockedDest, 'domestic', 'seller') || ''}`;
+
+      const expertText = isOnlyRegistered
+        ? `${baseText}<br>
+          <span style="color:var(--tx-3);font-size:0.72rem;margin-top:4px;display:block;">
+          ℹ️ <strong>Konservative Auslegung (Art. 141 lit. a MwStSystRL):</strong>
+          Das Tool blockiert Dreiecksgeschäfte sobald eine UID im Bestimmungsland
+          vorliegt — auch ohne dortige Niederlassung. Steuerrechtlich bestätigt
+          für ${currentCompany}. Liberalere Auslegung (VwGH Ro 2020/15/0003)
+          existiert, wird aber bewusst nicht angewendet.
+          </span>`
+        : baseText;
+
+      html += rH({ type:'orange', icon:'⚠️',
+        text: expertMode ? expertText : baseText
+      });
     }
 
     // Wahlrecht § 3 Abs. 15 Z 1 lit. b: nur wenn kein Dreiecksgeschäft greift
