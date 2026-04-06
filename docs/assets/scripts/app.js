@@ -5380,11 +5380,45 @@ function buildTrafficStatus(ctx, eng, options = {}) {
   const dreiecksPossible = options.dreiecksPossible;
 
   if (hasBlockingRegistrationRisk) {
+    const blockingRisks = risks.filter(r =>
+      r.type === 'registration-required' ||
+      r.type === 'ic-acquisition-no-reg' ||
+      r.type === 'resting-buyer-no-uid'
+    );
+    const riskItems = blockingRisks.map(r => {
+      if (r.type === 'registration-required') {
+        return `<div style="display:flex;gap:8px;align-items:baseline;margin-top:6px;">
+          <span style="color:var(--red);flex-shrink:0;">🚨</span>
+          <span><strong>Registrierungspflicht in ${cn(r.country)} (${rate(r.country)}%)</strong>
+          — ohne ${cn(r.country)}-UID keine IG-Steuerbefreiung möglich.</span>
+        </div>`;
+      }
+      if (r.type === 'ic-acquisition-no-reg') {
+        return `<div style="display:flex;gap:8px;align-items:baseline;margin-top:6px;">
+          <span style="color:var(--red);flex-shrink:0;">🚨</span>
+          <span><strong>IG-Erwerb in ${cn(r.country)} (${rate(r.country)}%)</strong>
+          ohne UID — Registrierung oder Dreiecksgeschäft erforderlich.</span>
+        </div>`;
+      }
+      if (r.type === 'resting-buyer-no-uid') {
+        return `<div style="display:flex;gap:8px;align-items:baseline;margin-top:6px;">
+          <span style="color:var(--red);flex-shrink:0;">🚨</span>
+          <span><strong>Ruhende Eingangsrechnung in ${cn(r.country)} (${rate(r.country)}%)</strong>
+          — ohne ${cn(r.country)}-UID kein Vorsteuerabzug, MwSt wird Kostenfaktor.</span>
+        </div>`;
+      }
+      return '';
+    }).join('');
+
     return `<div class="traffic-status traffic-status-red" data-component="trafficStatus">
       <div class="traffic-status-light"></div>
-      <div>
+      <div style="flex:1">
         <div class="traffic-status-title">Problem vorhanden</div>
-        <div class="traffic-status-body">In der aktuellen Konstellation ist das Reihengeschäft für dich nicht ohne zusätzliche Registrierung oder fehlende UID-Voraussetzungen sauber umsetzbar. Bitte die Registrierungswarnungen prüfen.</div>
+        <div class="traffic-status-body">
+          Dieses Reihengeschäft ist in der aktuellen Konstellation
+          für dich nicht ohne weiteres umsetzbar:
+          ${riskItems}
+        </div>
       </div>
     </div>`;
   }
