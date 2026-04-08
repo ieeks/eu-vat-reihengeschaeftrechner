@@ -1,0 +1,8 @@
+#!/bin/bash
+
+SCRIPT_DIR="$(git rev-parse --show-toplevel)"
+COMMIT_MSG="$(git log -1 --pretty=%s)"
+
+echo ""
+echo "🔁 post-commit hook: syncing to deploy repo..."
+"$SCRIPT_DIR/sync-repos.sh" "$COMMIT_MSG"
