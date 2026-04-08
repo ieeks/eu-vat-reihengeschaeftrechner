@@ -33,7 +33,7 @@ if ! git diff --cached --quiet; then
 else
   echo "   (nothing to commit in deploy)"
 fi
-git push || { echo "❌ Deploy push failed"; exit 1; }
+git push -u origin HEAD || { echo "❌ Deploy push failed"; exit 1; }
 
 echo ""
 echo "✅ Sync complete"
