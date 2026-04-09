@@ -2,6 +2,25 @@
 
 ---
 
+## v4.2 · 09.04.2026 — Session 20
+
+### Quick Check Tab — Phase 1
+- Neuer Tab `#tab-quickcheck` mit eigenem State `qcState` (company, dep, dest, transport)
+- 🟢 Quick Check Button im Header neben Experten-Modus (grün abgehoben)
+- `buildQuickCheck()`: bewegte Lieferung, ig./Inland/Import/Export, SAP-Codes aus `SAP_TAX_MAP`
+- `renderQuickCheck()`: 2-Spalten-Grid ER | AR, SAP-Badge, Pflichtangaben, Dreiecks-/Reg.-Hinweise
+- Art. 36a Hinweis wenn Transport=Zwischenhändler + Abgangsland-UID vorhanden
+- Fix: dep===dest → Inlandslieferung statt ig. Erwerb
+- Fix: EPDE mit UID im Abgangsland → dep-Land SAP-Code (nicht immer VH)
+- Non-Expert-Mode: `← Ergebnis` Back-Bar wenn QC aktiv
+
+### Dual Repo Workflow
+- DEPLOY-Repo gelöscht; Sync jetzt PRIMARY/docs/ → `ieeks.github.io/eu-vat-reihengeschaeftrechner/`
+- `manuel-app.dev/eu-vat-reihengeschaeftrechner/` live via GitHub Pages
+- `sync-repos.sh`, `toggle-cloudflare-redirect.sh`, `WORKFLOW.md`, post-commit Hook
+
+---
+
 ## v4.2 · 06.04.2026 — Session 19
 
 ### Bugfixes
