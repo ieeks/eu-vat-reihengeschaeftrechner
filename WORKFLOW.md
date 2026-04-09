@@ -5,7 +5,7 @@
 | Role | Name | URL |
 |---|---|---|
 | PRIMARY (source of truth) | `eu-vat-reihengeschaeftrechner` | https://ieeks.github.io/eu-vat-reihengeschaeftrechner/ |
-| DEPLOY (read-only copy) | `eu-vat-reihengeschaeftrechner-deploy` | https://manuel-app.dev |
+| DEPLOY (read-only copy, subfolder) | `ieeks.github.io/eu-vat-reihengeschaeftrechner/` | https://manuel-app.dev/eu-vat-reihengeschaeftrechner/ |
 
 ---
 

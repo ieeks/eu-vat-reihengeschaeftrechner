@@ -2,7 +2,7 @@
 set -e
 
 PRIMARY="$HOME/Developer/reihengeschaeft-rechner"
-DEPLOY="$HOME/Developer/eu-vat-reihengeschaeftrechner-deploy"
+DEPLOY="$HOME/Developer/ieeks.github.io"
 MSG=${1:-"sync"}
 
 if [ ! -d "$PRIMARY/.git" ]; then echo "❌ Primary repo not found: $PRIMARY"; exit 1; fi
@@ -18,12 +18,10 @@ else
 fi
 git push || { echo "❌ Primary push failed"; exit 1; }
 
-echo "🔄 Syncing PRIMARY → DEPLOY..."
+echo "🔄 Syncing PRIMARY/docs/ → DEPLOY/eu-vat-reihengeschaeftrechner/..."
 rsync -av --delete \
   --exclude ".git" \
-  --exclude "CNAME" \
-  --exclude "*.deploy-config" \
-  "$PRIMARY/" "$DEPLOY/"
+  "$PRIMARY/docs/" "$DEPLOY/eu-vat-reihengeschaeftrechner/"
 
 echo "🚀 Committing & pushing DEPLOY..."
 cd "$DEPLOY"
@@ -33,7 +31,7 @@ if ! git diff --cached --quiet; then
 else
   echo "   (nothing to commit in deploy)"
 fi
-git push -u origin HEAD || { echo "❌ Deploy push failed"; exit 1; }
+git push || { echo "❌ Deploy push failed"; exit 1; }
 
 echo ""
 echo "✅ Sync complete"
