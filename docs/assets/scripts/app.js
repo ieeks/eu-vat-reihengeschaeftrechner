@@ -9036,6 +9036,7 @@ function switchTabSilent(id) {
   activeTab = id;
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   $(`tab-${id}`)?.classList.add('active');
+  document.documentElement.classList.toggle('qc-active', id === 'quickcheck');
 }
 
 // ── Vergleich-Tab Modal ───────────────────────────────────────────────────

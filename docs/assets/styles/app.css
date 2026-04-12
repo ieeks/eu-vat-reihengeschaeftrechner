@@ -1085,6 +1085,10 @@ header {
   .pane-right-tabs { display: none !important; }
   #tab-basis { display: flex !important; }
 
+  /* ── Quick Check Tab isoliert: wenn QC aktiv → tab-basis ausblenden ── */
+  html.qc-active #tab-basis { display: none !important; }
+  html.qc-active #tab-quickcheck { display: flex !important; }
+
   /* ── Tap targets ≥48px ── */
   .party-btn, .me-pos-btn, .transport-item {
     min-height: 48px !important;
