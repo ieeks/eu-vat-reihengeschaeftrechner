@@ -11023,6 +11023,7 @@ function buildQuickCheck() {
   const { company, dep, dest, transport } = qcState;
   const vatIds = COMPANIES[company].vatIds;
   const home   = COMPANIES[company].home;
+  const _myUid = (country) => vatIds[country] || country;
 
   // ── Step 1: Bewegte Lieferung ─────────────────────────────────────────
   const movingL1     = transport !== 'customer';
@@ -11051,7 +11052,7 @@ function buildQuickCheck() {
     l1.sapCode = hasUID ? (sapEntry?.in || null) : null;
     l1.sapDesc = hasUID ? (sapEntry?.desc || null) : null;
     l1.sapNote = hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${dep}-UID`;
-    l1.reqs    = [`Eingangsrechnung mit ${rate} % ${dep}-MwSt`, `UID ${company} (${dep})`];
+    l1.reqs    = [`Eingangsrechnung mit ${rate} % ${dep}-MwSt`, `UID ${company} (${_myUid(dep)})`];
     l1.regRisk = hasUID ? null : dep;
   } else if (movingL1) {
     // ig. Erwerb — Erwerb findet im Empfangsland (dest) statt; EPDE gibt dem Lieferanten dest-UID
@@ -11065,7 +11066,7 @@ function buildQuickCheck() {
     l1.sapCode = hasDestUID ? (sapEntry?.in || null) : null;
     l1.sapDesc = hasDestUID ? (sapEntry?.desc || null) : null;
     l1.sapNote = hasDestUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${_qcCountryName(dest)}-UID → Registrierung erforderlich`;
-    l1.reqs    = [`UID Lieferant (${dep})`, `UID ${company} (${sapCountry})`, 'Hinweis auf Steuerfreiheit', 'Gelangensbestätigung'];
+    l1.reqs    = [`UID Lieferant (${dep})`, `UID ${company} (${_myUid(sapCountry)})`, 'Hinweis auf Steuerfreiheit', 'Gelangensbestätigung'];
     l1.regRisk = hasDestUID ? null : dest;
   } else {
     // ruhende L1 → steuerpflichtig im Abgangsland (dep)
@@ -11094,7 +11095,7 @@ function buildQuickCheck() {
     l2.taxInfo = '0 % — Ausfuhr steuerfrei';
     l2.sapCode = sapEntry?.out || (company === 'EPROHA' ? 'A0' : 'G0');
     l2.sapDesc = sapEntry?.desc || 'Ausfuhr 0 %';
-    l2.reqs    = [`UID ${company} (${home})`, 'Ausfuhrnachweise', 'Kein Steuerausweis', 'Zollanmeldung / EORI'];
+    l2.reqs    = [`UID ${company} (${_myUid(home)})`, 'Ausfuhrnachweise', 'Kein Steuerausweis', 'Zollanmeldung / EORI'];
     l2.regRisk = null;
   } else if (!movingL1) {
     // bewegte L2 → ig. Lieferung durch Company
@@ -11104,7 +11105,7 @@ function buildQuickCheck() {
     l2.taxInfo = '0 % — ig. Lieferung';
     l2.sapCode = sapEntry?.out || null;
     l2.sapDesc = sapEntry?.desc || null;
-    l2.reqs    = [`UID ${company} (${home})`, `UID Kunde (${dest})`, 'Hinweis auf Steuerfreiheit', 'Gelangensbestätigung / CMR'];
+    l2.reqs    = [`UID ${company} (${_myUid(home)})`, `UID Kunde (${dest})`, 'Hinweis auf Steuerfreiheit', 'Gelangensbestätigung / CMR'];
     l2.regRisk = null;
   } else {
     // ruhende L2 → steuerpflichtig
@@ -11119,7 +11120,7 @@ function buildQuickCheck() {
     l2.sapCode = hasUID ? (sapEntry?.out || null) : null;
     l2.sapDesc = hasUID ? (sapEntry?.desc || null) : null;
     l2.sapNote = hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${taxCountry}-UID`;
-    l2.reqs    = [`UID ${company}`, `UID Kunde (${dest})`, `Steuerbetrag ${rate} %`];
+    l2.reqs    = [`UID ${company} (${_myUid(taxCountry)})`, `UID Kunde (${dest})`, `Steuerbetrag ${rate} %`];
     l2.regRisk = hasUID ? null : taxCountry;
   }
 
