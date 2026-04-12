@@ -11027,12 +11027,28 @@ function buildQuickCheck() {
   const home    = co.home;
   const _myUid  = (country) => vatIds[country] || country;
 
+  // ── Dreieck-UID Priorisierung ─────────────────────────────────────────
+  // Priorisierung: dest-UID > SI-Fallback (wenn dep=home) > home-UID
+  function _qcTriangleUid(vatIds, dep, dest, home) {
+    if (vatIds[dest]) return { country: dest, uid: vatIds[dest] };
+    if (dep === home) {
+      // dep=home → home-UID blockiert Dreieck → SI als Fallback
+      const fallbacks = ['SI','NL','BE','CZ','PL','LV','EE'];
+      for (const c of fallbacks) {
+        if (vatIds[c] && c !== dest) return { country: c, uid: vatIds[c] };
+      }
+    }
+    // dep ≠ home → home-UID verwenden
+    return { country: home, uid: vatIds[home] || null };
+  }
+  const _triUid = _qcTriangleUid(vatIds, dep, dest, home);
+
   // ── Engine-Kontext aufbauen ───────────────────────────────────────────
   const transportMap = { supplier: 'A', middle: 'B', customer: 'C' };
   const ctx = Object.freeze({
     mode: 3, s1: dep, s2: home, s3: dest, s4: dest, dep, dest,
     transport: transportMap[transport],
-    uidOverride: null,
+    uidOverride: _triUid.uid,
     vatIds:         Object.freeze({ ...vatIds }),
     company, companyHome: home,
     establishments: Object.freeze([...(co.establishments || [])]),
@@ -11046,6 +11062,11 @@ function buildQuickCheck() {
   });
 
   const eng = VATEngine.run(ctx);
+
+  // ── Dreieck-Ergebnis (vor L1/L2, da Logik davon abhängt) ─────────────
+  const triangle           = eng.trianglePossible;
+  const triangleUidCountry = triangle ? _triUid.country : null;
+  const triangleUid        = triangle ? _triUid.uid : null;
 
   // ── Step 1: Bewegte Lieferung (aus Engine) ────────────────────────────
   const movingL1    = eng.movingIndex === 0;
@@ -11079,16 +11100,21 @@ function buildQuickCheck() {
   } else if (movingL1) {
     // ig. Erwerb — Erwerb findet im Empfangsland (dest) statt; EPDE gibt dem Lieferanten dest-UID
     const hasDestUID  = !!vatIds[dest] || dest === home;
-    const sapCountry  = (hasDestUID && SAP_TAX_MAP[company]?.[dest]?.['ic-acquisition'])
-      ? dest : home;
+    const sapCountry  = triangle
+      ? triangleUidCountry
+      : (hasDestUID && SAP_TAX_MAP[company]?.[dest]?.['ic-acquisition']) ? dest : home;
     const sapEntry = SAP_TAX_MAP[company]?.[sapCountry]?.['ic-acquisition'];
     l1.type    = 'ig-erwerb';
     l1.title   = 'Steuerfreie EU-Lieferung (ig. Lieferung)';
     l1.taxInfo = '0 % — ig. Lieferung durch Lieferant';
-    l1.sapCode = hasDestUID ? (sapEntry?.in || null) : null;
-    l1.sapDesc = hasDestUID ? (sapEntry?.desc || null) : null;
-    l1.sapNote = hasDestUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${_qcCountryName(dest)}-UID → Registrierung erforderlich`;
-    l1.reqs    = [`UID Lieferant (${dep})`, `UID ${company} (${_myUid(sapCountry)})`, 'Hinweis auf Steuerfreiheit', 'Gelangensbestätigung'];
+    l1.sapCode = (hasDestUID || triangle) ? (sapEntry?.in || null) : null;
+    l1.sapDesc = (hasDestUID || triangle) ? (sapEntry?.desc || null) : null;
+    l1.sapNote = (hasDestUID || triangle)
+      ? null
+      : `Kein SAP-Kennzeichen — ${company} hat keine ${_qcCountryName(dest)}-UID → Registrierung erforderlich`;
+    l1.reqs = triangle
+      ? [`UID Lieferant (${dep})`, `UID ${company} (${triangleUid || triangleUidCountry})`, 'Hinweis auf Steuerfreiheit', 'Gelangensbestätigung']
+      : [`UID Lieferant (${dep})`, `UID ${company} (${_myUid(sapCountry)})`, 'Hinweis auf Steuerfreiheit', 'Gelangensbestätigung'];
     l1.regRisk = hasDestUID ? null : dest;
   } else {
     // ruhende L1 → steuerpflichtig im Abgangsland (dep)
@@ -11131,24 +11157,42 @@ function buildQuickCheck() {
     l2.regRisk = null;
   } else {
     // ruhende L2 → L1 ist die bewegte Lieferung → ruhende L2 immer im Empfangsland (dest)
-    const taxCountry = dest;
-    const rate       = _qcRate(taxCountry);
-    const hasUID     = !!vatIds[taxCountry] || taxCountry === home;
-    const sapEntry   = SAP_TAX_MAP[company]?.[taxCountry]?.['domestic'] || SAP_TAX_MAP[company]?.[home]?.['domestic'];
-    l2.type    = 'resting';
-    l2.title   = `Ruhende Lieferung — steuerpflichtig ${_qcCountryName(taxCountry)} ${rate} %`;
-    l2.taxInfo = `${rate} % ${taxCountry}-MwSt`;
-    l2.sapCode = hasUID ? (sapEntry?.out || null) : null;
-    l2.sapDesc = hasUID ? (sapEntry?.desc || null) : null;
-    l2.sapNote = hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${taxCountry}-UID`;
-    l2.reqs    = [`UID ${company} (${_myUid(taxCountry)})`, `UID Kunde (${dest})`, `Steuerbetrag ${rate} %`];
-    l2.regRisk = hasUID ? null : taxCountry;
+    if (triangle) {
+      // Dreiecksgeschäft: ruhende L2 wird zur steuerfreien ig. Lieferung (§ 25b UStG)
+      const sapEntry = SAP_TAX_MAP[company]?.[triangleUidCountry]?.['ic-exempt']
+        || SAP_TAX_MAP[company]?.[home]?.['ic-exempt'];
+      l2.type      = 'ig-lieferung';
+      l2.title     = 'Steuerfreie EU-Lieferung — Dreiecksgeschäft (ig. Lieferung)';
+      l2.taxInfo   = '0 % — ig. Lieferung, RC beim Empfänger';
+      l2.sapCode   = sapEntry?.out || null;
+      l2.sapDesc   = sapEntry?.desc || null;
+      l2.sapNote   = sapEntry?.out
+        ? null
+        : `⚠ Kein SAP-Kennzeichen für ic-exempt ${triangleUidCountry} — neues Kennzeichen erforderlich`;
+      l2.reqs      = [
+        `UID ${company} (${triangleUid || triangleUidCountry})`,
+        `UID Kunde (${dest})`,
+        '„Steuerschuldnerschaft geht auf Leistungsempfänger über" (§ 25b UStG)',
+      ];
+      l2.regRisk   = null;
+      l2.isDreieck = true;
+    } else {
+      const taxCountry = dest;
+      const rate       = _qcRate(taxCountry);
+      const hasUID     = !!vatIds[taxCountry] || taxCountry === home;
+      const sapEntry   = SAP_TAX_MAP[company]?.[taxCountry]?.['domestic'] || SAP_TAX_MAP[company]?.[home]?.['domestic'];
+      l2.type    = 'resting';
+      l2.title   = `Ruhende Lieferung — steuerpflichtig ${_qcCountryName(taxCountry)} ${rate} %`;
+      l2.taxInfo = `${rate} % ${taxCountry}-MwSt`;
+      l2.sapCode = hasUID ? (sapEntry?.out || null) : null;
+      l2.sapDesc = hasUID ? (sapEntry?.desc || null) : null;
+      l2.sapNote = hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${taxCountry}-UID`;
+      l2.reqs    = [`UID ${company} (${_myUid(taxCountry)})`, `UID Kunde (${dest})`, `Steuerbetrag ${rate} %`];
+      l2.regRisk = hasUID ? null : taxCountry;
+    }
   }
 
-  // ── Step 4: Dreiecksgeschäft (aus Engine) ─────────────────────────────
-  const triangle = eng.trianglePossible;
-
-  // ── Step 5: Registrierungsrisiken (Engine + SAP-Ableitung) ──────────────
+  // ── Step 4: Registrierungsrisiken (Engine + SAP-Ableitung) ──────────────
   // ic-acquisition-no-reg: IG-Erwerb ohne dest-UID (Dreieck würde lösen)
   // resting-buyer-no-uid:  Ruhende L1 in Fremdland ohne dortige UID
   // Wenn Dreieck die Engine-Risiken unterdrückt, ergänzen wir via SAP-Ableitung
@@ -11158,7 +11202,7 @@ function buildQuickCheck() {
   const sapRisks = [l1.regRisk, l2.regRisk].filter(Boolean);
   const regRisks = [...new Set([...engineRisks, ...sapRisks])];
 
-  return { movingL1, l1, l2, triangle, regRisks, art36aHint, dep, dest, company, home };
+  return { movingL1, l1, l2, triangle, triangleUidCountry, triangleUid, regRisks, art36aHint, dep, dest, company, home };
 }
 
 function renderQuickCheck() {
@@ -11227,6 +11271,7 @@ function renderQuickCheck() {
         <ul class="qc-reqs">
           ${(data.reqs || []).map(r => `<li>${r}</li>`).join('')}
         </ul>
+        ${data.isDreieck ? '<div class="qc-dreieck-hint">⚠️ Dreiecksgeschäft-Haken in SAP nicht vergessen!</div>' : ''}
       </div>`;
   }
 
