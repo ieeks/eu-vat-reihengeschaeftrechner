@@ -11225,7 +11225,6 @@ function renderQuickCheck() {
         <ul class="qc-reqs">
           ${(data.reqs || []).map(r => `<li>${r}</li>`).join('')}
         </ul>
-        ${data.regRisk ? `<div class="qc-hint qc-hint--warn">⚠️ Registrierungsprüfung <strong>${_qcCountryName(data.regRisk)}</strong> erforderlich</div>` : ''}
       </div>`;
   }
 
