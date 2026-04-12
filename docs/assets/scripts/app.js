@@ -11208,10 +11208,15 @@ function renderQuickCheck() {
 
   const hintsHtml = (() => {
     const items = [];
-    if (r.triangle) items.push('✅ <strong>Dreiecksgeschäft</strong> nach Art. 141 MwStSystRL möglicherweise anwendbar');
-    else items.push('❌ Dreiecksgeschäft nicht anwendbar');
-    if (r.regRisks.length === 0) items.push('✅ Kein Registrierungsrisiko erkannt');
-    else r.regRisks.forEach(c => items.push(`⚠️ <strong>Registrierungsrisiko ${_qcCountryName(c)}</strong> — ${qcState.company} hat keine ${c}-UID`));
+    if (r.triangle && r.regRisks.length > 0) {
+      items.push(`✅ <strong>Dreiecksgeschäft</strong> (Art. 141 MwStSystRL) anwendbar — keine Registrierung in <strong>${r.regRisks.map(c => _qcCountryName(c)).join(', ')}</strong> erforderlich`);
+    } else if (r.triangle) {
+      items.push('✅ <strong>Dreiecksgeschäft</strong> nach Art. 141 MwStSystRL möglicherweise anwendbar');
+    } else if (r.regRisks.length > 0) {
+      r.regRisks.forEach(c => items.push(`⚠️ <strong>Registrierungsrisiko ${_qcCountryName(c)}</strong> — ${qcState.company} hat keine ${c}-UID`));
+    } else {
+      items.push('✅ Kein Registrierungsrisiko erkannt');
+    }
     return items.map(i => `<li>${i}</li>`).join('');
   })();
 
