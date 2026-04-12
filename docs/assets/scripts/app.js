@@ -11181,11 +11181,15 @@ function buildQuickCheck() {
       const rate       = _qcRate(taxCountry);
       const hasUID     = !!vatIds[taxCountry] || taxCountry === home;
       const sapEntry   = SAP_TAX_MAP[company]?.[taxCountry]?.['domestic'] || SAP_TAX_MAP[company]?.[home]?.['domestic'];
+      // Wenn domestic.out = null (z.B. NL: EPDE hat keine Betriebsstätte → RC-Pflicht) → RC-Fallback
+      const rcEntry      = SAP_TAX_MAP[company]?.[taxCountry]?.['rc'];
+      const effectiveOut = sapEntry?.out ?? rcEntry?.out ?? null;
+      const effectiveDesc = sapEntry?.out ? sapEntry.desc : (rcEntry?.desc || sapEntry?.desc);
       l2.type    = 'resting';
       l2.title   = `Ruhende Lieferung — steuerpflichtig ${_qcCountryName(taxCountry)} ${rate} %`;
       l2.taxInfo = `${rate} % ${taxCountry}-MwSt`;
-      l2.sapCode = hasUID ? (sapEntry?.out || null) : null;
-      l2.sapDesc = hasUID ? (sapEntry?.desc || null) : null;
+      l2.sapCode = hasUID ? effectiveOut : null;
+      l2.sapDesc = hasUID ? (effectiveDesc || null) : null;
       l2.sapNote = hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${taxCountry}-UID`;
       l2.reqs    = [`UID ${company} (${_myUid(taxCountry)})`, `UID Kunde (${dest})`, `Steuerbetrag ${rate} %`];
       l2.regRisk = hasUID ? null : taxCountry;
