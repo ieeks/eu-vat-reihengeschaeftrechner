@@ -11148,13 +11148,15 @@ function buildQuickCheck() {
   // ── Step 4: Dreiecksgeschäft (aus Engine) ─────────────────────────────
   const triangle = eng.trianglePossible;
 
-  // ── Step 5: Registrierungsrisiken (aus Engine) ────────────────────────
+  // ── Step 5: Registrierungsrisiken (Engine + SAP-Ableitung) ──────────────
   // ic-acquisition-no-reg: IG-Erwerb ohne dest-UID (Dreieck würde lösen)
   // resting-buyer-no-uid:  Ruhende L1 in Fremdland ohne dortige UID
-  const regRisks = (eng.risks?.risks || [])
+  // Wenn Dreieck die Engine-Risiken unterdrückt, ergänzen wir via SAP-Ableitung
+  const engineRisks = (eng.risks?.risks || [])
     .filter(r => r.type === 'ic-acquisition-no-reg' || r.type === 'resting-buyer-no-uid')
-    .map(r => r.country)
-    .filter((c, i, a) => a.indexOf(c) === i); // deduplizieren
+    .map(r => r.country);
+  const sapRisks = [l1.regRisk, l2.regRisk].filter(Boolean);
+  const regRisks = [...new Set([...engineRisks, ...sapRisks])];
 
   return { movingL1, l1, l2, triangle, regRisks, art36aHint, dep, dest, company, home };
 }
