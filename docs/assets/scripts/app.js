@@ -11022,15 +11022,36 @@ function _qcIsEU(code) {
 
 function buildQuickCheck() {
   const { company, dep, dest, transport } = qcState;
-  const vatIds = COMPANIES[company].vatIds;
-  const home   = COMPANIES[company].home;
-  const _myUid = (country) => vatIds[country] || country;
+  const co      = COMPANIES[company];
+  const vatIds  = co.vatIds;
+  const home    = co.home;
+  const _myUid  = (country) => vatIds[country] || country;
 
-  // ── Step 1: Bewegte Lieferung ─────────────────────────────────────────
-  const movingL1     = transport !== 'customer';
-  const art36aHint   = transport === 'middle' && !!vatIds[dep];
-  const depIsThird   = !_qcIsEU(dep);
-  const destIsThird  = !_qcIsEU(dest);
+  // ── Engine-Kontext aufbauen ───────────────────────────────────────────
+  const transportMap = { supplier: 'A', middle: 'B', customer: 'C' };
+  const ctx = Object.freeze({
+    mode: 3, s1: dep, s2: home, s3: dest, s4: dest, dep, dest,
+    transport: transportMap[transport],
+    uidOverride: null,
+    vatIds:         Object.freeze({ ...vatIds }),
+    company, companyHome: home,
+    establishments: Object.freeze([...(co.establishments || [])]),
+    get parties() { return [this.s1, this.s2, this.s4]; },
+    hasVatIn: (c) => !!vatIds[c],
+    vatIdIn:  (c) => vatIds[c] || null,
+    isNonEU:  (c) => !!getC(c)?.nonEU,
+    rateOf:   (c) => getC(c)?.std || 0,
+    nameOf:   (c) => cn(c),
+    flagOf:   (c) => flag(c),
+  });
+
+  const eng = VATEngine.run(ctx);
+
+  // ── Step 1: Bewegte Lieferung (aus Engine) ────────────────────────────
+  const movingL1    = eng.movingIndex === 0;
+  const art36aHint  = transport === 'middle' && !!vatIds[dep];
+  const depIsThird  = ctx.isNonEU(dep);
+  const destIsThird = ctx.isNonEU(dest);
 
   // ── Step 2+3: L1 (Eingangsrechnung — Lieferant → Company) ────────────
   const l1 = {};
@@ -11109,8 +11130,7 @@ function buildQuickCheck() {
     l2.reqs    = [`UID ${company} (${_myUid(home)})`, `UID Kunde (${dest})`, 'Hinweis auf Steuerfreiheit', 'Gelangensbestätigung / CMR'];
     l2.regRisk = null;
   } else {
-    // ruhende L2 → steuerpflichtig
-    // L1 ist die bewegte Lieferung → ruhende L2 immer im Empfangsland (dest)
+    // ruhende L2 → L1 ist die bewegte Lieferung → ruhende L2 immer im Empfangsland (dest)
     const taxCountry = dest;
     const rate       = _qcRate(taxCountry);
     const hasUID     = !!vatIds[taxCountry] || taxCountry === home;
@@ -11125,13 +11145,16 @@ function buildQuickCheck() {
     l2.regRisk = hasUID ? null : taxCountry;
   }
 
-  // ── Step 4: Dreiecksgeschäft ──────────────────────────────────────────
-  // 3 verschiedene EU-Länder: dep, home (Company-UID-Land), dest
-  const triangle = _qcIsEU(dep) && _qcIsEU(dest) && _qcIsEU(home)
-    && dep !== dest && dep !== home && dest !== home;
+  // ── Step 4: Dreiecksgeschäft (aus Engine) ─────────────────────────────
+  const triangle = eng.trianglePossible;
 
-  // ── Step 5: Registrierungsrisiko ──────────────────────────────────────
-  const regRisks = [l1.regRisk, l2.regRisk].filter(Boolean);
+  // ── Step 5: Registrierungsrisiken (aus Engine) ────────────────────────
+  // ic-acquisition-no-reg: IG-Erwerb ohne dest-UID (Dreieck würde lösen)
+  // resting-buyer-no-uid:  Ruhende L1 in Fremdland ohne dortige UID
+  const regRisks = (eng.risks?.risks || [])
+    .filter(r => r.type === 'ic-acquisition-no-reg' || r.type === 'resting-buyer-no-uid')
+    .map(r => r.country)
+    .filter((c, i, a) => a.indexOf(c) === i); // deduplizieren
 
   return { movingL1, l1, l2, triangle, regRisks, art36aHint, dep, dest, company, home };
 }
