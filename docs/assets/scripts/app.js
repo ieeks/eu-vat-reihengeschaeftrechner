@@ -11054,17 +11054,19 @@ function buildQuickCheck() {
     l1.reqs    = [`Eingangsrechnung mit ${rate} % ${dep}-MwSt`, `UID ${company} (${dep})`];
     l1.regRisk = hasUID ? null : dep;
   } else if (movingL1) {
-    // ig. Erwerb — wenn EPDE/EPROHA UID im Abgangsland hat, dep-Land-Code verwenden
-    const sapCountry = (vatIds[dep] && SAP_TAX_MAP[company]?.[dep]?.['ic-acquisition'])
-      ? dep : home;
+    // ig. Erwerb — Erwerb findet im Empfangsland (dest) statt; EPDE gibt dem Lieferanten dest-UID
+    const hasDestUID  = !!vatIds[dest] || dest === home;
+    const sapCountry  = (hasDestUID && SAP_TAX_MAP[company]?.[dest]?.['ic-acquisition'])
+      ? dest : home;
     const sapEntry = SAP_TAX_MAP[company]?.[sapCountry]?.['ic-acquisition'];
     l1.type    = 'ig-erwerb';
     l1.title   = 'Steuerfreie EU-Lieferung (ig. Lieferung)';
     l1.taxInfo = '0 % — ig. Lieferung durch Lieferant';
-    l1.sapCode = sapEntry?.in || null;
-    l1.sapDesc = sapEntry?.desc || null;
+    l1.sapCode = hasDestUID ? (sapEntry?.in || null) : null;
+    l1.sapDesc = hasDestUID ? (sapEntry?.desc || null) : null;
+    l1.sapNote = hasDestUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${_qcCountryName(dest)}-UID → Registrierung erforderlich`;
     l1.reqs    = [`UID Lieferant (${dep})`, `UID ${company} (${sapCountry})`, 'Hinweis auf Steuerfreiheit', 'Gelangensbestätigung'];
-    l1.regRisk = null;
+    l1.regRisk = hasDestUID ? null : dest;
   } else {
     // ruhende L1 → steuerpflichtig im Abgangsland (dep)
     const rate    = _qcRate(dep);
