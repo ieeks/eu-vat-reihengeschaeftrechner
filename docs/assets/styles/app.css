@@ -1089,7 +1089,8 @@ header {
   html.qc-active #tab-basis { display: none !important; }
   html.qc-active #tab-quickcheck { display: flex !important; }
   html.qc-active [data-component="input.Warenkette"],
-  html.qc-active [data-component="input.Transport"] {
+  html.qc-active [data-component="input.Transport"],
+  html.qc-active [data-component="input.UidStatus"] {
     display: none !important;
   }
 
