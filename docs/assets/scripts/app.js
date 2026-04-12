@@ -11106,8 +11106,8 @@ function buildQuickCheck() {
     l2.regRisk = null;
   } else {
     // ruhende L2 → steuerpflichtig
-    // Nach Einfuhr (depIsThird): Ware ist jetzt im Empfangsland (dest)
-    const taxCountry = depIsThird ? dest : dep;
+    // L1 ist die bewegte Lieferung → ruhende L2 immer im Empfangsland (dest)
+    const taxCountry = dest;
     const rate       = _qcRate(taxCountry);
     const hasUID     = !!vatIds[taxCountry] || taxCountry === home;
     const sapEntry   = SAP_TAX_MAP[company]?.[taxCountry]?.['domestic'] || SAP_TAX_MAP[company]?.[home]?.['domestic'];
