@@ -1088,6 +1088,10 @@ header {
   /* ── Quick Check Tab isoliert: wenn QC aktiv → tab-basis ausblenden ── */
   html.qc-active #tab-basis { display: none !important; }
   html.qc-active #tab-quickcheck { display: flex !important; }
+  html.qc-active [data-component="input.Warenkette"],
+  html.qc-active [data-component="input.Transport"] {
+    display: none !important;
+  }
 
   /* ── Tap targets ≥48px ── */
   .party-btn, .me-pos-btn, .transport-item {
