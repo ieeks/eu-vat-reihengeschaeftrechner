@@ -11063,6 +11063,13 @@ function buildQuickCheck() {
 
   const eng = VATEngine.run(ctx);
 
+  // ── RC-Erkennung (aus Engine-Supplies) ───────────────────────────────
+  const _engS    = eng.supplies || [];
+  const l1IsRC   = _engS[0]?.vatTreatment === 'rc';
+  const l1RCNote = _engS[0]?.rcBlockReason || null;
+  const l2IsRC   = _engS[1]?.vatTreatment === 'rc';
+  const l2RCNote = _engS[1]?.rcBlockReason || null;
+
   // ── Dreieck-Ergebnis (vor L1/L2, da Logik davon abhängt) ─────────────
   const triangle           = eng.trianglePossible;
   const triangleUidCountry = triangle ? _triUid.country : null;
@@ -11118,17 +11125,28 @@ function buildQuickCheck() {
     l1.regRisk = hasDestUID ? null : dest;
   } else {
     // ruhende L1 → steuerpflichtig im Abgangsland (dep)
-    const rate    = _qcRate(dep);
-    const hasUID  = !!vatIds[dep] || dep === home;
-    const sapEntry = SAP_TAX_MAP[company]?.[dep]?.['domestic'] || SAP_TAX_MAP[company]?.[home]?.['domestic'];
-    l1.type    = 'resting';
-    l1.title   = `Ruhende Lieferung — steuerpflichtig ${_qcCountryName(dep)} ${rate} %`;
-    l1.taxInfo = `${rate} % ${dep}-MwSt`;
-    l1.sapCode = hasUID ? (sapEntry?.in || null) : null;
-    l1.sapDesc = hasUID ? (sapEntry?.desc || null) : null;
-    l1.sapNote = hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${dep}-UID`;
-    l1.reqs    = [`Eingangsrechnung mit ${rate} % ${dep}-MwSt`];
-    l1.regRisk = hasUID ? null : dep;
+    if (l1IsRC) {
+      l1.type    = 'rc';
+      l1.title   = `Reverse Charge — ${_qcCountryName(dep)}`;
+      l1.taxInfo = `0 % — Steuerschuldner ist ${company} (RC)`;
+      l1.sapCode = SAP_TAX_MAP[company]?.[dep]?.['rc']?.in
+        || SAP_TAX_MAP[company]?.[home]?.['rc']?.in || null;
+      l1.reqs    = [`UID Lieferant (${dep})`, `UID ${company}`, '"Steuerschuldner ist der Leistungsempfänger"'];
+      l1.sapNote = l1RCNote;
+      l1.regRisk = null;
+    } else {
+      const rate    = _qcRate(dep);
+      const hasUID  = !!vatIds[dep] || dep === home;
+      const sapEntry = SAP_TAX_MAP[company]?.[dep]?.['domestic'] || SAP_TAX_MAP[company]?.[home]?.['domestic'];
+      l1.type    = 'resting';
+      l1.title   = `Ruhende Lieferung — steuerpflichtig ${_qcCountryName(dep)} ${rate} %`;
+      l1.taxInfo = `${rate} % ${dep}-MwSt`;
+      l1.sapCode = hasUID ? (sapEntry?.in || null) : null;
+      l1.sapDesc = hasUID ? (sapEntry?.desc || null) : null;
+      l1.sapNote = hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${dep}-UID`;
+      l1.reqs    = [`Eingangsrechnung mit ${rate} % ${dep}-MwSt`];
+      l1.regRisk = hasUID ? null : dep;
+    }
   }
 
   // ── Step 2+3: L2 (Ausgangsrechnung — Company → Kunde) ────────────────
@@ -11157,7 +11175,20 @@ function buildQuickCheck() {
     l2.regRisk = null;
   } else {
     // ruhende L2 → L1 ist die bewegte Lieferung → ruhende L2 immer im Empfangsland (dest)
-    if (triangle) {
+    if (l2IsRC) {
+      l2.type    = 'rc';
+      l2.title   = `Reverse Charge — ${_qcCountryName(dest)}`;
+      l2.taxInfo = '0 % — Steuerschuldner ist der Käufer (RC)';
+      l2.sapCode = SAP_TAX_MAP[company]?.[dest]?.['rc']?.out
+        || SAP_TAX_MAP[company]?.[home]?.['rc']?.out || null;
+      l2.reqs    = [
+        `UID ${company}`,
+        `UID Kunde (${dest})`,
+        '"Steuerschuldner ist der Leistungsempfänger"',
+      ];
+      l2.sapNote = l2RCNote;
+      l2.regRisk = null;
+    } else if (triangle) {
       // Dreiecksgeschäft: ruhende L2 wird zur steuerfreien ig. Lieferung (§ 25b UStG)
       const sapEntry = SAP_TAX_MAP[company]?.[triangleUidCountry]?.['ic-exempt']
         || SAP_TAX_MAP[company]?.[home]?.['ic-exempt'];
