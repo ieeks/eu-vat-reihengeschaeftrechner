@@ -2533,6 +2533,24 @@ header {
   font-weight: 600;
   color: var(--warn, #b45309);
 }
+.qc-reg-banner {
+  background: var(--red-dim);
+  border: 1.5px solid var(--red);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+.qc-reg-banner-title {
+  font-weight: 700;
+  color: var(--red);
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+.qc-reg-banner-body {
+  font-size: 0.85rem;
+  color: var(--tx-1);
+  line-height: 1.4;
+}
 
 /* Hints box */
 .qc-hints-box {

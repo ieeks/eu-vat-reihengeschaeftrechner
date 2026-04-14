@@ -11354,11 +11354,28 @@ function renderQuickCheck() {
     } else if (r.triangle) {
       items.push('✅ <strong>Dreiecksgeschäft</strong> nach Art. 141 MwStSystRL möglicherweise anwendbar');
     } else if (uniqueRisks.length > 0) {
-      uniqueRisks.forEach(c => items.push(`⚠️ <strong>Registrierungsrisiko ${_qcCountryName(c)}</strong> — ${qcState.company} hat keine ${c}-UID`));
+      // Registrierungsrisiko wird oben als roter Banner angezeigt — hier nur kurz referenzieren
+      uniqueRisks.forEach(c => items.push(
+        `📋 Registrierung in <strong>${_qcCountryName(c)}</strong> beantragen oder Steuerberater konsultieren`
+      ));
     } else {
       items.push('✅ Kein Registrierungsrisiko erkannt');
     }
     return items.map(i => `<li>${i}</li>`).join('');
+  })();
+
+  const regBannerHtml = (() => {
+    const uniqueRisks = [...new Set(r.regRisks)];
+    if (r.triangle || uniqueRisks.length === 0) return '';
+    return uniqueRisks.map(c => {
+      const rate   = _qcRate(c);
+      const isL2   = r.l2.regRisk === c;
+      const rechnung = isL2 ? 'Ausgangsrechnung (L2)' : 'Eingangsrechnung (L1)';
+      return `<div class="qc-reg-banner">
+        <div class="qc-reg-banner-title">🚨 Registrierungspflicht ${_qcCountryName(c)} (${rate} %)</div>
+        <div class="qc-reg-banner-body">${qcState.company} hat keine ${c}-UID. Ohne Registrierung kann die ${rechnung} nicht korrekt mit lokaler MwSt ausgestellt werden.</div>
+      </div>`;
+    }).join('');
   })();
 
   el.innerHTML = `
@@ -11389,6 +11406,8 @@ function renderQuickCheck() {
       </div>
 
       <div class="qc-divider"></div>
+
+      ${regBannerHtml}
 
       <div class="qc-moving-banner">
         📦 <strong>Bewegte Lieferung: ${movingLabel}</strong>
