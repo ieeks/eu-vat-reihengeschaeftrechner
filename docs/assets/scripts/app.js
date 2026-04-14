@@ -11063,6 +11063,20 @@ function buildQuickCheck() {
 
   const eng = VATEngine.run(ctx);
 
+  console.log('QC-DEBUG IT:', JSON.stringify({
+    movingIndex: eng.movingIndex,
+    trianglePossible: eng.trianglePossible,
+    supplies: (eng.supplies||[]).map(s => ({
+      label: s.label,
+      vatTreatment: s.vatTreatment,
+      rcApplicable: s.rcApplicable,
+      rcBlockReason: s.rcBlockReason,
+      iAmTheSeller: s.iAmTheSeller,
+      iAmTheBuyer: s.iAmTheBuyer,
+      placeOfSupply: s.placeOfSupply,
+    }))
+  }));
+
   // ── RC-Erkennung (aus Engine-Supplies) ───────────────────────────────
   const _engS    = eng.supplies || [];
   const l1IsRC   = _engS[0]?.vatTreatment === 'rc';
