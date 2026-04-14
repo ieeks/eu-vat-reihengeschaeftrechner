@@ -11043,6 +11043,56 @@ function buildQuickCheck() {
   }
   const _triUid = _qcTriangleUid(vatIds, dep, dest, home);
 
+  // ── Kurzschluss fuer dep===dest (nicht CH): Engine wuerde falschen Kontext ────
+  // bekommen (s2=home). Stattdessen direkt eigene Inland-Logik ohne Engine.
+  if (dep === dest && dep !== 'CH') {
+    const rate        = _qcRate(dep);
+    const hasUID      = !!vatIds[dep] || dep === home;
+    const sapEntryDom = SAP_TAX_MAP[company]?.[dep]?.['domestic'] || SAP_TAX_MAP[company]?.[home]?.['domestic'];
+    // IT ohne eigene UID → RC (Art. 17 Abs. 2 DPR 633/1972 — inversione contabile)
+    const itRC = dep === 'IT' && !vatIds['IT'];
+    const l1 = itRC ? {
+      type:'rc', title:`Reverse Charge — ${_qcCountryName('IT')}`,
+      taxInfo:`0 % — Steuerschuldner ist ${company} (RC)`,
+      sapCode: SAP_TAX_MAP[company]?.['IT']?.['rc']?.in || null,
+      sapDesc: SAP_TAX_MAP[company]?.['IT']?.['rc']?.desc || null,
+      sapNote: `Art. 17 Abs. 2 DPR 633/1972 – inversione contabile: Lieferant nicht IT-registriert → ${company} schuldet IVA.`,
+      reqs:   [`UID Lieferant (IT)`, `UID ${company}`, '"Steuerschuldner ist der Leistungsempfänger"'],
+      regRisk: null,
+    } : {
+      type:'domestic', title:`Inlandslieferung — steuerpflichtig ${_qcCountryName(dep)} ${rate} %`,
+      taxInfo:`${rate} % ${dep}-MwSt (Inlandslieferung)`,
+      sapCode: hasUID ? (sapEntryDom?.in || null) : null,
+      sapDesc: hasUID ? (sapEntryDom?.desc || null) : null,
+      sapNote: hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${dep}-UID`,
+      reqs:   [`Eingangsrechnung mit ${rate} % ${dep}-MwSt`, `UID ${company} (${vatIds[dep] || dep})`],
+      regRisk: hasUID ? null : dep,
+    };
+    const rcEntryOut = SAP_TAX_MAP[company]?.[dep]?.['rc'];
+    const effectiveOut  = sapEntryDom?.out ?? rcEntryOut?.out ?? null;
+    const effectiveDesc = sapEntryDom?.out ? sapEntryDom.desc : (rcEntryOut?.desc || sapEntryDom?.desc);
+    const l2 = itRC ? {
+      type:'rc', title:`Reverse Charge — ${_qcCountryName('IT')}`,
+      taxInfo:'0 % — Steuerschuldner ist der Käufer (RC)',
+      sapCode: SAP_TAX_MAP[company]?.['IT']?.['rc']?.out || null,
+      sapDesc: SAP_TAX_MAP[company]?.['IT']?.['rc']?.desc || null,
+      sapNote: null,
+      reqs:   [`UID ${company}`, 'UID Kunde (IT)', '"Steuerschuldner ist der Leistungsempfänger"'],
+      regRisk: null,
+    } : {
+      type:'domestic', title:`Inlandslieferung — steuerpflichtig ${_qcCountryName(dest)} ${rate} %`,
+      taxInfo:`${rate} % ${dest}-MwSt`,
+      sapCode: hasUID ? effectiveOut : null,
+      sapDesc: hasUID ? (effectiveDesc || null) : null,
+      sapNote: hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${dest}-UID`,
+      reqs:   [`UID ${company}`, `UID Kunde (${dest})`, `Steuerbetrag ${rate} %`],
+      regRisk: hasUID ? null : dest,
+    };
+    const regRisks = [l1.regRisk, l2.regRisk].filter(Boolean);
+    return { movingL1:true, l1, l2, triangle:false, triangleUidCountry:null, triangleUid:null,
+             regRisks, art36aHint:false, dep, dest, company, home };
+  }
+
   // ── Engine-Kontext aufbauen ───────────────────────────────────────────
   const transportMap = { supplier: 'A', middle: 'B', customer: 'C' };
   const ctx = Object.freeze({
@@ -11062,20 +11112,6 @@ function buildQuickCheck() {
   });
 
   const eng = VATEngine.run(ctx);
-
-  console.log('QC-DEBUG IT:', JSON.stringify({
-    movingIndex: eng.movingIndex,
-    trianglePossible: eng.trianglePossible,
-    supplies: (eng.supplies||[]).map(s => ({
-      label: s.label,
-      vatTreatment: s.vatTreatment,
-      rcApplicable: s.rcApplicable,
-      rcBlockReason: s.rcBlockReason,
-      iAmTheSeller: s.iAmTheSeller,
-      iAmTheBuyer: s.iAmTheBuyer,
-      placeOfSupply: s.placeOfSupply,
-    }))
-  }));
 
   // ── RC-Erkennung (aus Engine-Supplies) ───────────────────────────────
   const _engS    = eng.supplies || [];
@@ -11121,30 +11157,6 @@ function buildQuickCheck() {
     l1.sapNote  = 'EUSt-Bescheid dient als Vorsteuerbeleg';
     l1.reqs     = ['Zollanmeldung', 'EUSt-Bescheid als Vorsteuerbeleg', 'EORI-Nummer'];
     l1.regRisk  = null;
-  } else if (dep === dest) {
-    // Inland — Ware bleibt im selben Land, kein ig. Vorgang
-    if (l1IsRC) {
-      l1.type    = 'rc';
-      l1.title   = `Reverse Charge — ${_qcCountryName(dep)}`;
-      l1.taxInfo = `0 % — Steuerschuldner ist ${company} (RC)`;
-      l1.sapCode = SAP_TAX_MAP[company]?.[dep]?.['rc']?.in
-        || SAP_TAX_MAP[company]?.[home]?.['rc']?.in || null;
-      l1.reqs    = [`UID Lieferant (${dep})`, `UID ${company}`, '"Steuerschuldner ist der Leistungsempfänger"'];
-      l1.sapNote = l1RCNote;
-      l1.regRisk = null;
-    } else {
-      const rate    = _qcRate(dep);
-      const hasUID  = !!vatIds[dep] || dep === home;
-      const sapEntry = SAP_TAX_MAP[company]?.[dep]?.['domestic'] || SAP_TAX_MAP[company]?.[home]?.['domestic'];
-      l1.type    = 'domestic';
-      l1.title   = `Inlandslieferung — steuerpflichtig ${_qcCountryName(dep)} ${rate} %`;
-      l1.taxInfo = `${rate} % ${dep}-MwSt (Inlandslieferung)`;
-      l1.sapCode = hasUID ? (sapEntry?.in || null) : null;
-      l1.sapDesc = hasUID ? (sapEntry?.desc || null) : null;
-      l1.sapNote = hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${dep}-UID`;
-      l1.reqs    = [`Eingangsrechnung mit ${rate} % ${dep}-MwSt`, `UID ${company} (${_myUid(dep)})`];
-      l1.regRisk = hasUID ? null : dep;
-    }
   } else if (movingL1) {
     // ig. Erwerb — Erwerb findet im Empfangsland (dest) statt; EPDE gibt dem Lieferanten dest-UID
     const hasDestUID  = !!vatIds[dest] || dest === home;
@@ -11209,33 +11221,6 @@ function buildQuickCheck() {
       'Kein EU-Recht anwendbar',
     ];
     l2.regRisk = hasUID ? null : 'CH';
-  } else if (dep === dest) {
-    // Inland — L2 im selben Land wie L1
-    if (l2IsRC) {
-      l2.type    = 'rc';
-      l2.title   = `Reverse Charge — ${_qcCountryName(dest)}`;
-      l2.taxInfo = '0 % — Steuerschuldner ist der Käufer (RC)';
-      l2.sapCode = SAP_TAX_MAP[company]?.[dest]?.['rc']?.out
-        || SAP_TAX_MAP[company]?.[home]?.['rc']?.out || null;
-      l2.reqs    = [`UID ${company}`, `UID Kunde (${dest})`, '"Steuerschuldner ist der Leistungsempfänger"'];
-      l2.sapNote = l2RCNote;
-      l2.regRisk = null;
-    } else {
-      const rate    = _qcRate(dest);
-      const hasUID  = !!vatIds[dest] || dest === home;
-      const sapEntry = SAP_TAX_MAP[company]?.[dest]?.['domestic'] || SAP_TAX_MAP[company]?.[home]?.['domestic'];
-      const rcEntry  = SAP_TAX_MAP[company]?.[dest]?.['rc'];
-      const effectiveOut  = sapEntry?.out ?? rcEntry?.out ?? null;
-      const effectiveDesc = sapEntry?.out ? sapEntry.desc : (rcEntry?.desc || sapEntry?.desc);
-      l2.type    = 'domestic';
-      l2.title   = `Inlandslieferung — steuerpflichtig ${_qcCountryName(dest)} ${rate} %`;
-      l2.taxInfo = `${rate} % ${dest}-MwSt`;
-      l2.sapCode = hasUID ? effectiveOut : null;
-      l2.sapDesc = hasUID ? (effectiveDesc || null) : null;
-      l2.sapNote = hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${dest}-UID`;
-      l2.reqs    = [`UID ${company}`, `UID Kunde (${dest})`, `Steuerbetrag ${rate} %`];
-      l2.regRisk = hasUID ? null : dest;
-    }
   } else if (destIsThird) {
     const isCH = dest === 'CH';
     const sapEntry = isCH
