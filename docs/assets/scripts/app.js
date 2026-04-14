@@ -11093,17 +11093,28 @@ function buildQuickCheck() {
     l1.regRisk  = null;
   } else if (dep === dest) {
     // Inland — Ware bleibt im selben Land, kein ig. Vorgang
-    const rate    = _qcRate(dep);
-    const hasUID  = !!vatIds[dep] || dep === home;
-    const sapEntry = SAP_TAX_MAP[company]?.[dep]?.['domestic'] || SAP_TAX_MAP[company]?.[home]?.['domestic'];
-    l1.type    = 'domestic';
-    l1.title   = `Inlandslieferung — steuerpflichtig ${_qcCountryName(dep)} ${rate} %`;
-    l1.taxInfo = `${rate} % ${dep}-MwSt (Inlandslieferung)`;
-    l1.sapCode = hasUID ? (sapEntry?.in || null) : null;
-    l1.sapDesc = hasUID ? (sapEntry?.desc || null) : null;
-    l1.sapNote = hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${dep}-UID`;
-    l1.reqs    = [`Eingangsrechnung mit ${rate} % ${dep}-MwSt`, `UID ${company} (${_myUid(dep)})`];
-    l1.regRisk = hasUID ? null : dep;
+    if (l1IsRC) {
+      l1.type    = 'rc';
+      l1.title   = `Reverse Charge — ${_qcCountryName(dep)}`;
+      l1.taxInfo = `0 % — Steuerschuldner ist ${company} (RC)`;
+      l1.sapCode = SAP_TAX_MAP[company]?.[dep]?.['rc']?.in
+        || SAP_TAX_MAP[company]?.[home]?.['rc']?.in || null;
+      l1.reqs    = [`UID Lieferant (${dep})`, `UID ${company}`, '"Steuerschuldner ist der Leistungsempfänger"'];
+      l1.sapNote = l1RCNote;
+      l1.regRisk = null;
+    } else {
+      const rate    = _qcRate(dep);
+      const hasUID  = !!vatIds[dep] || dep === home;
+      const sapEntry = SAP_TAX_MAP[company]?.[dep]?.['domestic'] || SAP_TAX_MAP[company]?.[home]?.['domestic'];
+      l1.type    = 'domestic';
+      l1.title   = `Inlandslieferung — steuerpflichtig ${_qcCountryName(dep)} ${rate} %`;
+      l1.taxInfo = `${rate} % ${dep}-MwSt (Inlandslieferung)`;
+      l1.sapCode = hasUID ? (sapEntry?.in || null) : null;
+      l1.sapDesc = hasUID ? (sapEntry?.desc || null) : null;
+      l1.sapNote = hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${dep}-UID`;
+      l1.reqs    = [`Eingangsrechnung mit ${rate} % ${dep}-MwSt`, `UID ${company} (${_myUid(dep)})`];
+      l1.regRisk = hasUID ? null : dep;
+    }
   } else if (movingL1) {
     // ig. Erwerb — Erwerb findet im Empfangsland (dest) statt; EPDE gibt dem Lieferanten dest-UID
     const hasDestUID  = !!vatIds[dest] || dest === home;
@@ -11151,7 +11162,34 @@ function buildQuickCheck() {
 
   // ── Step 2+3: L2 (Ausgangsrechnung — Company → Kunde) ────────────────
   const l2 = {};
-  if (destIsThird) {
+  if (dep === dest) {
+    // Inland — L2 im selben Land wie L1
+    if (l2IsRC) {
+      l2.type    = 'rc';
+      l2.title   = `Reverse Charge — ${_qcCountryName(dest)}`;
+      l2.taxInfo = '0 % — Steuerschuldner ist der Käufer (RC)';
+      l2.sapCode = SAP_TAX_MAP[company]?.[dest]?.['rc']?.out
+        || SAP_TAX_MAP[company]?.[home]?.['rc']?.out || null;
+      l2.reqs    = [`UID ${company}`, `UID Kunde (${dest})`, '"Steuerschuldner ist der Leistungsempfänger"'];
+      l2.sapNote = l2RCNote;
+      l2.regRisk = null;
+    } else {
+      const rate    = _qcRate(dest);
+      const hasUID  = !!vatIds[dest] || dest === home;
+      const sapEntry = SAP_TAX_MAP[company]?.[dest]?.['domestic'] || SAP_TAX_MAP[company]?.[home]?.['domestic'];
+      const rcEntry  = SAP_TAX_MAP[company]?.[dest]?.['rc'];
+      const effectiveOut  = sapEntry?.out ?? rcEntry?.out ?? null;
+      const effectiveDesc = sapEntry?.out ? sapEntry.desc : (rcEntry?.desc || sapEntry?.desc);
+      l2.type    = 'domestic';
+      l2.title   = `Inlandslieferung — steuerpflichtig ${_qcCountryName(dest)} ${rate} %`;
+      l2.taxInfo = `${rate} % ${dest}-MwSt`;
+      l2.sapCode = hasUID ? effectiveOut : null;
+      l2.sapDesc = hasUID ? (effectiveDesc || null) : null;
+      l2.sapNote = hasUID ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${dest}-UID`;
+      l2.reqs    = [`UID ${company}`, `UID Kunde (${dest})`, `Steuerbetrag ${rate} %`];
+      l2.regRisk = hasUID ? null : dest;
+    }
+  } else if (destIsThird) {
     const isCH = dest === 'CH';
     const sapEntry = isCH
       ? (SAP_TAX_MAP[company]?.['CH']?.['export'] || SAP_TAX_MAP[company]?.[home]?.['export'])
