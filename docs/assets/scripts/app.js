@@ -11273,11 +11273,9 @@ function renderQuickCheck() {
   const r = buildQuickCheck();
 
   const movingLabel = r.movingL1 ? 'L1 (Lieferant → ' + coLabel + ')' : 'L2 (' + coLabel + ' → Kunde)';
-  const movingReason = transport === 'supplier' ? 'Lieferant organisiert Transport → L1 bewegte Lieferung'
-    : transport === 'customer' ? 'Kunde organisiert Transport → L2 bewegte Lieferung'
-    : r.art36aHint
-      ? `${coLabel} organisiert Transport → L1 bewegte Lieferung (Art. 36a beachten)`
-      : `${coLabel} organisiert Transport → L1 bewegte Lieferung`;
+  const _transporter = transport === 'supplier' ? 'Lieferant' : transport === 'customer' ? 'Kunde' : coLabel;
+  const _art36a = transport === 'middle' && r.art36aHint ? ' (Art. 36a beachten)' : '';
+  const movingReason = `${_transporter} organisiert Transport → ${r.movingL1 ? 'L1' : 'L2'} bewegte Lieferung${_art36a}`;
 
   const art36aBox = r.art36aHint ? `
     <div class="qc-hint qc-hint--warn">
