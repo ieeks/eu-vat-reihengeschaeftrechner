@@ -104,7 +104,7 @@ const SAP_TAX_MAP = {
       'export':               { out:'G0', in:null,  desc:'Ausfuhr DE→CH 0% (§ 6 UStG)' },
     },
     IT: {
-      'rc':                   { out:'IC', in:null,  desc:'Inversione contabile IT 0% (Art. 17 DPR 633)' },
+      'rc':                   { out:'IC', in:'VI',  desc:'Inversione contabile IT 0% (Art. 17 DPR 633)' },
       'ic-acquisition':       { out:null, in:'IP',  desc:'IG-Erwerb IT 22%' },
       'domestic-input':       { out:null, in:'VI',  desc:'Vorsteuer IT 22%' },
       'domestic':             { out:null, in:'VI',  desc:'Vorsteuer IT 22% (Eingangsrechnung)' },
