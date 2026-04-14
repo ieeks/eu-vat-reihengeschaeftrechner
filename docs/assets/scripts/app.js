@@ -11083,7 +11083,23 @@ function buildQuickCheck() {
 
   // ── Step 2+3: L1 (Eingangsrechnung — Lieferant → Company) ────────────
   const l1 = {};
-  if (depIsThird) {
+  if (dep === 'CH' && dest === 'CH') {
+    // CH-Inland: kein EU-Recht, beide Lieferungen sind CH-Inlandslieferungen
+    const hasUID   = !!vatIds['CH'];
+    const sapEntry = SAP_TAX_MAP[company]?.['CH']?.['domestic'];
+    l1.type    = 'ch-inland';
+    l1.title   = 'CH-Inlandslieferung — 8,1 % CH-MWST';
+    l1.taxInfo = '8,1 % CH-MWST (Inlandslieferung Schweiz)';
+    l1.sapCode = hasUID ? (sapEntry?.in || null) : null;
+    l1.sapDesc = hasUID ? (sapEntry?.desc || null) : null;
+    l1.sapNote = hasUID ? null : 'Keine CH-Registrierung — Registrierung bei ESTV prüfen (Art. 10 MWSTG)';
+    l1.reqs    = [
+      'Eingangsrechnung mit 8,1 % CH-MWST',
+      hasUID ? `CH-UID ${company} (${vatIds['CH'] || 'CHE-xxx.xxx.xxx MWST'})` : 'CH-UID beantragen',
+      `${company} zieht als Vorsteuer ab`,
+    ];
+    l1.regRisk = hasUID ? null : 'CH';
+  } else if (depIsThird) {
     l1.type     = 'import';
     l1.title    = `Einfuhr aus ${_qcCountryName(dep)}`;
     l1.taxInfo  = 'Einfuhrumsatzsteuer (EUSt)';
@@ -11162,7 +11178,24 @@ function buildQuickCheck() {
 
   // ── Step 2+3: L2 (Ausgangsrechnung — Company → Kunde) ────────────────
   const l2 = {};
-  if (dep === dest) {
+  if (dep === 'CH' && dest === 'CH') {
+    // CH-Inland: kein EU-Recht
+    const hasUID   = !!vatIds['CH'];
+    const sapEntry = SAP_TAX_MAP[company]?.['CH']?.['domestic'];
+    l2.type    = 'ch-inland';
+    l2.title   = 'CH-Inlandslieferung — 8,1 % CH-MWST';
+    l2.taxInfo = `8,1 % CH-MWST — ${company} fakturiert mit CH-UID`;
+    l2.sapCode = hasUID ? (sapEntry?.out || null) : null;
+    l2.sapDesc = hasUID ? (sapEntry?.desc || null) : null;
+    l2.sapNote = hasUID ? null : 'Keine CH-Registrierung — Registrierung bei ESTV prüfen (Art. 10 MWSTG)';
+    l2.reqs    = [
+      hasUID ? `CH-UID ${company} (${vatIds['CH'] || 'CHE-xxx.xxx.xxx MWST'})` : 'CH-UID beantragen',
+      'UID Kunde (CH)',
+      'Steuerbetrag 8,1 %',
+      'Kein EU-Recht anwendbar',
+    ];
+    l2.regRisk = hasUID ? null : 'CH';
+  } else if (dep === dest) {
     // Inland — L2 im selben Land wie L1
     if (l2IsRC) {
       l2.type    = 'rc';
@@ -11310,6 +11343,7 @@ function renderQuickCheck() {
   // ── Result ────────────────────────────────────────────────────────────
   const r = buildQuickCheck();
 
+  const isCHInland = r.dep === 'CH' && r.dest === 'CH';
   const movingLabel = r.movingL1 ? 'L1 (Lieferant → ' + coLabel + ')' : 'L2 (' + coLabel + ' → Kunde)';
   const _transporter = transport === 'supplier' ? 'Lieferant' : transport === 'customer' ? 'Kunde' : coLabel;
   const _art36a = transport === 'middle' && r.art36aHint ? ' (Art. 36a beachten)' : '';
@@ -11409,10 +11443,10 @@ function renderQuickCheck() {
 
       ${regBannerHtml}
 
-      <div class="qc-moving-banner">
-        📦 <strong>Bewegte Lieferung: ${movingLabel}</strong>
-        <span class="qc-moving-reason">${movingReason}</span>
-      </div>
+      ${isCHInland
+        ? `<div class="qc-moving-banner qc-ch-inland">🇨🇭 <strong>CH-Inlandsgeschäft</strong><span class="qc-moving-reason">Kein EU-Recht anwendbar — beide Lieferungen sind CH-Inlandslieferungen (8,1 % CH-MWST)</span></div>`
+        : `<div class="qc-moving-banner">📦 <strong>Bewegte Lieferung: ${movingLabel}</strong><span class="qc-moving-reason">${movingReason}</span></div>`
+      }
 
       ${art36aBox}
 
