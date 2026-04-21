@@ -43,13 +43,14 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 - **Warenfluss-Diagramm** — SVG inkl. Inland + CH/GB Export
 - **P0 Warnungen** — Ruhende Lieferung ohne UID → 4 Handlungsoptionen
 - **Weitere Hinweise** — sekundäre Hints werden auf Desktop in ein einklappbares Panel verschoben
+- **🟢 Quick Check Tab** — Schnellansicht im Full-Width-Modus (linke Spalte hidden); zeigt bewegte Lieferung, SAP-Codes, Registrierungsrisiken; Toggle-Button im Header mit `✕`-Indikator
 - **⚖ Vergleich-Tab** — Transport-Szenarien nebeneinander (Supplier/Middle/Customer)
 - **Experten-Modus** — 5 Tabs + Perspektivwechsel
 
 ## Aktueller Fokus
-- `⚖ Vergleich-Tab` ist fachlich harmonisiert (Session 17) — finale Browserabnahme offen
+- **Quick Check Tab:** Full-Width-Modus aktiv — linke Spalte wird ausgeblendet, Ergebnis-Panel auf 100 % (Session 21)
+- Finale Browserabnahme v4.2 ausstehend
 - `/vat-knowledge/` Wissensbasis: 16 Markdown-Dateien (EU/AT/DE/CH Recht ↔ Code-Mapping)
-- Drop-Shipment EU: prominenter UID-Pflicht-Block vor Diagramm (Mobile-first)
 
 ## Drittland-Support
 - **CH (Schweiz):** 2P und 3P, DAP/DDP, BAZG, EUSt 8,1%, FHA

@@ -2,6 +2,20 @@
 
 ---
 
+## v4.2 · 21.04.2026 — Session 21
+
+### Quick Check Tab — Full-Width Layout + Exit UX
+
+- **Full-Width Mode:** `html.qc-active` blendet `.pane-left` aus und expandiert `.pane-right` auf 100 % Breite (Desktop + Mobile)
+- **Header-Button:** Grüner Hintergrund + `✕`-Suffix via `html.qc-active .qc-header-btn::after` wenn QC aktiv — kein JS-Class-Toggle nötig
+- **`toggleQuickCheck(btn)`** — ersetzt direkten `switchTab`-Call im Header-Button; wirkt als Toggle (Klick 1 → öffnet QC, Klick 2 → zurück zum Ergebnis-Tab)
+- **Exit-Chip im Panel:** `qc-exit-bar` ganz oben im QC-Panel mit `← Zum Ergebnis ✕` — zweiter Ausstiegsweg, besonders für Mobile
+- **STRUKTUR-Header readonly:** zeigt „3" aktiv, „4" und „Lohnveredelung" gedimmt + „Phase 1 — nur 3-Parteien-Modus" Hinweis
+- **`#qcBackBar` dauerhaft versteckt:** alter Back-Bar ist durch Exit-Chip abgelöst
+- `npm run check` grün
+
+---
+
 ## v4.2 · 09.04.2026 — Session 20
 
 ### Quick Check Tab — Phase 1

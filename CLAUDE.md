@@ -64,13 +64,15 @@ Reihengeschaeftsrechner_22.html
 Tests
 v4 UI Layer
   toggleDevMode() ← Dev-Overlay mit JS-Tooltip (v4.2)
+  toggleQuickCheck(btn) ← QC Header-Button Toggle; Exit via basisBtn aus #tabBar (v4.2 Session 21)
 ```
 
 ## Aktuelle P0-Baustelle
 
 - `buildVergleichTab()` ist in Session 17 fachlich harmonisiert (statusCell/recommendationCell/reasonCell/art41Cell + dreiecksOpportunity pro Szenario)
-- `buildTrafficStatus` RED-Branch und `analyzeInland` regBanner zeigen jetzt konkrete Risiken mit Land + Steuersatz (Session 18)
-- Offen: Finale Browserabnahme der `docs/`-App (Release v4.2)
+- `buildTrafficStatus` RED-Branch und `analyzeInland` regBanner zeigen konkrete Risiken mit Land + Steuersatz (Session 18)
+- Quick Check Tab: Full-Width-Modus fertig (Session 21) — `html.qc-active`, `toggleQuickCheck()`, Exit-Chip, STRUKTUR-Header
+- Offen: Finale Browserabnahme der `docs/`-App (Release v4.2) inkl. QC-Fullwidth-Tests
 - Änderungen am Vergleich nur minimal und mit echten Referenzfällen prüfen; keine neue Heuristik einführen, die vom Hauptstatus abweicht
 
 ## Output-Hierarchie
