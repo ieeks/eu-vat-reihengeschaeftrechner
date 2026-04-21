@@ -11016,7 +11016,7 @@ function handleURLParams() {
 //  Eigener State, völlig unabhängig vom Haupt-Formular.
 // ═══════════════════════════════════════════════════════════════════════
 
-let qcState = { company: 'EPDE', dep: 'DE', dest: 'PL', transport: 'supplier' };
+let qcState = { company: 'EPDE', dep: 'DE', dest: 'PL', transport: 'supplier', mode: '3p' };
 
 // Länder alphabetisch sortiert (EU-27 + CH + GB)
 const QC_COUNTRIES = EU.slice().sort((a, b) => a.name.localeCompare(b.name, 'de'));
@@ -11328,7 +11328,8 @@ function renderQuickCheck() {
   const backBar = $('qcBackBar');
   if (backBar) backBar.style.display = 'none';
 
-  const { company, dep, dest, transport } = qcState;
+  const { company, dep, dest, transport, mode } = qcState;
+  const comingSoonLabels = { '4p': '4-Parteien-Modus', 'lohn': 'Lohnveredelung' };
 
   // ── Dropdown HTML ─────────────────────────────────────────────────────
   const depOpts  = QC_COUNTRIES.map(c =>
@@ -11432,13 +11433,20 @@ function renderQuickCheck() {
       <div class="qc-struktur-header">
         <span class="sec-hdr" style="font-size:0.72rem;opacity:0.6;">👥 STRUKTUR</span>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-          <button class="party-btn active" disabled>3</button>
-          <button class="party-btn" disabled style="opacity:0.4">4</button>
-          <button class="party-btn" disabled style="opacity:0.4;font-size:0.72rem;">🔧 Lohnveredelung</button>
-          <span style="font-size:0.68rem;color:var(--tx-2);opacity:0.7;margin-left:6px;">Phase 1 — nur 3-Parteien-Modus</span>
+          <button class="party-btn ${mode === '3p' ? 'active' : ''}" onclick="qcState.mode='3p';renderQuickCheck()">3</button>
+          <button class="party-btn qc-btn-soon ${mode === '4p' ? 'active' : ''}" onclick="renderQcComingSoon('4p')">4</button>
+          <button class="party-btn qc-btn-soon ${mode === 'lohn' ? 'active' : ''}" style="font-size:0.72rem;" onclick="renderQcComingSoon('lohn')">🔧 Lohnveredelung</button>
         </div>
       </div>
 
+      <div id="qc-result-area">
+      ${mode !== '3p' ? `
+        <div class="qc-coming-soon">
+          <span class="qc-coming-soon-icon">🚧</span>
+          <div class="qc-coming-soon-title">${comingSoonLabels[mode]} — Coming Soon</div>
+          <div class="qc-coming-soon-text">Dieser Modus wird nach Abnahme des 3-Parteien-Modus implementiert.</div>
+        </div>
+      ` : `
       <div class="qc-form">
         <div class="qc-form-row">
           <div class="qc-field">
@@ -11483,8 +11491,15 @@ function renderQuickCheck() {
         <div class="qc-hints-hdr">ℹ️ Weitere Hinweise</div>
         <ul class="qc-hints-list">${hintsHtml}</ul>
       </div>
+      `}
+      </div>
 
     </div>`;
+}
+
+function renderQcComingSoon(mode) {
+  qcState.mode = mode;
+  renderQuickCheck();
 }
 
 // Boot

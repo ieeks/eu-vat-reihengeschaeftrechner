@@ -2639,3 +2639,46 @@ html.qc-active .qc-header-btn::after {
   margin-bottom: 14px;
   flex-wrap: wrap;
 }
+
+/* QC struktur button: "coming soon" badge */
+.qc-btn-soon {
+  position: relative;
+  opacity: 0.65;
+}
+.qc-btn-soon::after {
+  content: 'soon';
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  background: var(--tx-2);
+  color: var(--surface);
+  padding: 1px 4px;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* QC coming soon panel */
+.qc-coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--tx-2);
+}
+.qc-coming-soon-icon { font-size: 2rem; }
+.qc-coming-soon-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--tx-1);
+}
+.qc-coming-soon-text {
+  font-size: 0.78rem;
+  max-width: 320px;
+  line-height: 1.6;
+}
