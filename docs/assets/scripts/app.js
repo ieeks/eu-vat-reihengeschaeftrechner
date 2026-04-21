@@ -9032,6 +9032,17 @@ function switchTab(id, btn) {
   btn.classList.add('active');
 }
 
+function toggleQuickCheck(btn) {
+  if (document.documentElement.classList.contains('qc-active')) {
+    const basisBtn = document.querySelector('#tabBar .tab-btn.active')
+                     || document.querySelector('#tabBar .tab-btn');
+    switchTab('basis', basisBtn || btn);
+  } else {
+    switchTab('quickcheck', btn);
+    renderQuickCheck();
+  }
+}
+
 function switchTabSilent(id) {
   activeTab = id;
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -11314,9 +11325,8 @@ function renderQuickCheck() {
   const el = $('tab-quickcheck');
   if (!el) return;
 
-  // Show back-bar only in non-expert mode
   const backBar = $('qcBackBar');
-  if (backBar) backBar.style.display = expertMode ? 'none' : 'flex';
+  if (backBar) backBar.style.display = 'none';
 
   const { company, dep, dest, transport } = qcState;
 
@@ -11413,6 +11423,21 @@ function renderQuickCheck() {
 
   el.innerHTML = `
     <div class="qc-wrap">
+
+      <div class="qc-exit-bar">
+        <span class="qc-exit-hint">🟢 Quick Check Modus</span>
+        <button class="qc-exit-btn" onclick="toggleQuickCheck()">← Zum Ergebnis ✕</button>
+      </div>
+
+      <div class="qc-struktur-header">
+        <span class="sec-hdr" style="font-size:0.72rem;opacity:0.6;">👥 STRUKTUR</span>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <button class="party-btn active" disabled>3</button>
+          <button class="party-btn" disabled style="opacity:0.4">4</button>
+          <button class="party-btn" disabled style="opacity:0.4;font-size:0.72rem;">🔧 Lohnveredelung</button>
+          <span style="font-size:0.68rem;color:var(--tx-2);opacity:0.7;margin-left:6px;">Phase 1 — nur 3-Parteien-Modus</span>
+        </div>
+      </div>
 
       <div class="qc-form">
         <div class="qc-form-row">
