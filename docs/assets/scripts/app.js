@@ -9468,7 +9468,7 @@ function exportPDF() { window.print(); }
 
 function switchToDesign(version) {
   const params = window.location.search;
-  window.location.href = version === 'v1' ? '../v1/index.html' + params : '../index.html' + params;
+  window.location.href = version === 'v1' ? './v1/index.html' + params : '../index.html' + params;
 }
 
 // ── Tests ────────────────────────────────────────────────────────────
