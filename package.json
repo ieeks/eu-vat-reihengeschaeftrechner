@@ -1,13 +1,17 @@
 {
   "name": "eu-vat-reihengeschaeftrechner",
   "private": true,
-  "version": "4.2.0",
+  "version": "4.3.0",
   "description": "Lokaler Start- und Prüfrahmen für den EU VAT Reihengeschäftsrechner",
   "type": "module",
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "start": "node scripts/serve.mjs",
     "check": "node scripts/serve.mjs --check",
-    "check:pages": "node scripts/serve.mjs --check-pages"
+    "check:pages": "node scripts/serve.mjs --check-pages",
+    "test": "node scripts/test.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
   }
 }
