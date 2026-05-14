@@ -9830,7 +9830,7 @@ function renderUIDInline() {
     </div>
     <div class="uid-inline-field">
       <div class="uid-inline-label">Als Verkäufer (${sellerRole})</div>
-      <div class="uid-inline-val">${homeUID || '—'}</div>
+      <div class="uid-inline-val">${buyerUID || '—'}</div>
     </div>
   </div>`;
 }
