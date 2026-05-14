@@ -1,6 +1,6 @@
 # RGR TODO — Reihengeschäftsrechner v4.2
 
-Stand: 21.04.2026
+Stand: 14.05.2026
 
 ---
 
@@ -14,8 +14,10 @@ Stand: 21.04.2026
 - [x] **UID-Chip + Rechnungshinweis Ausfuhr** — Teal-Chip, 📄-Zeile bei dep=AT/DE (Session 19)
 - [x] **Dev-Mode data-component komplett** — buildRiskPanel, dreiecksDisclaimer, deliveryDetails, CH/GB-Hints (Session 19)
 - [x] **Quick Check: Full-Width Layout + Exit UX** — `html.qc-active`, `toggleQuickCheck()`, Exit-Chip, STRUKTUR-Header (Session 21)
-- [ ] **Release v4.2** — Finale Browserabnahme der `docs/`-App (inkl. Quick-Check-Fullwidth-Tests)
+- [x] **v4.3 Redesign live** — Light Theme, Header-Modus-Tabs, View-Nav, 4P-Diamond, v1/v2-Toggle (Session 22)
+- [x] **renderUIDInline() UID-Override** — L1+L2 zeigen selectedUidOverride; applyDreiecksUid() ruft renderUIDs() (Session 22)
 - [ ] **3P CH/GB Browsertest** — B003a (AT→AT→CH middle), B003b (AT→DE→CH supplier), GB analog
+- [ ] **Arrow-Labels 3P-Dreieck** — Steuersatz + Behandlung in L1/L2-Labels wieder ergänzen (beim Redesign vereinfacht)
 
 ---
 

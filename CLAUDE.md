@@ -8,9 +8,11 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 
 | Datei | Beschreibung |
 |---|---|
-| `docs/assets/scripts/app.js` | **Hauptdatei v4.2** (deploybare App-Logik) |
-| `docs/assets/styles/app.css` | Haupt-Styles der deploybaren App |
-| `docs/index.html` | Deploybare Multi-File-App |
+| `docs/assets/scripts/app.js` | **Hauptdatei v4.3** (deploybare App-Logik) |
+| `docs/assets/styles/app.css` | Haupt-Styles der deploybaren App (Light Theme v4.3) |
+| `docs/index.html` | Deploybare Multi-File-App — **v2 (Redesign)** |
+| `docs/v1/` | Eingefrorener v1-Stand (b1954f4) — Production-Fallback |
+| `docs/v1/index.html` | v1 Entry Point (dunkles Theme, QC-Topbar) |
 | `Reihengeschaeftsrechner_22.html` | Legacy-Snapshot der früheren Single-File-App |
 | `CLAUDE.md` | Diese Datei |
 | `README.md` | User-facing Übersicht |
@@ -30,7 +32,7 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 |---|---|---|
 | `v4.2-snapshot` · `b1954f4` | v4.2 vor Redesign (dunkles Theme, QC-Topbar fertig) | `git checkout v4.2-snapshot -- docs/` |
 
-> Tag lokal vorhanden. Vom Mac pushen: `git push origin v4.2-snapshot`
+> Tag auf GitHub gepusht. Alternativ: `docs/v1/` im Repo ist ein eingefrorener Stand desselben Commits.
 
 ## Entities
 
@@ -73,14 +75,22 @@ Tests
 v4 UI Layer
   toggleDevMode() ← Dev-Overlay mit JS-Tooltip (v4.2)
   toggleQuickCheck(btn) ← QC Header-Button Toggle; Exit via basisBtn aus #tabBar (v4.2 Session 21)
+
+v4.3 Header/Nav (Session 22)
+  setPartiesFromHeader(n, btn) ← Modus-Tab im Header → delegiert an setParties()
+  syncHeaderModeTabs(n)        ← Header-Tabs mit aktuellem Modus synchron halten
+  updateModeBadge(n)           ← Sidebar-Mode-Badge (Code + Titel + Beschreibung)
+  switchView(view, btn)        ← View-Nav (standard/quickcheck/vergleich) → delegiert an switchTab()
+  switchToDesign(version)      ← v1/v2 Toggle im ⋯-Menü; überträgt URL-Params
+  renderUIDInline()            ← Eigene UIDs: buyerUID = selectedUidOverride ?? homeUID
 ```
 
 ## Aktuelle P0-Baustelle
 
-- `buildVergleichTab()` ist in Session 17 fachlich harmonisiert (statusCell/recommendationCell/reasonCell/art41Cell + dreiecksOpportunity pro Szenario)
-- `buildTrafficStatus` RED-Branch und `analyzeInland` regBanner zeigen konkrete Risiken mit Land + Steuersatz (Session 18)
-- Quick Check Tab: Full-Width-Modus fertig (Session 21) — `html.qc-active`, `toggleQuickCheck()`, Exit-Chip, STRUKTUR-Header
-- Offen: Finale Browserabnahme der `docs/`-App (Release v4.2) inkl. QC-Fullwidth-Tests
+- v4.3 Redesign live auf `manuel-app.dev` (Session 22) — Light Theme, Header-Tabs, 4P-Diamond
+- v1/v2-Toggle im ⋯-Menü: `docs/index.html` = v2, `docs/v1/` = eingefrorener Production-Stand
+- `renderUIDInline()` zeigt selectedUidOverride korrekt für L1 und L2 (Session 22)
+- Offen: Arrow-Labels im 3P-Dreieck-Diagramm verarmt (kein Steuersatz mehr) — nice-to-have
 - Änderungen am Vergleich nur minimal und mit echten Referenzfällen prüfen; keine neue Heuristik einführen, die vom Hauptstatus abweicht
 
 ## Output-Hierarchie
