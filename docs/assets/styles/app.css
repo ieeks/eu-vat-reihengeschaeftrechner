@@ -754,7 +754,7 @@ header {
   color: var(--tx-2);
 }
 .t-opt:hover { border-color: var(--border-hi); }
-.t-opt.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+.t-opt.active { background: var(--tx-1); border-color: var(--tx-1); color: var(--bg); }
 .radio { display: none; }
 .t-label { }
 .t-role {
