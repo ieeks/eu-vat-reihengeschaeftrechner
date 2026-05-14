@@ -1592,14 +1592,51 @@ header {
 
 /* Print */
 @media print {
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  body { background: #fff !important; color: #111 !important; font-size: 11pt; overflow: auto; }
-  header, .pane-left { display: none !important; }
-  .app { display: block; height: auto; }
-  .pane-right { width: 100%; height: auto; overflow: visible; }
-  .pane-right-tabs { display: none !important; }
-  .pane-right-body { overflow: visible; height: auto; }
-  .tab-panel { display: flex !important; }
+  @page { margin: 1.5cm 1.5cm 2cm; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
+  body { background: #fff !important; color: #111 !important; font-size: 10pt; overflow: auto; margin: 0; }
+
+  /* ── Hide chrome / interactive UI ── */
+  header, .pane-left, .pane-right-tabs,
+  #testPanel, #vergleichModal, #dev-tooltip,
+  .h-overflow-wrap, .vgl-card-switch,
+  .detail-toggle, .sc-toggle,
+  .perspektiv-toggle-btn,
+  .dreiecks-uid-select-wrap { display: none !important; }
+
+  /* ── Layout ── */
+  .app { display: block !important; height: auto !important; overflow: visible !important; }
+  .pane-right { width: 100% !important; height: auto !important; overflow: visible !important; }
+  .pane-right-body { overflow: visible !important; height: auto !important; min-height: 0 !important; padding: 0 !important; gap: 10pt; }
+
+  /* ── Only the active tab ── */
+  .tab-panel { display: none !important; }
+  .tab-panel.active { display: flex !important; flex-direction: column !important; gap: 8pt !important; }
+
+  /* ── Force all collapsed sections open ── */
+  .detail-collapse { display: block !important; }
+  .detail-collapse-body { display: block !important; }
+  .flow-diagram-body { display: block !important; }
+  .uid-body { max-height: none !important; overflow: visible !important; }
+  .perspektiv-block { display: block !important; }
+  .perspektiv-body { display: block !important; }
+  .perspektiv-wrap { display: block !important; }
+
+  /* ── Always show hints and kurzbeschreibung ── */
+  .hint { display: flex !important; }
+  .hints { display: block !important; }
+  .kurz-box.fade { display: flex !important; }
+  .kurz-body { display: block !important; }
+  .kurz-title { display: block !important; }
+
+  /* ── Cards: no shadows or large radii ── */
+  .sc, .kurz-card, .hint-block, .sap-block, .legal-block,
+  .delivery-box, .flow-outer, .melde-block, .rpa-block,
+  .mov-card, .checklist-block { border-radius: 4pt !important; box-shadow: none !important; }
+
+  /* ── Page break hints ── */
+  .delivery-box, .sc, .hint-block, .kurz-card,
+  .traffic-status, .decision-step { page-break-inside: avoid; break-inside: avoid; }
 }
 
 /* ── v3.2 analysis output CSS (hint, delivery-box, flow-diagram, tldr, badge, etc.) ── */

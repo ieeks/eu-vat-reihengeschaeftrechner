@@ -9475,7 +9475,16 @@ function shareLink() {
 }
 
 // ── PDF export ───────────────────────────────────────────────────────
-function exportPDF() { window.print(); }
+function exportPDF() {
+  const prev = document.title;
+  const st = getState();
+  const co = document.querySelector('.co-pill button.active')?.textContent?.trim() || '';
+  const modeLabel = st.mode === 5 ? 'Lohn' : `${st.mode}P`;
+  const date = new Date().toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
+  document.title = `RGR ${co} · ${modeLabel} · ${date}`;
+  window.print();
+  document.title = prev;
+}
 
 function switchToDesign(version) {
   const params = window.location.search;
