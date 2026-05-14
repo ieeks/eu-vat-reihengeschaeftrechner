@@ -1470,11 +1470,11 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
 
       <!-- L1: A → B -->
       ${arrow(ab.sx, ab.sy, ab.ex, ab.ey, L1col)}
-      ${arrowLabel(mid(ab.sx,ab.ex)-14, mid(ab.sy,ab.ey)-8, L1lbl, L1col)}
+      ${arrowLabel(mid(ab.sx,ab.ex)-20, mid(ab.sy,ab.ey)-26, L1lbl, L1col)}
 
       <!-- L2: B → C -->
       ${arrow(bc.sx, bc.sy, bc.ex, bc.ey, L2col)}
-      ${arrowLabel(mid(bc.sx,bc.ex)+14, mid(bc.sy,bc.ey)-8, L2lbl, L2col)}
+      ${arrowLabel(mid(bc.sx,bc.ex)+20, mid(bc.sy,bc.ey)-26, L2lbl, L2col)}
 
       <!-- Nodes -->
       ${node(AX, AY, A, L1col !== '#6B7280', L1col !== '#6B7280' ? L1col : COL_BORDER)}

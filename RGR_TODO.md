@@ -17,7 +17,7 @@ Stand: 14.05.2026
 - [x] **v4.3 Redesign live** — Light Theme, Header-Modus-Tabs, View-Nav, 4P-Diamond, v1/v2-Toggle (Session 22)
 - [x] **renderUIDInline() UID-Override** — L1+L2 zeigen selectedUidOverride; applyDreiecksUid() ruft renderUIDs() (Session 22)
 - [ ] **3P CH/GB Browsertest** — B003a (AT→AT→CH middle), B003b (AT→DE→CH supplier), GB analog
-- [ ] **Arrow-Labels 3P-Dreieck** — Steuersatz + Behandlung in L1/L2-Labels wieder ergänzen (beim Redesign vereinfacht)
+- [x] **Arrow-Labels 3P-Dreieck** — Steuersatz + Behandlung restauriert, Positionierung oberhalb Pfeil korrigiert (Session 22)
 
 ---
 
