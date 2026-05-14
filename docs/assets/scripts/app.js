@@ -3305,6 +3305,7 @@ function applyDreiecksUid(supplier, me, customer, departure, destination) {
   }
   // Set the global UID override and re-run full analysis
   setState({ uidOverride: selectedDreiecksUidCode });
+  renderUIDs();
   // Also update the v4 UID override state so renderResult() picks it up
   if (typeof renderResult === 'function') {
     renderResult();
