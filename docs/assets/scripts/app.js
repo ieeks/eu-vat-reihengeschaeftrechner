@@ -9819,19 +9819,17 @@ function renderUIDInline() {
 
   // Relevant UIDs for this scenario
   const depCountry  = countries[meIdx] || countries[0];
-  const myUID = vids[depCountry] || '';
-
-  // Collect all my UIDs for display
-  const myUIDEntries = Object.entries(vids);
+  const homeUID = vids[depCountry] || '';
+  const buyerUID = (selectedUidOverride && vids[selectedUidOverride]) ? vids[selectedUidOverride] : homeUID;
 
   el.innerHTML = `<div class="uid-inline-grid">
     <div class="uid-inline-field">
       <div class="uid-inline-label">Als Käufer (${buyerRole})</div>
-      <div class="uid-inline-val">${myUID || '—'}</div>
+      <div class="uid-inline-val">${buyerUID || '—'}</div>
     </div>
     <div class="uid-inline-field">
       <div class="uid-inline-label">Als Verkäufer (${sellerRole})</div>
-      <div class="uid-inline-val">${myUID || '—'}</div>
+      <div class="uid-inline-val">${homeUID || '—'}</div>
     </div>
   </div>`;
 }
