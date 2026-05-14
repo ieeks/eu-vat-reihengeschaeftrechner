@@ -2,6 +2,33 @@
 
 ---
 
+## v4.3 · 14.05.2026 — Session 22
+
+### Redesign — Light Theme + Header-Navigation
+
+- **Light Theme CSS-Token-System** — vollständige `--variable`-Palette: Farben, Status, Dreieck, SAP-Badge, UID-Badge, Radius, Transitions. IBM Plex Sans + IBM Plex Mono als Schriften (Google Fonts).
+- **Header-Modus-Tabs** — `h-mode-tabs` mit 3P/4P/2P/Lohn direkt im Header; `setPartiesFromHeader()` delegiert an `setParties()`; `syncHeaderModeTabs()` hält Tabs synchron.
+- **View-Nav im Header** — `h-view-nav` mit Standard / Quick Check / Vergleich; `switchView()` delegiert an `switchTab()`; ersetzt alten `qcHeaderBtn`.
+- **Sidebar-Mode-Badge** — zeigt aktiven Modus (Code + Titel + Beschreibung) oben in der Sidebar; `updateModeBadge()` aus `setParties()` aufgerufen.
+- **SVG-Diagramme theme-aware** — `buildTriangleSVG()` und `buildTriangleSVG4()` lesen Farben via `getComputedStyle()` statt hardcodierter Hex-Werte.
+- **`sapBadge()` / `sapBadgeBoth()`** — Inline-Styles auf CSS-Klasse `badge badge-sap` refactored.
+- **4P-Diamond-Diagramm** — neues `buildTriangleSVG4()` Layout: A (links-unten) → B (links-oben) → C (rechts-oben) → D (rechts-unten); EuG T-646/24 im Titel.
+- **4P-Warnhinweise** — UID-Pflicht C im Bestimmungsland + AT/DE-Länderrisikohinweis als `rH({type:'warn'})`.
+
+### v1/v2-Toggle
+
+- **`docs/v1/`** — eingefrorener Stand von `v4.2-snapshot` (b1954f4); komplett isoliert, ändert sich nie automatisch.
+- **`switchToDesign(version)`** — im ⋯-Menü beider Versionen; überträgt `window.location.search` → URL-Param-State bleibt erhalten.
+- **Git-Tag `v4.2-snapshot`** — auf GitHub, zeigt dauerhaft auf pre-Redesign-Stand. Rollback: `git checkout v4.2-snapshot -- docs/`
+
+### Bugfixes
+
+- **UID-Override zurück in `buildTriangleSVG()` `node()`** — `uidLine`-Parameter beim Redesign-Refactor verloren gegangen; B-Node zeigt wieder `selectedUidOverride` im Diagramm.
+- **`renderUIDInline()` zeigt Override-UID** — `buyerUID` nutzt `selectedUidOverride` wenn gesetzt (L1 + L2); vorher immer Home-UID.
+- **`applyDreiecksUid()` ruft `renderUIDs()`** — Eigene-UIDs-Sektion wurde nach UID-Auswahl nicht neu gerendert.
+
+---
+
 ## v4.2 · 21.04.2026 — Session 21
 
 ### Quick Check Tab — Full-Width Layout + Exit UX
