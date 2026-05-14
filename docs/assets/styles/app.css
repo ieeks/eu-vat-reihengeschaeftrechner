@@ -475,7 +475,7 @@ header {
 
 /* LEFT — Mode Badge */
 .sidebar-mode-badge {
-  background: var(--ink);
+  background: #1c1c1b;
   padding: 12px 18px;
   display: flex;
   align-items: center;
@@ -484,7 +484,7 @@ header {
 }
 .sidebar-mode-code {
   background: rgba(255,255,255,0.95);
-  color: var(--ink);
+  color: #1c1c1b;
   border-radius: 4px;
   padding: 3px 12px;
   font-weight: 700;
@@ -754,7 +754,7 @@ header {
   color: var(--tx-2);
 }
 .t-opt:hover { border-color: var(--border-hi); }
-.t-opt.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+.t-opt.active { background: var(--tx-1); border-color: var(--tx-1); color: var(--bg); }
 .radio { display: none; }
 .t-label { }
 .t-role {
