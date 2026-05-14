@@ -24,6 +24,14 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 | `scripts/serve.mjs` | Dependency-freier lokaler Static-Server |
 | `.github/workflows/pages.yml` | GitHub-Pages-Deployment |
 
+## Design-Snapshots / Rollback
+
+| Tag / Commit | Stand | Wiederherstellen |
+|---|---|---|
+| `v4.2-snapshot` · `b1954f4` | v4.2 vor Redesign (dunkles Theme, QC-Topbar fertig) | `git checkout v4.2-snapshot -- docs/` |
+
+> Tag lokal vorhanden. Vom Mac pushen: `git push origin v4.2-snapshot`
+
 ## Entities
 
 | Company | Sitz | UIDs |
