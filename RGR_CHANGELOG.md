@@ -2,6 +2,19 @@
 
 ---
 
+## v4.3 · 14.05.2026 — Session 23
+
+### Infrastruktur & UX
+
+- **Self-hosted Fonts** — IBM Plex Sans (300–700) + IBM Plex Mono (400–700) als woff2 in `docs/assets/fonts/` und `docs/v1/assets/fonts/`; `@font-face`-Regeln in beiden `app.css`; Google-Fonts-`<link>` aus beiden `index.html` entfernt. App läuft vollständig offline ohne Drittanbieter-Request.
+- **PDF-Export** — `exportPDF()` setzt vor `window.print()` einen sprechenden Dokumenttitel (`RGR EPDE · 3P · 14.05.2026`) als Default-Dateiname; `@media print` komplett überarbeitet: nur aktiver Tab druckt, alle eingeklappten Sektionen werden aufgeklappt (detail-collapse, flow-diagram, perspektiv-block, uid-body), interaktive Elemente (Toggle-Buttons, Wechseln-Karten, Overflow-Menü) versteckt, `@page`-Margins gesetzt, `page-break-inside: avoid` auf Karten.
+
+### Bugfix
+
+- **Vergleich-Tab scrollbar auf iPad Air** — `min-height: 0` auf `.pane-right-body` (Flex-Column-Item), sodass `overflow-y: auto` greift. Ohne `min-height: 0` wächst das Element auf Content-Höhe und scrollt nie. Zusätzlich `-webkit-overflow-scrolling: touch` und `min-width: 0` auf `.pane-right`.
+
+---
+
 ## v4.3 · 14.05.2026 — Session 22
 
 ### Redesign — Light Theme + Header-Navigation

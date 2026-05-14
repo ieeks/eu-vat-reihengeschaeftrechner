@@ -10,6 +10,7 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 |---|---|
 | `docs/assets/scripts/app.js` | **Hauptdatei v4.3** (deploybare App-Logik) |
 | `docs/assets/styles/app.css` | Haupt-Styles der deploybaren App (Light Theme v4.3) |
+| `docs/assets/fonts/` | Self-hosted IBM Plex Sans + Mono woff2 (latin, Session 23) |
 | `docs/index.html` | Deploybare Multi-File-App — **v2 (Redesign)** |
 | `docs/v1/` | Eingefrorener v1-Stand (b1954f4) — Production-Fallback |
 | `docs/v1/index.html` | v1 Entry Point (dunkles Theme, QC-Topbar) |
@@ -87,10 +88,10 @@ v4.3 Header/Nav (Session 22)
 
 ## Aktuelle P0-Baustelle
 
-- v4.3 Redesign live auf `manuel-app.dev` (Session 22) — Light Theme, Header-Tabs, 4P-Diamond
+- v4.3 Redesign live auf `manuel-app.dev` (Session 22–23) — Light Theme, Header-Tabs, 4P-Diamond
 - v1/v2-Toggle im ⋯-Menü: `docs/index.html` = v2, `docs/v1/` = eingefrorener Production-Stand
-- `renderUIDInline()` zeigt selectedUidOverride korrekt für L1 und L2 (Session 22)
-- Offen: Arrow-Labels im 3P-Dreieck-Diagramm verarmt (kein Steuersatz mehr) — nice-to-have
+- Fonts self-hosted: `docs/assets/fonts/` + `docs/v1/assets/fonts/` — kein Google Fonts (Session 23)
+- PDF-Export via `exportPDF()` → `window.print()`, verbesserter `@media print` (Session 23)
 - Änderungen am Vergleich nur minimal und mit echten Referenzfällen prüfen; keine neue Heuristik einführen, die vom Hauptstatus abweicht
 
 ## Output-Hierarchie
