@@ -1399,16 +1399,19 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
   // Midpoints for labels
   const mid = (a,b) => (a+b)/2;
 
-  // Node box SVG — clean: flag + CC code + role
-  function node(cx, cy, party, highlight, highlightColor) {
+  // Node box SVG — clean: flag + CC code + role (+ optional UID line)
+  function node(cx, cy, party, highlight, highlightColor, uidLine = null) {
     const x = cx - NW/2;
+    const nh = uidLine ? NH + 14 : NH;
+    const yOff = uidLine ? -6 : 0;
     const borderCol = highlight ? highlightColor : COL_BORDER;
     return `
-      <rect x="${x}" y="${cy - NH/2}" width="${NW}" height="${NH}" rx="6"
+      <rect x="${x}" y="${cy - nh/2}" width="${NW}" height="${nh}" rx="6"
         fill="${COL_SURF2}" stroke="${borderCol}" stroke-width="1.5"/>
-      <text x="${cx}" y="${cy - 10}" text-anchor="middle" font-size="20" dominant-baseline="middle">${flag(party.code)}</text>
-      <text x="${cx}" y="${cy + 10}" text-anchor="middle" font-size="11" font-weight="700" fill="${COL_TX1}" font-family="IBM Plex Mono,monospace">${party.code}</text>
-      <text x="${cx}" y="${cy + 24}" text-anchor="middle" font-size="9" fill="${COL_TX3}" font-family="IBM Plex Sans,system-ui,sans-serif">${party.role}</text>
+      <text x="${cx}" y="${cy - 10 + yOff}" text-anchor="middle" font-size="20" dominant-baseline="middle">${flag(party.code)}</text>
+      <text x="${cx}" y="${cy + 10 + yOff}" text-anchor="middle" font-size="11" font-weight="700" fill="${COL_TX1}" font-family="IBM Plex Mono,monospace">${party.code}</text>
+      <text x="${cx}" y="${cy + 24 + yOff}" text-anchor="middle" font-size="9" fill="${COL_TX3}" font-family="IBM Plex Sans,system-ui,sans-serif">${party.role}</text>
+      ${uidLine ? `<text x="${cx}" y="${cy + 36 + yOff}" text-anchor="middle" font-size="8" fill="${COL_TEAL}" font-family="IBM Plex Mono,monospace" font-weight="700">${uidLine}</text>` : ''}
     `;
   }
 
@@ -1465,7 +1468,10 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
 
       <!-- Nodes -->
       ${node(AX, AY, A, L1col !== '#6B7280', L1col !== '#6B7280' ? L1col : COL_BORDER)}
-      ${node(BX, BY, B, !noMoving, noMoving ? COL_TX3 : nodeBcol)}
+      ${node(BX, BY, B, !noMoving, noMoving ? COL_TX3 : nodeBcol, (() => {
+        if (!selectedUidOverride || !MY_VAT_IDS[selectedUidOverride]) return null;
+        return selectedUidOverride + '-UID: ' + MY_VAT_IDS[selectedUidOverride];
+      })())}
       ${node(CX, CY, C, true, COL_TX3)}
     </svg>
     <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:8px;font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:var(--tx-3);">
