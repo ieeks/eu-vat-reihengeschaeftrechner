@@ -278,10 +278,7 @@ function sapBadge(country, treatment, role, uidCountry) {
     }
     return '';
   }
-  return ` <span style="display:inline-block;padding:2px 7px;border-radius:4px;
-    background:rgba(245,168,39,0.15);color:#F5A827;border:1px solid rgba(245,168,39,0.45);
-    font-family:var(--mono);font-size:0.62rem;font-weight:700;letter-spacing:0.5px;vertical-align:middle;
-    cursor:help;" title="SAP Stkz. ${code}: ${desc}">SAP&nbsp;Stkz.&nbsp;=&nbsp;${code}</span>`;
+  return ` <span class="badge badge-sap" style="vertical-align:middle;cursor:help;" title="SAP Stkz. ${code}: ${desc}">SAP&nbsp;Stkz.&nbsp;=&nbsp;${code}</span>`;
 }
 
 // Zeigt BEIDE SAP-Codes (Ausgang + Eingang) — für Lieferboxen wo ich Käufer UND Verkäufer-Infos brauche
@@ -295,10 +292,7 @@ function sapBadgeBoth(country, treatment, uidCountry) {
   if (map.in)  parts.push(`Eing:&nbsp;<strong>${map.in}</strong>`);
   if (!parts.length) return '';
   const desc = map.desc || '';
-  return ` <span style="display:inline-block;padding:2px 7px;border-radius:4px;
-    background:rgba(245,168,39,0.15);color:#F5A827;border:1px solid rgba(245,168,39,0.45);
-    font-family:var(--mono);font-size:0.62rem;font-weight:700;letter-spacing:0.5px;vertical-align:middle;
-    cursor:help;" title="SAP Stkz. ${desc}">SAP&nbsp;Stkz.:&nbsp;${parts.join('&nbsp;·&nbsp;')}</span>`;
+  return ` <span class="badge badge-sap" style="vertical-align:middle;cursor:help;" title="SAP Stkz. ${desc}">SAP&nbsp;Stkz.:&nbsp;${parts.join('&nbsp;·&nbsp;')}</span>`;
 }
 
 // ── Globale Laufzeit-Zustände ────────────────────────────────────────────────
@@ -1317,12 +1311,13 @@ function buildFlowDiagram(parties, movingDeliveryIdx, departure, destination, is
   }
   // ── fallback: horizontal flow (non-triangle) ──────────────────────────
   const n = parties.length;
+  const is2P = n === 2;
   let invoiceRow = '';
   for (let i = 0; i < n; i++) {
     const p = parties[i];
     const isMover = i === movingDeliveryIdx;
     const vatId = myVat(p.code);
-    invoiceRow += `<div class="flow-node ${vatId ? 'has-vat' : ''} ${isMover ? 'moving-from' : ''}">
+    invoiceRow += `<div class="flow-node ${vatId ? 'has-vat' : ''} ${isMover ? 'moving-from' : ''} ${is2P ? 'flow-node-2p' : ''}">
       <div class="fn-role">${p.role}</div>
       <div class="fn-flag">${flag(p.code)}</div>
       <div class="fn-name">${cn(p.code)}</div>
@@ -1333,14 +1328,14 @@ function buildFlowDiagram(parties, movingDeliveryIdx, departure, destination, is
       const isMovingArrow = i === movingDeliveryIdx;
       let cls = isMovingArrow ? 'moving' : 'invoice';
       let label = isMovingArrow ? '⚡ IG · 0%' : `L${i+1}`;
-      invoiceRow += `<div class="flow-arrow ${cls}">
+      invoiceRow += `<div class="flow-arrow ${cls} ${is2P ? 'flow-arrow-2p' : ''}">
         <div class="arr-label">${label}</div>
         <div class="arr-line"></div>
       </div>`;
     }
   }
   const goodsLabel = `Ware: ${cn(departure)} → ${cn(destination)}`;
-  return `<div class="flow-diagram" data-component="buildFlowDiagram">
+  return `<div class="flow-diagram${is2P ? ' flow-diagram-2p' : ''}" data-component="buildFlowDiagram">
     <div class="flow-title">📦 Warenfluss &amp; Fakturierung</div>
     <div class="flow-diagram-body">
     <div class="flow-invoice-row">${invoiceRow}</div>
@@ -1370,15 +1365,18 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
   const CX = 452, CY = 228;
   const NW = 104, NH = 68; // node box width/height
 
-  // Colors (match tool palette)
-  const COL_BLUE   = '#3B82F6';
-  const COL_VIOLET = '#A78BFA';
-  const COL_TEAL   = '#2DD4BF';
-  const COL_TX2    = '#9AA3AE';
-  const COL_TX3    = '#4E5664';
-  const COL_SURF2  = '#1C2230';
-  const COL_BORDER = 'rgba(255,255,255,0.12)';
-  const COL_GREEN  = '#4ADE80';
+  // Colors — use CSS custom properties for theme awareness
+  const _cs = getComputedStyle(document.documentElement);
+  const COL_BLUE   = _cs.getPropertyValue('--blue').trim()   || '#2563eb';
+  const COL_VIOLET = _cs.getPropertyValue('--violet').trim() || '#7c3aed';
+  const COL_TEAL   = _cs.getPropertyValue('--teal').trim()   || '#0891b2';
+  const COL_TX2    = _cs.getPropertyValue('--tx-2').trim()    || '#6b6b69';
+  const COL_TX3    = _cs.getPropertyValue('--tx-3').trim()    || '#9ca3af';
+  const COL_SURF2  = _cs.getPropertyValue('--surface').trim() || '#ffffff';
+  const COL_BORDER = _cs.getPropertyValue('--border').trim()  || '#e8e7e4';
+  const COL_GREEN  = _cs.getPropertyValue('--green').trim()   || '#16a34a';
+  const COL_INK    = _cs.getPropertyValue('--ink').trim()     || '#1c1c1b';
+  const COL_TX1    = _cs.getPropertyValue('--tx-1').trim()    || '#1c1c1b';
 
   const vatA = myVat(A.code);
   const vatB = myVat(B.code);
@@ -1401,20 +1399,16 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
   // Midpoints for labels
   const mid = (a,b) => (a+b)/2;
 
-  // Node box SVG
-  function node(cx, cy, party, highlight, highlightColor, uidLine) {
+  // Node box SVG — clean: flag + CC code + role
+  function node(cx, cy, party, highlight, highlightColor) {
     const x = cx - NW/2;
-    const nh = uidLine ? NH + 14 : NH;
-    const yOff = uidLine ? -6 : 0;
     const borderCol = highlight ? highlightColor : COL_BORDER;
-    const glow = highlight ? `filter="url(#glow_${highlightColor.replace('#','')})"` : '';
     return `
-      <rect x="${x}" y="${cy - nh/2}" width="${NW}" height="${nh}" rx="8"
-        fill="${COL_SURF2}" stroke="${borderCol}" stroke-width="${highlight?1.8:1}" ${glow}/>
-      <text x="${cx}" y="${cy - 14 + yOff}" text-anchor="middle" font-size="18" dominant-baseline="middle">${flag(party.code)}</text>
-      <text x="${cx}" y="${cy + 4 + yOff}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#E6E8EB" font-family="system-ui,sans-serif">${cn(party.code)}</text>
-      <text x="${cx}" y="${cy + 17 + yOff}" text-anchor="middle" font-size="9" fill="${highlight?highlightColor:COL_TX3}" font-family="monospace">${party.role}</text>
-      ${uidLine ? `<text x="${cx}" y="${cy + 30 + yOff}" text-anchor="middle" font-size="8" fill="${COL_TEAL}" font-family="monospace" font-weight="700">${uidLine}</text>` : ''}
+      <rect x="${x}" y="${cy - NH/2}" width="${NW}" height="${NH}" rx="6"
+        fill="${COL_SURF2}" stroke="${borderCol}" stroke-width="1.5"/>
+      <text x="${cx}" y="${cy - 10}" text-anchor="middle" font-size="20" dominant-baseline="middle">${flag(party.code)}</text>
+      <text x="${cx}" y="${cy + 10}" text-anchor="middle" font-size="11" font-weight="700" fill="${COL_TX1}" font-family="IBM Plex Mono,monospace">${party.code}</text>
+      <text x="${cx}" y="${cy + 24}" text-anchor="middle" font-size="9" fill="${COL_TX3}" font-family="IBM Plex Sans,system-ui,sans-serif">${party.role}</text>
     `;
   }
 
@@ -1431,19 +1425,12 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
     `;
   }
 
-  // Label badge on arrow midpoint
+  // Simple text label above arrow
   function arrowLabel(x, y, lines, color) {
-    // Fixed-width boxes — no text overflow regardless of country name length
-    const lh = 13, pad = 7, tw = 90, th = lines.length * lh + pad;
-    const bx = x - tw/2, by = y - th/2;
-    return `
-      <rect x="${bx}" y="${by}" width="${tw}" height="${th}" rx="4"
-        fill="#0a0d12" stroke="${color}" stroke-width="1" opacity="0.97"/>
-      ${lines.map((l,i) =>
-        `<text x="${x}" y="${by + pad + lh*(i+0.8)}" text-anchor="middle"
-          font-size="9" font-weight="600" fill="${color}" font-family="monospace">${l}</text>`
-      ).join('')}
-    `;
+    return lines.map((l, i) =>
+      `<text x="${x}" y="${y + i * 11}" text-anchor="middle"
+        font-size="9" font-weight="600" fill="${color}" font-family="IBM Plex Mono,monospace">${l}</text>`
+    ).join('');
   }
 
   // Goods flow label below the A→C line
@@ -1455,167 +1442,136 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
   const L1moving = movingIdx === 0;
   const L1col    = noMoving ? '#6B7280' : (L1moving ? COL_BLUE : '#6B7280');
   const L2col    = noMoving ? '#6B7280' : (!L1moving ? COL_BLUE : (isDreiecks ? COL_VIOLET : '#6B7280'));
-  const L1lbl    = noMoving ? ['○ L1 · ruhend', rate(A.code)+'% '+cn(departure)] : (L1moving ? ['⚡ L1 · IGL', '0% steuerfrei'] : ['○ L1 · ruhend', rate(A.code)+'% '+departure]);
-  const L2lbl    = noMoving ? ['○ L2 · ruhend', rate(C.code)+'% '+cn(destination)] : (!L1moving ? ['⚡ L2 · IGL', '0% steuerfrei'] : (isDreiecks ? ['△ L2 · Dreieck', 'RC · 0%'] : ['○ L2 · ruhend', rate(C.code)+'% '+destination]));
+  const L1lbl    = noMoving ? ['L1 — ruhend'] : (L1moving ? ['L1 — bewegte'] : ['L1 — ruhend']);
+  const L2lbl    = noMoving ? ['L2 — ruhend'] : (!L1moving ? ['L2 — bewegte'] : (isDreiecks ? ['L2 — Dreieck'] : ['L2 — ruhend']));
   const nodeBcol = noMoving ? '#6B7280' : (isDreiecks ? COL_VIOLET : (L1moving ? COL_VIOLET : COL_BLUE));
 
   const svg = `
   <div class="flow-diagram">
-    <div class="flow-title">📦 Warenfluss &amp; Fakturierung${isDreiecks ? ' · Dreiecksgeschäft' : ''}</div>
+    <div class="flow-title">Warenfluss${isDreiecks ? ' · Dreiecksgeschäft' : ''}</div>
     <div class="flow-diagram-body">
     <svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block;margin:0 auto;overflow:visible;">
-      <defs>
-        <filter id="glow_3B82F6" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="3" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <filter id="glow_A78BFA" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="3" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <filter id="glow_2DD4BF" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="3" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      </defs>
 
-      <!-- Goods flow A → C (physical, dashed teal) -->
-      ${arrow(ac.sx, ac.sy, ac.ex, ac.ey, COL_TEAL, true)}
-      ${arrowLabel(acMidX, acMidY+2, ['Ware direkt', departure+'→'+destination], COL_TEAL)}
+      <!-- Goods flow A → C (physical, dashed) -->
+      ${arrow(ac.sx, ac.sy, ac.ex, ac.ey, COL_TX3, true)}
 
       <!-- L1: A → B -->
       ${arrow(ab.sx, ab.sy, ab.ex, ab.ey, L1col)}
-      ${arrowLabel(mid(ab.sx,ab.ex)-18, mid(ab.sy,ab.ey), L1lbl, L1col)}
+      ${arrowLabel(mid(ab.sx,ab.ex)-14, mid(ab.sy,ab.ey)-8, L1lbl, L1col)}
 
       <!-- L2: B → C -->
       ${arrow(bc.sx, bc.sy, bc.ex, bc.ey, L2col)}
-      ${arrowLabel(mid(bc.sx,bc.ex)+18, mid(bc.sy,bc.ey), L2lbl, L2col)}
+      ${arrowLabel(mid(bc.sx,bc.ex)+14, mid(bc.sy,bc.ey)-8, L2lbl, L2col)}
 
       <!-- Nodes -->
       ${node(AX, AY, A, L1col !== '#6B7280', L1col !== '#6B7280' ? L1col : COL_BORDER)}
-      ${node(BX, BY, B, !noMoving, noMoving ? COL_TEAL : nodeBcol, (() => {
-        if (!selectedUidOverride || !MY_VAT_IDS[selectedUidOverride]) return null;
-        return selectedUidOverride + '-UID: ' + MY_VAT_IDS[selectedUidOverride];
-      })())}
-      ${node(CX, CY, C, true, COL_TEAL)}
+      ${node(BX, BY, B, !noMoving, noMoving ? COL_TX3 : nodeBcol)}
+      ${node(CX, CY, C, true, COL_TX3)}
     </svg>
-    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-family:monospace;font-size:0.65rem;color:var(--tx-3);">
-      ${noMoving
-        ? `<span style="display:flex;align-items:center;gap:5px;"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="#6B7280" stroke-width="2"/></svg> ○ Ruhende Lieferung (Inland)</span>`
-        : `<span style="display:flex;align-items:center;gap:5px;"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="${COL_BLUE}" stroke-width="2"/></svg> ⚡ Bewegte Lieferung (IGL, 0%)</span>`}
-      ${!noMoving && isDreiecks ? '<span style="display:flex;align-items:center;gap:5px;"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="'+COL_VIOLET+'" stroke-width="2"/></svg> △ Dreiecksgeschäft (RC, 0%)</span>' : !noMoving ? '<span style="display:flex;align-items:center;gap:5px;"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="#6B7280" stroke-width="2"/></svg> ○ Ruhende Lieferung</span>' : ''}
-      <span style="display:flex;align-items:center;gap:5px;"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="${COL_TEAL}" stroke-width="2" stroke-dasharray="5 3"/></svg> Warenfluss physisch (direkt)</span>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:8px;font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:var(--tx-3);">
+      <span style="display:flex;align-items:center;gap:5px;"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="${COL_INK}" stroke-width="2"/></svg> Bewegte Lieferung</span>
+      <span style="display:flex;align-items:center;gap:5px;"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="${COL_TX3}" stroke-width="2" stroke-dasharray="5 3"/></svg> Ruhende Lieferung</span>
     </div>
     </div>
   </div>`;
   return svg;
 }
 
-// ── SVG triangle diagram for 4-party Dreiecksgeschäft ───────────────────────
+// ── SVG diamond diagram for 4-party Dreiecksgeschäft (EuG T-646/24) ────────
 function buildTriangleSVG4(parties, movingIdx, departure, destination) {
-  // 4-party layout:
-  //        B (top-center)
-  //       / \
-  //      A   C --- D
-  // A=Lieferant, B=Zwischenhändler (me), C=2.ZH, D=Kunde
+  // Diamond layout (like Image #12):
+  //   A (bottom-left) → B (top-left) → C (top-right) → D (bottom-right)
+  //   A ──────────────────────────────────────────────────────────────→ D
+  //        Direkte Warenbewegung vom Abgangsort zum Bestimmungsort
   const A = parties[0], B = parties[1], C = parties[2], D = parties[3];
 
-  // Canvas: wider to give D enough space; taller to avoid label clipping
-  const W = 620, H = 340;
+  const W = 800, H = 290;
+  const NW = 110, NH = 66;
 
-  // Node positions — well-separated, D clearly to the right of C
-  const BX = 220, BY = 48;   // top center
-  const AX = 60,  AY = 260;  // bottom left
-  const CX = 380, CY = 260;  // bottom center-right
-  const DX = 560, DY = 260;  // bottom right (clear of C)
-  const NW = 100, NH = 66;
+  const AX = 90,  AY = 200;  // bottom-left  (Lieferant)
+  const BX = 250, BY = 58;   // top-left     (1. ZH / me)
+  const CX = 550, CY = 58;   // top-right    (2. ZH) — weit auseinander für L2-Label
+  const DX = 710, DY = 200;  // bottom-right (Empfänger)
 
-  const COL_BLUE   = '#3B82F6';
-  const COL_VIOLET = '#A78BFA';
-  const COL_TEAL   = '#2DD4BF';
-  const COL_SURF2  = '#1C2230';
-  const COL_DIM    = 'rgba(255,255,255,0.18)';
+  const _cs4 = getComputedStyle(document.documentElement);
+  const COL_BLUE   = _cs4.getPropertyValue('--blue').trim()   || '#2563eb';
+  const COL_VIOLET = _cs4.getPropertyValue('--violet').trim() || '#7c3aed';
+  const COL_TEAL   = _cs4.getPropertyValue('--teal').trim()   || '#0891b2';
+  const COL_SURF   = _cs4.getPropertyValue('--surface').trim() || '#ffffff';
+  const COL_BORDER = _cs4.getPropertyValue('--border').trim()  || '#e8e7e4';
+  const COL_TX1    = _cs4.getPropertyValue('--tx-1').trim()    || '#1c1c1b';
+  const COL_INK    = _cs4.getPropertyValue('--ink').trim()     || '#1c1c1b';
 
-  function edgePts(x1,y1,x2,y2,pad=50) {
+  function edgePts(x1,y1,x2,y2,pad=56) {
     const dx=x2-x1,dy=y2-y1,d=Math.sqrt(dx*dx+dy*dy),ux=dx/d,uy=dy/d;
     return {sx:x1+ux*pad,sy:y1+uy*pad,ex:x2-ux*pad,ey:y2-uy*pad};
   }
   function mid(a,b){return (a+b)/2;}
 
-  // Unique marker id per arrow to avoid conflicts
   let _mid=0;
-  function arrow(sx,sy,ex,ey,color,dashed=false){
+  function arrow(sx,sy,ex,ey,color,width=2){
     const id='m4'+(++_mid);
-    const dash=dashed?'stroke-dasharray="7 4"':'';;
     return '<defs><marker id="'+id+'" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="'+color+'"/></marker></defs>'+
-    '<line x1="'+sx+'" y1="'+sy+'" x2="'+ex+'" y2="'+ey+'" stroke="'+color+'" stroke-width="2" '+dash+' marker-end="url(#'+id+')"/>';
+      '<line x1="'+sx+'" y1="'+sy+'" x2="'+ex+'" y2="'+ey+'" stroke="'+color+'" stroke-width="'+width+'" marker-end="url(#'+id+')"/>';
   }
 
-  // Edge label with background — tw adapted to text
-  function label(x,y,lines,color,tw=92){
-    const lh=13,pad=6,th=lines.length*lh+pad;
-    let out='<rect x="'+( x-tw/2)+'" y="'+( y-th/2)+'" width="'+tw+'" height="'+th+'" rx="4" fill="#080b10" stroke="'+color+'" stroke-width="1" opacity="0.95"/>';
+  function edgeLabel(x,y,lines,color,tw=90){
+    const lh=12,pad=5,th=lines.length*lh+pad;
+    let out='<rect x="'+(x-tw/2)+'" y="'+(y-th/2)+'" width="'+tw+'" height="'+th+'" rx="3" fill="'+COL_SURF+'" stroke="'+color+'" stroke-width="1" opacity="0.96"/>';
     lines.forEach((l,i)=>{
-      out+='<text x="'+x+'" y="'+( y-th/2+pad+lh*(i+0.8))+'" text-anchor="middle" font-size="9" font-weight="600" fill="'+color+'" font-family="monospace">'+l+'</text>';
+      out+='<text x="'+x+'" y="'+(y-th/2+pad+lh*(i+0.75))+'" text-anchor="middle" font-size="8.5" font-weight="600" fill="'+color+'" font-family="IBM Plex Mono,monospace">'+l+'</text>';
     });
     return out;
   }
 
-  function node(cx,cy,p,col){
+  function node(cx,cy,p,col,isMe){
     const x=cx-NW/2,y=cy-NH/2;
-    return '<rect x="'+x+'" y="'+y+'" width="'+NW+'" height="'+NH+'" rx="8" fill="'+COL_SURF2+'" stroke="'+col+'" stroke-width="1.8"/>'+
-    '<text x="'+cx+'" y="'+( cy-13)+'" text-anchor="middle" font-size="18" dominant-baseline="middle">'+flag(p.code)+'</text>'+
-    '<text x="'+cx+'" y="'+( cy+4)+'" text-anchor="middle" font-size="10" font-weight="700" fill="#E6E8EB" font-family="system-ui,sans-serif">'+cn(p.code)+'</text>'+
-    '<text x="'+cx+'" y="'+( cy+18)+'" text-anchor="middle" font-size="8.5" fill="'+col+'" font-family="monospace">'+p.role+'</text>';
+    const sw=isMe?'2':'1.5';
+    return '<rect x="'+x+'" y="'+y+'" width="'+NW+'" height="'+NH+'" rx="6" fill="'+COL_SURF+'" stroke="'+col+'" stroke-width="'+sw+'"/>'+
+      '<text x="'+cx+'" y="'+(cy-12)+'" text-anchor="middle" font-size="17" dominant-baseline="middle">'+flag(p.code)+'</text>'+
+      '<text x="'+cx+'" y="'+(cy+5)+'" text-anchor="middle" font-size="10" font-weight="600" fill="'+COL_TX1+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+p.code+'</text>'+
+      '<text x="'+cx+'" y="'+(cy+18)+'" text-anchor="middle" font-size="8.5" fill="'+col+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+p.role+'</text>';
   }
 
-  const ab = edgePts(AX,AY,BX,BY,50);
-  const bc = edgePts(BX,BY,CX,CY,50);
-  const cd = edgePts(CX,CY,DX,DY,50);
-  // Goods flow A→D: arc via midpoint slightly above the bottom line
-  const adMx = mid(AX,DX), adMy = AY - 30;
-  const adSx = AX + 50, adSy = AY - 10;
-  const adEx = DX - 50, adEy = DY - 10;
-
-  const depLabel = departure  || '?';
-  const dstLabel = destination || '?';
-  const l3rate   = rate(D.code);
+  const ab = edgePts(AX,AY,BX,BY,52);
+  const bc = edgePts(BX,BY,CX,CY,52);
+  const cd = edgePts(CX,CY,DX,DY,52);
+  // Horizontal goods flow A→D at node mid-height
+  const goodsY = AY;
+  const adSx = AX + NW/2 + 4, adEy = goodsY, adEx = DX - NW/2 - 4, adSy = goodsY;
+  const l3rate = rate(D.code);
 
   return '<div class="flow-diagram">'+
-    '<div class="flow-title">📦 Warenfluss &amp; Fakturierung · 4-Parteien Dreiecksgeschäft (EuG T-646/24)</div>'+
+    '<div class="flow-title">📦 Warenfluss · 4-Parteien Dreiecksgeschäft (EuG T-646/24)</div>'+
     '<div class="flow-diagram-body">'+
-    '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="max-width:'+W+'px;display:block;margin:0 auto;overflow:visible;">'+
+    '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;overflow:visible;">'+
 
-    // Goods flow A→D dashed teal (curved path above bottom nodes)
-    '<defs><marker id="m4g" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="'+COL_TEAL+'"/></marker></defs>'+
-    '<path d="M '+adSx+' '+adSy+' Q '+adMx+' '+( AY-60)+' '+adEx+' '+adEy+'"'+
-      ' stroke="'+COL_TEAL+'" stroke-width="2" fill="none" stroke-dasharray="7 4" marker-end="url(#m4g)"/>'+
-    label(adMx, AY-78, ['Ware direkt', depLabel+'→'+dstLabel], COL_TEAL, 100)+
-
-    // L1 A→B
+    // Invoice chain: L1 A→B, L2 B→C, L3 C→D
     arrow(ab.sx,ab.sy,ab.ex,ab.ey,COL_BLUE)+
-    label(mid(ab.sx,ab.ex)-20, mid(ab.sy,ab.ey), ['⚡ L1 · IGL','0% steuerfrei'], COL_BLUE)+
+    edgeLabel(mid(ab.sx,ab.ex)-8, mid(ab.sy,ab.ey), ['⚡ L1 · IGL','0% steuerfrei'], COL_BLUE)+
 
-    // L2 B→C
     arrow(bc.sx,bc.sy,bc.ex,bc.ey,COL_VIOLET)+
-    label(mid(bc.sx,bc.ex)+20, mid(bc.sy,bc.ey), ['△ L2 · Dreieck','RC · 0%'], COL_VIOLET)+
+    edgeLabel(mid(bc.sx,bc.ex), mid(bc.sy,bc.ey)-20, ['△ L2 · Dreieck','RC · 0%'], COL_VIOLET)+
 
-    // L3 C→D — label above the line to avoid node overlap
     arrow(cd.sx,cd.sy,cd.ex,cd.ey,COL_TEAL)+
-    label(mid(cd.sx,cd.ex), mid(cd.sy,cd.ey)-22, ['L3 · ruhend', l3rate+'% '+cn(D.code)], COL_TEAL)+
+    edgeLabel(mid(cd.sx,cd.ex)+8, mid(cd.sy,cd.ey), ['L3 · ruhend', l3rate+'% '+D.code], COL_TEAL)+
 
-    // Nodes
-    node(AX,AY,A,COL_BLUE)+
-    node(BX,BY,B,COL_VIOLET)+
-    node(CX,CY,C,COL_TEAL)+
-    node(DX,DY,D,COL_DIM)+
+    // Physical goods flow A→D: horizontal solid dark arrow
+    arrow(adSx,adSy,adEx,adEy,COL_INK,1.5)+
+    '<text x="'+mid(adSx,adEx)+'" y="'+(goodsY+20)+'" text-anchor="middle" font-size="8.5" fill="'+COL_TX1+'" font-family="IBM Plex Sans,system-ui,sans-serif">Direkte Warenbewegung vom Abgangsort zum Bestimmungsort</text>'+
+
+    // Nodes (on top of arrows)
+    node(AX,AY,A,COL_BLUE,false)+
+    node(BX,BY,B,COL_VIOLET,true)+
+    node(CX,CY,C,COL_TEAL,false)+
+    node(DX,DY,D,COL_BORDER,false)+
 
     '</svg>'+
-    '<div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-family:monospace;font-size:0.65rem;color:var(--tx-3);">'+
-    '<span style="display:flex;align-items:center;gap:5px;"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="'+COL_BLUE+'" stroke-width="2"/></svg> L1 · IGL (bewegte Lieferung)</span>'+
-    '<span style="display:flex;align-items:center;gap:5px;"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="'+COL_VIOLET+'" stroke-width="2"/></svg> L2 · Dreiecksgeschäft (RC)</span>'+
-    '<span style="display:flex;align-items:center;gap:5px;"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="'+COL_TEAL+'" stroke-width="2"/></svg> L3 · Ruhende Lieferung</span>'+
-    '<span style="display:flex;align-items:center;gap:5px;"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="'+COL_TEAL+'" stroke-width="2" stroke-dasharray="5 3"/></svg> Warenfluss physisch</span>'+
+    '<div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:8px;font-family:monospace;font-size:0.65rem;color:var(--tx-3);">'+
+    '<span style="display:flex;align-items:center;gap:5px;"><svg width="24" height="4"><line x1="0" y1="2" x2="24" y2="2" stroke="'+COL_BLUE+'" stroke-width="2"/></svg> L1 · IGL (bewegte Lieferung)</span>'+
+    '<span style="display:flex;align-items:center;gap:5px;"><svg width="24" height="4"><line x1="0" y1="2" x2="24" y2="2" stroke="'+COL_VIOLET+'" stroke-width="2"/></svg> L2 · Dreiecksgeschäft (RC)</span>'+
+    '<span style="display:flex;align-items:center;gap:5px;"><svg width="24" height="4"><line x1="0" y1="2" x2="24" y2="2" stroke="'+COL_TEAL+'" stroke-width="2"/></svg> L3 · Ruhende Lieferung</span>'+
+    '<span style="display:flex;align-items:center;gap:5px;"><svg width="24" height="4"><line x1="0" y1="2" x2="24" y2="2" stroke="'+COL_INK+'" stroke-width="1.5"/></svg> Warenfluss physisch</span>'+
     '</div></div></div>';
 }
 
@@ -3222,9 +3178,7 @@ function buildDeliveryBox(num, from, to, isMoving, tax, myCode, dest, iAmBuyer, 
           if (iAmSeller && outCode) parts.push(`Ausg:&nbsp;${outCode}`);
           if (!iAmSeller && inCode)  parts.push(`Eing:&nbsp;${inCode}`);
           if (!parts.length) return '';
-          return `<span class="badge" title="SAP Stkz. ${sapDesc}"
-            style="background:rgba(245,168,39,0.15);color:#F5A827;border-color:rgba(245,168,39,0.45);
-                   font-family:var(--mono);font-size:0.62rem;font-weight:700;letter-spacing:0.5px;cursor:help;">
+          return `<span class="badge badge-sap" title="SAP Stkz. ${sapDesc}">
             SAP&nbsp;Stkz.:&nbsp;${parts.join('&nbsp;·&nbsp;')}</span>`;
         })()}
       </div>
@@ -3471,7 +3425,7 @@ function buildDreiecks4Result(s1, s2, s3, s4, dep, dest, movingIdx, meCode) {
           <li>${natLaw('dreiecks.hint')} / Art. 141 MwStSystRL</li>
           <li>„Übergang der Steuerschuld auf den Leistungsempfänger" (Art. 197)</li>
           <li>Deine USt-IdNr. (B): <strong>${meCode}</strong> – NICHT die ${cn(dest)}-UID!</li>
-          <li>USt-IdNr. von C: Pflicht!</li>
+          <li>USt-IdNr. von C: <strong>${cn(dest)}-UID</strong> (Bestimmungsland – nicht Heimat-UID!) – Pflicht!</li>
         </ul>
       </div>
       ${vatBox(meCode,'Deine USt-ID auf Rechnung an C')}
@@ -3511,7 +3465,9 @@ function buildDreiecks4Result(s1, s2, s3, s4, dep, dest, movingIdx, meCode) {
     ${rH({type:'warn',icon:'🚨',text:'Luxury Trust (EuGH C-247/21): Fehlende Pflichtangaben auf Rechnung B→C = materieller Mangel – keine rückwirkende Heilung!'})}
     ${rH({type:'warn',icon:'🚫',text:'Betrugsausschluss (§ 25f UStG): Vereinfachung entfällt bei Kenntnis von MwSt-Betrug. VIES-Prüfung und TCMS dokumentieren!'})}
     ${rH({type:'info',icon:'📋',text:'ZM-Pflicht B: Dreiecksgeschäft-Code (§ 18a Abs. 7 S. 1 Nr. 4 UStG). Verspätete ZM = formeller Mangel (EuGH C-580/16). Fehlende RC-Rechnung = materieller Mangel!'})}
-    ${rH({type:'ok',icon:'🎯',text:`Ergebnis: B (${cn(s2)}) braucht KEINE Registrierung in ${cn(dest)} (${rate(dest)}%). D trägt Steuerschuld.`})}
+    ${rH({type:'ok',icon:'🎯',text:`Ergebnis: B (${cn(s2)}) braucht KEINE Registrierung in ${cn(dest)} (${rate(dest)}%). C übernimmt Steuerschuld im Bestimmungsland.`})}
+    ${rH({type:'warn',icon:'🔑',text:`Voraussetzung: C muss im Bestimmungsland (${cn(dest)}) registriert sein und gegenüber B mit <strong>${cn(dest)}-UID</strong> auftreten. Fehlt diese Registrierung, entfällt die Vereinfachung – B muss sich dann selbst in ${cn(dest)} registrieren. Die ${cn(dest)}-UID von C muss auf der Rechnung B→C erscheinen!`})}
+    ${rH({type:'warn',icon:'🌍',text:`Länder-Risiko: Nicht alle EU-Mitgliedstaaten erkennen die Vereinfachung für 4-gliedrige Reihengeschäfte an. AT: anwendbar (Art. 25 Abs. 1+3 UStG, AbgÄG 2022, UStR Rz 4295). DE: nur last3. Landesrecht des Bestimmungslands (${cn(dest)}) vor Abschluss prüfen!`})}
   </div>`;
 
   return html;
@@ -4228,12 +4184,12 @@ function analyze2() {
 
     if (isNonEUDest) {
       // Drittland
-      html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:#F5A827;">Ausg: A0</strong> (Ausfuhr AT 0% — § 7 UStG AT / Art. 146 MwStSystRL)`});
+      html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: A0</strong> (Ausfuhr AT 0% — § 7 UStG AT / Art. 146 MwStSystRL)`});
       html += rH({type:'ok', icon:'🇦🇹', text:`Rechnung an AT-Kunden: <strong>0% MwSt (Ausfuhrlieferung)</strong>. AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>.`});
       html += rH({type:'warn', icon:'🛃', text:`Ausfuhrnachweis (ATLAS/e-dec) erforderlich — Bestimmungsland ist Drittland (${cn(dsDest)}). Zollanmeldung in AT.`});
     } else {
       // EU-Bestimmungsland
-      html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:#F5A827;">Ausg: AF</strong> (IG-Lieferung AT 0% — Art. 6 Abs. 1 iVm. Art. 7 UStG 1994) · <em>nur wenn ${cn(dsDest)}-UID des Kunden vorliegt</em>`});
+      html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: AF</strong> (IG-Lieferung AT 0% — Art. 6 Abs. 1 iVm. Art. 7 UStG 1994) · <em>nur wenn ${cn(dsDest)}-UID des Kunden vorliegt</em>`});
       html += rH({type:'ok', icon:'⚡', text:
         `Rechnung von EPROHA an AT-Kunde: <strong>0% MwSt (IG-Lieferung AT→${cn(dsDest)})</strong> gem. Art. 6 Abs. 1 iVm. Art. 7 UStG 1994 / Art. 138 MwStSystRL.<br>
         AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong> · ${cn(dsDest)}-UID des AT-Kunden auf Rechnung anführen.`
@@ -4317,7 +4273,7 @@ function analyze2() {
         </div>
       </div>
     </div>`;
-    html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:#F5A827;">Ausg: A2</strong> (Ausgangssteuer AT 20%) · <strong style="color:#F5A827;">Eing: V2</strong> (Vorsteuer AT 20%)`});
+    html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: A2</strong> (Ausgangssteuer AT 20%) · <strong style="color:var(--sap-badge-color);">Eing: V2</strong> (Vorsteuer AT 20%)`});
     html += rH({type:'ok', icon:'🇦🇹', text:`Inlandslieferung AT→AT. MwSt: <strong>20%</strong> auf Rechnung ausweisen. AT-UID: <strong>${myATVat||'ATU...'}</strong>`});
 
     if (isAbholung) {
@@ -4369,7 +4325,7 @@ function analyze2() {
       </div>
     </div>`;
 
-    html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:#F5A827;">Ausg: A0</strong> (Ausgangssteuer AT 0% Ausfuhr) · Kein ZM-Eintrag — GB ist kein EU-Land`});
+    html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: A0</strong> (Ausgangssteuer AT 0% Ausfuhr) · Kein ZM-Eintrag — GB ist kein EU-Land`});
     html += rH({type:'ok', icon:'⚡', text:`Ausfuhrlieferung AT → GB: Rechnung <strong>0% MwSt</strong> gem. § 7 UStG AT / Art. 146 MwStSystRL. AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>.`});
     html += rH({type:'warn', icon:'📦', text:`Belegnachweis: <strong>AT-Ausfuhrbestätigung (ATLAS/e-dec)</strong> aufbewahren (§ 7 Abs. 3 UStG AT). Gelangensbestätigung allein reicht nicht für Drittland-Ausfuhr!`});
     html += rH({type:'warn', icon:'🛃', text:`<strong>Zoll AT (Ausfuhr):</strong> Ausfuhranmeldung in AT via ATLAS erforderlich. Zolltarifnummer (KN-Code) + Ursprungsland angeben. Empfehlung: Spediteur mit ATLAS-Zugang beauftragen.`});
@@ -4476,7 +4432,7 @@ function analyze2() {
         </div>
       </div>`;
     }
-    html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:#F5A827;">Ausg: AF</strong> (Ausgangssteuer AT 0% IG-Lieferung)`});
+    html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: AF</strong> (Ausgangssteuer AT 0% IG-Lieferung)`});
     html += rH({type:'ok', icon:'⚡', text:`Innergemeinschaftliche Lieferung (AT→${cn(dest)}). Rechnung: <strong>0% MwSt (steuerfrei)</strong> gem. Art. 6 Abs. 1 iVm. Art. 7 UStG 1994 / Art. 138 MwStSystRL.`});
     html += rH({type:'ok', icon:'🆔', text:`AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>. Kunden-UID (${cn(dest)}) auf Rechnung: erforderlich + im MIAS prüfen.`});
     html += rH({type:'warn', icon:'⚠️', text:`<strong>Kunden-UID prüfen:</strong> Liegt keine gültige UID des Kunden aus ${cn(dest)} vor, entfällt die Steuerbefreiung. In diesem Fall: <strong>20% österreichische MwSt</strong> auf die Rechnung (Inlandslieferung AT). Auf ${cn(dest)}-Registrierung des Kunden bestehen oder 20% AT fakturieren bis UID nachgereicht wird.`});
@@ -5258,9 +5214,9 @@ function buildMeldepflichten(ctx, engResult) {
 
   const rows = items.map(it => {
     const colors = {
-      teal: { bg:'var(--teal-dim)', border:'rgba(45,212,191,0.22)', title:'var(--teal)', text:'#A7F3D0' },
-      blue: { bg:'var(--blue-dim)', border:'var(--blue-glow)', title:'var(--blue)', text:'#93C5FD' },
-      violet: { bg:'var(--violet-dim)', border:'rgba(167,139,250,0.22)', title:'var(--violet)', text:'#C4B5FD' },
+      teal: { bg:'var(--teal-dim)', border:'var(--teal-b)', title:'var(--teal)', text:'var(--tx-2)' },
+      blue: { bg:'var(--blue-dim)', border:'var(--blue-glow)', title:'var(--blue)', text:'var(--tx-2)' },
+      violet: { bg:'var(--violet-dim)', border:'rgba(167,139,250,0.22)', title:'var(--violet)', text:'var(--tx-2)' },
     };
     const c = colors[it.color] || colors.teal;
     return `
@@ -5490,13 +5446,9 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
           lines.push(`<div class="decision-own-line">
             <span class="decision-own-dot">🆔</span>
             <span style="display:inline-flex;align-items:center;gap:6px;">
-              <span style="display:inline-flex;align-items:center;gap:5px;
-                padding:2px 9px;border-radius:4px;
-                background:rgba(45,212,191,0.12);
-                border:1px solid rgba(45,212,191,0.35);
-                font-family:var(--mono);font-size:0.62rem;font-weight:700;
-                color:var(--teal);">
-                ${flag(uidCode)} ${uid}
+              <span class="badge-uid">
+                <span class="badge-uid-cc">${uidCode}</span>
+                ${uid}
               </span>
               <span style="font-size:0.7rem;color:var(--tx-3);">
                 ${uidLabel}
@@ -5586,9 +5538,9 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
     title: 'Incoterms — DAP oder DDP?',
     body: _isGBDest ? `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
-        <div style="padding:8px 10px;background:rgba(45,212,191,0.07);
-          border:1px solid rgba(45,212,191,0.25);border-radius:var(--r);">
-          <div style="font-weight:700;font-size:0.75rem;color:var(--teal);
+        <div style="padding:8px 10px;background:var(--status-ok-bg);
+          border:1px solid var(--status-ok-border);border-radius:var(--r);">
+          <div style="font-weight:700;font-size:0.75rem;color:var(--status-ok-text);
             margin-bottom:4px;">✅ DAP / EXW — empfohlen</div>
           <div style="font-size:0.72rem;color:var(--tx-2);line-height:1.6;">
             GB-Kunde = Importeur<br>
@@ -5597,24 +5549,24 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
             Ausfuhrnachweis (ATLAS) bei dir
           </div>
         </div>
-        <div style="padding:8px 10px;background:rgba(245,168,39,0.07);
-          border:1px solid rgba(245,168,39,0.25);border-radius:var(--r);">
-          <div style="font-weight:700;font-size:0.75rem;color:var(--amber);
+        <div style="padding:8px 10px;background:var(--status-warn-bg);
+          border:1px solid var(--status-warn-border);border-radius:var(--r);">
+          <div style="font-weight:700;font-size:0.75rem;color:var(--status-warn-text);
             margin-bottom:4px;">⚠️ DDP — nur wenn nötig</div>
           <div style="font-size:0.72rem;color:var(--tx-2);line-height:1.6;">
             Du = Importeur in GB<br>
             Du zahlst UK Import VAT + Zoll<br>
             ${_myGBVat
-              ? `GB VAT: <strong style="color:var(--teal)">${_myGBVat}</strong>`
+              ? `GB VAT: <strong style="color:var(--uid-badge-color)">${_myGBVat}</strong>`
               : `⚠️ GB VAT Registration bei HMRC erforderlich`}<br>
             Fiscal Representative ggf. nötig
           </div>
         </div>
       </div>` : `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
-        <div style="padding:8px 10px;background:rgba(45,212,191,0.07);
-          border:1px solid rgba(45,212,191,0.25);border-radius:var(--r);">
-          <div style="font-weight:700;font-size:0.75rem;color:var(--teal);
+        <div style="padding:8px 10px;background:var(--status-ok-bg);
+          border:1px solid var(--status-ok-border);border-radius:var(--r);">
+          <div style="font-weight:700;font-size:0.75rem;color:var(--status-ok-text);
             margin-bottom:4px;">✅ DAP / EXW — empfohlen</div>
           <div style="font-size:0.72rem;color:var(--tx-2);line-height:1.6;">
             CH-Kunde = Einführer<br>
@@ -5623,15 +5575,15 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
             Ausfuhrnachweis (ATLAS/e-dec) bei dir
           </div>
         </div>
-        <div style="padding:8px 10px;background:rgba(245,168,39,0.07);
-          border:1px solid rgba(245,168,39,0.25);border-radius:var(--r);">
-          <div style="font-weight:700;font-size:0.75rem;color:var(--amber);
+        <div style="padding:8px 10px;background:var(--status-warn-bg);
+          border:1px solid var(--status-warn-border);border-radius:var(--r);">
+          <div style="font-weight:700;font-size:0.75rem;color:var(--status-warn-text);
             margin-bottom:4px;">⚠️ DDP — nur wenn nötig</div>
           <div style="font-size:0.72rem;color:var(--tx-2);line-height:1.6;">
             Du = Einführer in CH<br>
             Du zahlst EUSt 8,1% → als Vorsteuer abziehbar<br>
             ${_myCHVat
-              ? `CH-UID: <strong style="color:var(--teal)">${_myCHVat}</strong>`
+              ? `CH-UID: <strong style="color:var(--uid-badge-color)">${_myCHVat}</strong>`
               : `⚠️ CH-MWST-Registrierung erforderlich`}<br>
             Steuervertreter CH (Art. 67 MWSTG) pflicht
           </div>
@@ -5704,12 +5656,15 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
       }
     }
 
-    return items.slice(0, 3).map(item => `
-      <div class="summary-item"${item.warn ? ' style="border-left:3px solid var(--red,#ef4444);padding-left:10px;margin-left:-10px"' : ''}>
+    return items.slice(0, 3).map(item => {
+      const topColor = item.warn ? 'var(--status-err-strip)' : item.ok ? 'var(--status-ok-strip)' : 'var(--ink)';
+      const valColor = item.warn ? 'var(--status-err-text)' : item.ok ? 'var(--status-ok-text)' : '';
+      return `
+      <div class="summary-item" style="border-top-color:${topColor}">
         <div class="summary-label">${item.label}</div>
-        <div class="summary-value"${item.warn ? ' style="color:var(--red);font-weight:600"' : item.ok ? ' style="color:var(--green);font-weight:600"' : ''}>${item.value}</div>
-      </div>
-    `).join('');
+        <div class="summary-value"${valColor ? ` style="color:${valColor}"` : ''}>${item.value}</div>
+      </div>`;
+    }).join('');
   })();
 
   const steps = [step1, step2, step3, step4].map((step, index) => `
@@ -8959,6 +8914,18 @@ function toggleExpert() {
   renderResult();
 }
 
+function flashModeTabs() {
+  const tabs = document.getElementById('hdrModeTabs');
+  if (!tabs) return;
+  tabs.style.transition = 'outline 0s';
+  tabs.style.outline = '2px solid rgba(255,255,255,0.8)';
+  tabs.style.borderRadius = '6px';
+  setTimeout(() => {
+    tabs.style.outline = '2px solid transparent';
+    setTimeout(() => { tabs.style.outline = ''; tabs.style.borderRadius = ''; }, 300);
+  }, 400);
+}
+
 function toggleDevMode() {
   devMode = !devMode;
   document.documentElement.setAttribute('data-dev', devMode ? 'true' : 'false');
@@ -8979,41 +8946,43 @@ function toggleDevMode() {
     document.addEventListener('mouseover', _devTipShow);
     document.addEventListener('mouseout',  _devTipHide);
     document.addEventListener('mousemove', _devTipMove);
+    document.addEventListener('keydown',   _devEscHandler);
   } else {
     document.removeEventListener('mouseover', _devTipShow);
     document.removeEventListener('mouseout',  _devTipHide);
     document.removeEventListener('mousemove', _devTipMove);
+    document.removeEventListener('keydown',   _devEscHandler);
     const tip = document.getElementById('dev-tooltip');
     if (tip) tip.style.display = 'none';
   }
 }
 
+function _devEscHandler(e) {
+  if (e.key === 'Escape' && devMode) toggleDevMode();
+}
+
 function _devTipShow(e) {
   const tip = document.getElementById('dev-tooltip');
   if (!tip) return;
-  // Walk composedPath — handles SVG elements, text nodes, shadow roots
-  const path = e.composedPath ? e.composedPath() : [];
-  let el = null;
-  for (const node of path) {
-    // Skip non-elements (TextNode, Document, Window, ShadowRoot)
-    if (!(node instanceof Element)) continue;
-    const comp = node.getAttribute('data-component');
-    if (comp) { el = node; break; }
+  let el = e.target;
+  if (!(el instanceof Element)) { tip.style.display = 'none'; return; }
+  // Skip body/html/tooltip itself
+  if (el === document.body || el === document.documentElement || el.id === 'dev-tooltip') {
+    tip.style.display = 'none'; return;
   }
-  // Fallback: walk up from target manually
-  if (!el) {
-    let cur = e.target;
-    while (cur && cur !== document.body) {
-      if (cur instanceof Element && cur.getAttribute('data-component')) { el = cur; break; }
-      cur = cur.parentElement;
-    }
-  }
-  if (el) {
-    tip.textContent = el.getAttribute('data-component');
-    tip.style.display = 'block';
-  } else {
-    tip.style.display = 'none';
-  }
+
+  const comp = el.closest('[data-component]')?.getAttribute('data-component') || null;
+
+  // Build selector line: tag + #id + .classes (max 4 classes)
+  const tag = el.tagName.toLowerCase();
+  const id  = el.id ? '#' + el.id : '';
+  const cls = Array.from(el.classList).slice(0, 4).map(c => '.' + c).join('');
+  const selector = tag + id + cls;
+
+  tip.innerHTML = comp
+    ? `<span style="opacity:.55;font-weight:400">${selector}</span> <span style="color:#a5f3fc">⬡ ${comp}</span>`
+    : `<span>${selector}</span>`;
+  tip.style.display = 'block';
 }
 function _devTipHide(e) {
   const tip = document.getElementById('dev-tooltip');
@@ -9030,6 +8999,29 @@ function switchTab(id, btn) {
   switchTabSilent(id);
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  // Sync header view-nav
+  var viewMap = { basis:'standard', begrundung:'standard', invoice:'standard', melde:'standard', quickcheck:'quickcheck', vergleich:'vergleich' };
+  var activeView = viewMap[id] || 'standard';
+  document.querySelectorAll('.h-view-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.view === activeView);
+  });
+}
+
+function switchView(view, btn) {
+  // Sync header view-nav
+  document.querySelectorAll('.h-view-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  if (view === 'standard') {
+    var basisBtn = document.querySelector('#tabBar .tab-btn');
+    switchTab('basis', basisBtn || btn);
+  } else if (view === 'quickcheck') {
+    switchTab('quickcheck', btn);
+    renderQuickCheck();
+  } else if (view === 'vergleich') {
+    var vBtn = $('tabBtnVergleich');
+    switchTab('vergleich', vBtn || btn);
+  }
 }
 
 function toggleQuickCheck(btn) {
@@ -9375,38 +9367,62 @@ function buildVergleichTab(baseCtx, baseEng) {
     } catch(e) { return pill('–','gray'); }
   }
 
-  const tableHtml = `
-  <table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;font-family:var(--mono);">
-    <thead>
-      <tr style="border-bottom:1px solid var(--border-md);">
-        <th style="padding:10px 12px;text-align:left;font-size:0.65rem;color:var(--tx-3);font-weight:600;border-right:1px solid var(--border);">Dimension</th>
-        ${transports.map(colHdr).join('')}
-      </tr>
-    </thead>
-    <tbody>
-      ${sectionHdr('Klassifikation')}
-      ${rowDim('Bewegte Lieferung', transports.map(tr => `<span style="font-size:0.72rem;color:var(--tx-1);">${movingLabel(tr)}</span>`))}
-      ${rowDim('Ruhende Lieferung', transports.map(tr => `<span style="font-size:0.72rem;color:var(--tx-2);">${restingLabel(tr)}</span>`))}
+  function cardStatus(tr) {
+    const blocking = blockingStatusRisks(tr);
+    if (blocking.length) return 'red';
+    if (getDreiecksApplied(tr) || !getDreiecksOpp(tr)) return 'green';
+    return 'amber';
+  }
 
-      ${sectionHdr('Steuerliche Behandlung')}
-      ${rowDim(`L1: ${cn(s1)} → ${cn(s2)}`, transports.map(tr => treatPill(tr, 0)))}
-      ${rowDim(`L2: ${cn(s2)} → ${cn(s4)}`, transports.map(tr => treatPill(tr, 1)))}
+  function buildCard(tr) {
+    const isCur = tr === cur;
+    const cs = cardStatus(tr);
+    return `
+    <div class="vgl-card${isCur ? ' active' : ''} status-${cs}">
+      <div class="vgl-card-hdr">
+        <span class="vgl-card-title">${tIcon[tr]} ${tLabel[tr]}</span>
+        ${isCur ? '<span class="vgl-card-badge" style="background:var(--blue-dim);color:var(--blue);">aktiv</span>' : ''}
+      </div>
+      <div class="vgl-card-section">
+        <div class="vgl-card-label">Status</div>
+        <div class="vgl-card-value">${statusCell(tr)}</div>
+      </div>
+      <div class="vgl-card-section">
+        <div class="vgl-card-label">Bewegte Lieferung</div>
+        <div class="vgl-card-value">${movingLabel(tr)}</div>
+      </div>
+      <div class="vgl-card-section">
+        <div class="vgl-card-label">L1: ${cn(s1)} → ${cn(s2)}</div>
+        <div class="vgl-card-value">${treatPill(tr, 0)}</div>
+      </div>
+      <div class="vgl-card-section">
+        <div class="vgl-card-label">L2: ${cn(s2)} → ${cn(s4)}</div>
+        <div class="vgl-card-value">${treatPill(tr, 1)}</div>
+      </div>
+      <div class="vgl-card-section">
+        <div class="vgl-card-label">SAP-Kennzeichen</div>
+        <div class="vgl-card-value">${mySapCell(tr)}</div>
+      </div>
+      <div class="vgl-card-section">
+        <div class="vgl-card-label">Registrierung</div>
+        <div class="vgl-card-value">${registrationCell(tr)}</div>
+      </div>
+      <div class="vgl-card-section">
+        <div class="vgl-card-label">Dreiecksgeschäft</div>
+        <div class="vgl-card-value">${triCell(tr)}</div>
+      </div>
+      <div class="vgl-card-section">
+        <div class="vgl-card-label">Empfehlung</div>
+        <div class="vgl-card-value">${recommendationCell(tr)} — ${reasonCell(tr)}</div>
+      </div>
+      ${!isCur ? `<button class="vgl-card-switch" onclick="showVergleichModal('${tr}')">Wechseln ↗</button>` : ''}
+    </div>`;
+  }
 
-      ${sectionHdr('SAP-Codes (meine Lieferung)')}
-      ${rowDim('Stkz. / Behandlung', transports.map(tr => mySapCell(tr)))}
-
-      ${sectionHdr('Compliance & Risiko')}
-      ${rowDim('Status', transports.map(tr => statusCell(tr)))}
-      ${rowDim('Registrierung', transports.map(tr => registrationCell(tr)))}
-      ${rowDim('Grund', transports.map(tr => reasonCell(tr)))}
-      ${rowDim('Empfehlung', transports.map(tr => recommendationCell(tr)))}
-      ${rowDim('Dreiecks­geschäft', transports.map(tr => triCell(tr)))}
-      ${rowDim('Art. 41 / Doppelerwerb', transports.map(tr => art41Cell(tr)))}
-    </tbody>
-  </table>`;
+  const tableHtml = `<div class="vgl-grid">${transports.map(buildCard).join('')}</div>`;
 
   const hint = `<div style="margin-top:10px;font-size:0.68rem;color:var(--tx-3);line-height:1.6;padding:8px 12px;border-left:3px solid var(--border-md);border-radius:0 4px 4px 0;">
-    Blau hinterlegt = aktives Szenario (${tLabel[cur]}). Klick auf eine andere Spaltenüberschrift öffnet den Wechsel-Dialog.
+    Blau = aktives Szenario (${tLabel[cur]}). Klick auf „Wechseln" bei einer anderen Karte öffnet den Dialog.
   </div>`;
 
   $('tab-vergleich').innerHTML = `<div style="padding:14px 0;" data-component="buildVergleichTab">${tableHtml}${hint}</div>`;
@@ -9457,9 +9473,41 @@ function closeTests() {
 function runInvariantTests() { openTests(); setTimeout(()=>{ try{runAllTests();}catch(e){} },100); }
 
 // ── Parties ──────────────────────────────────────────────────────────
+function setPartiesFromHeader(n, btn) {
+  // Sync sidebar party buttons
+  var sidebarBtn = n === 5 ? $('partyBtn5') : $('partyBtn' + n);
+  if (sidebarBtn) setParties(n, sidebarBtn);
+  // Sync header tabs
+  syncHeaderModeTabs(n);
+}
+
+function syncHeaderModeTabs(n) {
+  document.querySelectorAll('.h-mode-tab').forEach(function(t) {
+    t.classList.toggle('active', parseInt(t.dataset.mode) === n);
+  });
+}
+
+function updateModeBadge(n) {
+  var code = $('sidebarModeCode'), title = $('sidebarModeTitle'), desc = $('sidebarModeDesc');
+  if (!code) return;
+  var map = {
+    2: { code: '2P', title: 'Lager', desc: 'AT-Lager (EPROHA)' },
+    3: { code: '3P', title: 'Standard', desc: 'Reihengeschäft · EU + CH/GB' },
+    4: { code: '4P', title: 'EuGH T-646', desc: '4-Parteien · Dreiecksgeschäft' },
+    5: { code: 'LV', title: 'Lohnveredelung', desc: 'Art. 17 Abs. 2 lit. f' }
+  };
+  var m = map[n] || map[3];
+  code.textContent = m.code;
+  if (title) title.textContent = m.title;
+  if (desc) desc.textContent = m.desc;
+}
+
 function setParties(n, btn) {
   // Mode 2 only available for EPROHA
   if (n === 2 && currentCompany !== 'EPROHA') return;
+
+  updateModeBadge(n);
+  syncHeaderModeTabs(n);
 
   // Mode 5 = Lohnveredelung
   if (n === 5) {
@@ -9502,17 +9550,21 @@ function setParties(n, btn) {
 function syncPartyButtons() {
   const btn2 = $('partyBtn2');
   if (!btn2) return;
+  var hdr2 = $('hdrMode2');
   if (currentCompany === 'EPROHA') {
     btn2.style.display = '';
     btn2.title = 'AT-Lagerlieferung (EPROHA)';
+    if (hdr2) hdr2.style.display = '';
   } else {
     btn2.style.display = 'none';
+    if (hdr2) hdr2.style.display = 'none';
     // If currently in mode 2, switch to mode 3
     if (currentMode === 2) {
       currentMode = 3;
       document.querySelectorAll('#partyTopRow .party-btn').forEach((b,i) => b.classList.toggle('active', i === (btn2.style.display === 'none' ? 0 : 1)));
       // activate the 3-button (index 1 when 2-button hidden = index 0 visually)
       document.querySelectorAll('#partyTopRow .party-btn:not([style*="none"])')[0]?.classList.add('active');
+      syncHeaderModeTabs(3);
     }
   }
 }
@@ -9574,31 +9626,44 @@ function renderPickers() {
     4: ['DE', home, 'FR', 'IT'],
   };
 
+  const roles3 = ['Lieferant','Mittler','Empfänger'];
+  const roles4 = ['Lieferant','Mittler 1','Mittler 2','Empfänger'];
+  const roles2 = ['Lager/Werk','Kunde'];
+  const roles = n === 4 ? roles4 : n === 2 ? roles2 : roles3;
+
   let h = '';
   for (let i = 0; i < n; i++) {
-    if (i > 0) h += `<span class="picker-arrow">→</span>`;
     const def = defaults[n][i];
     const existing = $(`cp-${i}`)?.value || def;
+    const letter = PL(i);
+    const role = roles[i] || '';
+    const isMe = n === 3 && i === 1;
 
     // Mode 2 EPROHA: A is always AT, locked
     const isLocked = (currentMode === 2 && i === 0);
 
     if (isLocked) {
-      h += `<div class="picker">
-        <label>A <span style="font-size:0.55rem;color:var(--teal)">(Lager/Werk)</span></label>
-        <div class="picker-wrap">
-          <select id="cp-${i}" disabled style="opacity:0.6;cursor:not-allowed">
-            <option value="AT" selected>🇦🇹 Österreich</option>
-          </select>
+      h += `<div class="picker-grid">
+        <div class="picker-circle">${letter}</div>
+        <div class="picker">
+          <label>${role}</label>
+          <div class="picker-wrap">
+            <select id="cp-${i}" disabled style="opacity:0.6;cursor:not-allowed">
+              <option value="AT" selected>🇦🇹 Österreich</option>
+            </select>
+          </div>
         </div>
       </div>`;
     } else {
-      h += `<div class="picker">
-        <label>${PL(i)}${n===3&&i===1?' <span style="font-size:0.55rem;color:var(--teal)">✦ ICH</span>':''}</label>
-        <div class="picker-wrap">
-          <select id="cp-${i}" onchange="onCC()">
-            ${EU.map(c => `<option value="${c.code}"${c.code===existing?' selected':''}>${flag(c.code)} ${cn(c.code)}</option>`).join('')}
-          </select>
+      h += `<div class="picker-grid">
+        <div class="picker-circle">${letter}</div>
+        <div class="picker">
+          <label>${role}${isMe?' <span style="font-size:0.6rem;font-weight:700;color:#fff;background:var(--teal);border-radius:3px;padding:1px 5px;vertical-align:middle;letter-spacing:0.03em">ICH</span>':''}</label>
+          <div class="picker-wrap">
+            <select id="cp-${i}" onchange="onCC()">
+              ${EU.map(c => `<option value="${c.code}"${c.code===existing?' selected':''}>${flag(c.code)} ${cn(c.code)}</option>`).join('')}
+            </select>
+          </div>
         </div>
       </div>`;
     }
@@ -9615,9 +9680,9 @@ function renderChain() {
     const isMe = i === meIdx;
     return `${i>0?'<span class="cp-arrow">→</span>':''}
     <span class="cp-item${isMe?' is-me':''}">
-      <span>${flag(c)}</span>
-      <span class="cname">${cn(c)}</span>
-      <span class="lbl">${PL(i)}${isMe?' ✦ ICH':''}</span>
+      <span class="cp-flag">${flag(c)}</span>
+      <span class="cp-cc">${c}</span>
+      <span class="lbl">${PL(i)}${isMe?' · ICH':''}</span>
     </span>`;
   }).join('');
 }
@@ -9644,27 +9709,24 @@ function renderTransport() {
     $('transportList').innerHTML = `
       <label class="t-opt${aActive?' active':''}" onclick="setT('A')">
         <div class="radio"></div>
-        <span class="t-label"><strong>🇦🇹 A</strong> — EPROHA liefert zum Kunden</span>
-        <span class="t-role">Lieferant</span>
+        <span class="t-label"><strong>A</strong> — EPROHA liefert</span>
       </label>
       <label class="t-opt${cActive?' active':''}" onclick="setT('C')">
         <div class="radio"></div>
-        <span class="t-label"><strong>${flag(countries[1]||'DE')} B</strong> — Kunde holt ab (EXW/FCA)</span>
-        <span class="t-role">Abholung</span>
+        <span class="t-label"><strong>B</strong> — Kunde holt ab</span>
       </label>`;
     return;
   }
 
   const roles = {
-    3: ['Lieferant','Zwischenhändler','Endkunde'],
-    4: ['Lieferant','Zwischenhändler 1','Zwischenhändler 2','Endkunde']
+    3: ['Lieferant','Mittler','Empfänger'],
+    4: ['Lieferant','Mittler 1','Mittler 2','Empfänger']
   };
   const activeLetter = getTransportLetter();
   $('transportList').innerHTML = ['A','B','C','D'].slice(0,n).map((l,i) => `
     <label class="t-opt${activeLetter===l?' active':''}" onclick="setT('${l}')">
       <div class="radio"></div>
-      <span class="t-label"><strong>${flag(countries[i])} ${l}</strong> — ${cn(countries[i])}</span>
-      <span class="t-role">${(roles[n]||roles[3])[i]||''}</span>
+      <span class="t-label"><strong>${l}</strong> — ${(roles[n]||roles[3])[i]||''}</span>
     </label>`).join('');
 }
 
@@ -9731,7 +9793,40 @@ function toggleUIDs() {
   $('uidChevron').classList.toggle('open', uidPanelOpen);
 }
 
+function renderUIDInline() {
+  const el = $('uidInlineGrid');
+  if (!el) return;
+  const countries = getSelectedCountries();
+  const meIdx = currentMode === 2 ? 0 : mePosition - 1;
+  const vids = MY_VAT_IDS;
+  const n = countries.length;
+
+  // Determine buyer/seller positions relative to meIdx
+  // Als Käufer: L before me (meIdx-1 → meIdx), Als Verkäufer: L after me (meIdx → meIdx+1)
+  const buyerRole  = meIdx === 0 ? 'L1' : `L${meIdx}`;
+  const sellerRole = meIdx >= n - 1 ? `L${n-1}` : `L${meIdx + 1}`;
+
+  // Relevant UIDs for this scenario
+  const depCountry  = countries[meIdx] || countries[0];
+  const myUID = vids[depCountry] || '';
+
+  // Collect all my UIDs for display
+  const myUIDEntries = Object.entries(vids);
+
+  el.innerHTML = `<div class="uid-inline-grid">
+    <div class="uid-inline-field">
+      <div class="uid-inline-label">Als Käufer (${buyerRole})</div>
+      <div class="uid-inline-val">${myUID || '—'}</div>
+    </div>
+    <div class="uid-inline-field">
+      <div class="uid-inline-label">Als Verkäufer (${sellerRole})</div>
+      <div class="uid-inline-val">${myUID || '—'}</div>
+    </div>
+  </div>`;
+}
+
 function renderUIDs() {
+  renderUIDInline();
   const countries = getSelectedCountries();
   // Mode 2: EPROHA is always party A (index 0)
   const meIdx = currentMode === 2 ? 0 : mePosition - 1;
@@ -11451,24 +11546,25 @@ function renderQuickCheck() {
       <div class="qc-form">
         <div class="qc-form-row">
           <div class="qc-field">
-            <label class="qc-label">Gesellschaft</label>
-            <div class="qc-co-btns">
-              <button class="qc-co-btn ${company === 'EPDE'   ? 'active' : ''}" onclick="qcState.company='EPDE';renderQuickCheck()">EPDE</button>
-              <button class="qc-co-btn ${company === 'EPROHA' ? 'active' : ''}" onclick="qcState.company='EPROHA';renderQuickCheck()">EPROHA</button>
-            </div>
-          </div>
-          <div class="qc-field">
-            <label class="qc-label">Abgangsland (Lieferant)</label>
+            <label class="qc-label">Abgangsland</label>
             <select class="qc-select" onchange="qcState.dep=this.value;renderQuickCheck()">${depOpts}</select>
           </div>
           <div class="qc-field">
-            <label class="qc-label">Empfangsland (Kunde)</label>
+            <label class="qc-label">Empfangsland</label>
             <select class="qc-select" onchange="qcState.dest=this.value;renderQuickCheck()">${destOpts}</select>
           </div>
+          <div class="qc-field">
+            <label class="qc-label">Transport</label>
+            <div class="qc-transport-row">${tOpts}</div>
+          </div>
+          <button class="qc-check-btn" onclick="renderQuickCheck()">Prüfen</button>
         </div>
-        <div class="qc-transport-row">
-          <span class="qc-label">Transport organisiert:</span>
-          ${tOpts}
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="qc-label" style="margin:0;">Gesellschaft:</span>
+          <div class="qc-co-btns">
+            <button class="qc-co-btn ${company === 'EPDE'   ? 'active' : ''}" onclick="qcState.company='EPDE';renderQuickCheck()">EPDE</button>
+            <button class="qc-co-btn ${company === 'EPROHA' ? 'active' : ''}" onclick="qcState.company='EPROHA';renderQuickCheck()">EPROHA</button>
+          </div>
         </div>
       </div>
 
