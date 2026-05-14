@@ -1445,8 +1445,18 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
   const L1moving = movingIdx === 0;
   const L1col    = noMoving ? '#6B7280' : (L1moving ? COL_BLUE : '#6B7280');
   const L2col    = noMoving ? '#6B7280' : (!L1moving ? COL_BLUE : (isDreiecks ? COL_VIOLET : '#6B7280'));
-  const L1lbl    = noMoving ? ['L1 — ruhend'] : (L1moving ? ['L1 — bewegte'] : ['L1 — ruhend']);
-  const L2lbl    = noMoving ? ['L2 — ruhend'] : (!L1moving ? ['L2 — bewegte'] : (isDreiecks ? ['L2 — Dreieck'] : ['L2 — ruhend']));
+  const L1lbl    = noMoving
+    ? ['L1 — ruhend', rate(A.code) + '% ' + cn(departure)]
+    : (L1moving
+        ? ['L1 — bewegte', '0% steuerfrei']
+        : ['L1 — ruhend', rate(A.code) + '% ' + cn(departure)]);
+  const L2lbl    = noMoving
+    ? ['L2 — ruhend', rate(C.code) + '% ' + cn(destination)]
+    : (!L1moving
+        ? ['L2 — bewegte', '0% steuerfrei']
+        : (isDreiecks
+            ? ['L2 — Dreieck', 'RC · 0%']
+            : ['L2 — ruhend', rate(C.code) + '% ' + cn(destination)]));
   const nodeBcol = noMoving ? '#6B7280' : (isDreiecks ? COL_VIOLET : (L1moving ? COL_VIOLET : COL_BLUE));
 
   const svg = `
