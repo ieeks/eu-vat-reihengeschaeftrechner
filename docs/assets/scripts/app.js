@@ -9838,8 +9838,13 @@ function renderUIDInline() {
   const sellerRole = meIdx >= n - 1 ? `L${n-1}` : `L${meIdx + 1}`;
 
   // Relevant UIDs for this scenario
-  const depCountry  = countries[meIdx] || countries[0];
-  const homeUID = vids[depCountry] || '';
+  const myCountry  = countries[meIdx] || countries[0];
+  const departure  = countries[0];
+  const destination = countries[n - 1];
+  // Inland chain (dep === dest): both deliveries are domestic in that country → use that UID
+  // Otherwise: use UID of my position country, fall back to first available UID
+  const relevantCountry = (departure === destination) ? departure : myCountry;
+  const homeUID = vids[relevantCountry] || vids[myCountry] || '';
   const buyerUID = (selectedUidOverride && vids[selectedUidOverride]) ? vids[selectedUidOverride] : homeUID;
 
   el.innerHTML = `<div class="uid-inline-grid">
