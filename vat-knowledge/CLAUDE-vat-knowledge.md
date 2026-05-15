@@ -142,3 +142,4 @@ uidOverride > selectedUidOverride > companyHome
 - [`rc_country_rules.md`](rules/rc_country_rules.md) — _checkRCBlock() für BE/PL/CZ/SI/LV/EE/IT; DE-RC-Prüfung liegt in `computeTax()` (Rendering-Layer), nicht in `_checkRCBlock()` (VATEngine). Engine kennt keinen DE-spezifischen RC-Block.
 - [`registration_risk_logic.md`](rules/registration_risk_logic.md) — 6 Risk-Types A–F, triangleMitigatesReg, severity-Werte
 - [`place_of_supply.md`](rules/place_of_supply.md) — Art. 32/36 MwStSystRL, num-Signal, Inland-Sonderfall, Export-Check
+- [`reference-cases.md`](reference-cases.md) — **Referenzfälle mit verifizierten Ergebnissen** (movingIndex, Lieferort, SAP-Stkz.); 14 Fälle aus SMOKE_TESTS, alle Transport-Varianten, Dreiecksgeschäft-Blockierungsgründe, EPROHA + EPDE
