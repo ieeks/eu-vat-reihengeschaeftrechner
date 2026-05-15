@@ -94,7 +94,7 @@ Stand: 15.05.2026
 ## P2 — Nice-to-have
 
 - [x] **vat-knowledge: Inlands-Reihengeschäft-Seite** — `rules/inland_chain.md`: meStatus, SAP-Matrizen EPROHA+EPDE, IT inversione contabile, 4 Referenzfälle (Session 25)
-- [ ] **vat-knowledge: bekannte Grenzfälle** — BG→AT→BG, HU→DE EXW, Sappi DE→EPDE→IT
+- [x] **vat-knowledge: bekannte Grenzfälle** — `edge-cases.md`: BG Inland, HU EXW lit. c/b, Sappi DE→EPDE→IT (Session 25)
 - [ ] **Code-Modularisierung** — IIFE-Module, tieferer AppState nach UI-Helper-Basis
 - [ ] **External Verify Button**
 - [ ] **Belegnachweis-Checkliste** (nur Expert)
