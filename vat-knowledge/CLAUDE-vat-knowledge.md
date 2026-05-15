@@ -126,6 +126,7 @@ uidOverride > selectedUidOverride > companyHome
 ### Österreich (`at/`)
 - [`ustg_at_reihengeschaeft.md`](at/ustg_at_reihengeschaeft.md) — § 3 Abs. 8/15 UStG AT, Art. 6/7 UStG 1994, EPROHA-Kontext
 - [`ustg_at_dreieck.md`](at/ustg_at_dreieck.md) — Art. 25 UStG AT, KZ 077, natLaw()-Dispatch AT vs. DE
+- [`eproha-buchungskreise.md`](at/eproha-buchungskreise.md) — **AT- vs. DE-Buchungskreis**, A0/AF/DH-Entscheidungslogik, `_sapEffectiveCountry()`, vollständige SAP-Matrix EPROHA
 
 ### Deutschland (`de/`)
 - [`ustg_de_3_6a.md`](de/ustg_de_3_6a.md) — § 3 Abs. 6a UStG, § 13b RC-Block bei Warenlieferung, EPDE-Kontext
