@@ -14,7 +14,7 @@
 | `classifySupplies()` / `placeOfSupply` | `rules/place_of_supply.md` |
 | `_checkRCBlock()` | `rules/rc_country_rules.md` |
 | `detectRegistrationRisk()` | `rules/registration_risk_logic.md` |
-| SAP-Codes / `_sapEffectiveCountry()` | `rules/uid_usage_rules.md` |
+| SAP-Codes / `_sapEffectiveCountry()` | `rules/uid_usage_rules.md` · `at/eproha-buchungskreise.md` · `de/epde-buchungskreise.md` |
 | `buildKurzbeschreibung()` / `summaryItems` | `rules/uid_usage_rules.md` |
 | `buildVergleichTab()` | `rules/triangle_conditions.md` + `rules/registration_risk_logic.md` |
 | `buildTrafficStatus()` / `analyzeInland()` regBanner | `rules/registration_risk_logic.md` |
@@ -131,6 +131,7 @@ uidOverride > selectedUidOverride > companyHome
 ### Deutschland (`de/`)
 - [`ustg_de_3_6a.md`](de/ustg_de_3_6a.md) — § 3 Abs. 6a UStG, § 13b RC-Block bei Warenlieferung, EPDE-Kontext
 - [`ustae_reihengeschaeft.md`](de/ustae_reihengeschaeft.md) — Abschn. 3.14/25b UStAE, § 14a Abs. 7, BFH XI R 35/22
+- [`epde-buchungskreise.md`](de/epde-buchungskreise.md) — **DE- vs. 7 EU-Buchungskreise**, G0/DH-Entscheidungslogik, RC NL-Ausnahme, IT inversione contabile, vollständige SAP-Matrix EPDE (8 UIDs)
 
 ### Schweiz (`ch/`)
 - [`mwst_ch_ort_lieferung.md`](ch/mwst_ch_ort_lieferung.md) — Art. 7/23/10/67 MWSTG, computeTaxCH(), Drittland-Routing
