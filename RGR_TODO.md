@@ -73,7 +73,7 @@ Stand: 15.05.2026
 
 - [x] **Drop-Shipment Browserabnahme** — Mode 2 / EPROHA abgenommen (Session 24)
 - [ ] **Typeahead Länder-Picker** — Native select ersetzen
-- [ ] **REAL_CASES_2026 Tests** — HU→DE EXW, Sappi DE→EPDE→IT, BG→AT→BG, BG→DE→BG Inland-Hint prüfen
+- [x] **REAL_CASES_2026 Tests** — RC-HU-DE-LITC/LITA, RC-SAPPI-1/2/3, RC-BG-AT-BG, RC-BG-DE-BG als SMOKE_TESTS (Session 25)
 - [ ] **Vergleich-Tab: Struktur-Dimension** — 3P/4P/Dreieck als zweite Achse
 - [ ] **VATEngine: establishments-Datenmodell pro Partei** —
   Niederlassung von Registrierung trennen. Aktuell kennt die Engine
