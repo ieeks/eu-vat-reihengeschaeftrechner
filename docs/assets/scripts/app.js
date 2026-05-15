@@ -2543,8 +2543,9 @@ function analyzeInland(ctx) {
 
     // SAP-Badge für meine Lieferung
     const inlandTreatment = isItRC ? 'rc' : 'domestic';
-    const sapRole = (lNum === 1 && isMySupply) ? 'buyer' : 'seller';
-    const inlandSAP = isMySupply ? sapBadge(land, inlandTreatment, sapRole) : '';
+    const isMyBuyer = to.label.includes('Ich');
+    const sapRole = isMyBuyer ? 'buyer' : 'seller';
+    const inlandSAP = (isMySupply || isMyBuyer) ? sapBadge(land, inlandTreatment, sapRole) : '';
 
     return `<div class="delivery-box resting" style="margin-bottom:12px;">
       <div class="delivery-header">
@@ -8461,6 +8462,7 @@ const OUTPUT_TESTS = [
         if (!el) { el = document.createElement('select'); el.id = id; el.style.display='none'; document.body.appendChild(el); }
         el.innerHTML = `<option value="${val}" selected>${val}</option>`;
       };
+      setV('cp-0','AT'); setV('cp-1','IT');
       setV('s1','AT'); setV('s2','IT'); setV('s3','IT'); setV('s4','IT');
       setV('dep','AT'); setV('dest','IT');
     },
@@ -8487,6 +8489,7 @@ const OUTPUT_TESTS = [
         if (!el) { el = document.createElement('select'); el.id = id; el.style.display='none'; document.body.appendChild(el); }
         el.innerHTML = `<option value="${val}" selected>${val}</option>`;
       };
+      setV('cp-0','AT'); setV('cp-1','DE');
       setV('s1','AT'); setV('s2','DE'); setV('s3','DE'); setV('s4','DE');
       setV('dep','AT'); setV('dest','DE');
     },
@@ -8509,6 +8512,7 @@ const OUTPUT_TESTS = [
         if (!el) { el = document.createElement('select'); el.id = id; el.style.display='none'; document.body.appendChild(el); }
         el.innerHTML = `<option value="${val}" selected>${val}</option>`;
       };
+      setV('cp-0','AT'); setV('cp-1','IT');
       setV('s1','AT'); setV('s2','IT'); setV('s3','IT'); setV('s4','IT');
       setV('dep','AT'); setV('dest','IT');
     },

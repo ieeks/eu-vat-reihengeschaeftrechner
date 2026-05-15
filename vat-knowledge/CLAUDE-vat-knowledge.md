@@ -14,7 +14,7 @@
 | `classifySupplies()` / `placeOfSupply` | `rules/place_of_supply.md` |
 | `_checkRCBlock()` | `rules/rc_country_rules.md` |
 | `detectRegistrationRisk()` | `rules/registration_risk_logic.md` |
-| SAP-Codes / `_sapEffectiveCountry()` | `rules/uid_usage_rules.md` |
+| SAP-Codes / `_sapEffectiveCountry()` | `rules/uid_usage_rules.md` · `at/eproha-buchungskreise.md` · `de/epde-buchungskreise.md` |
 | `buildKurzbeschreibung()` / `summaryItems` | `rules/uid_usage_rules.md` |
 | `buildVergleichTab()` | `rules/triangle_conditions.md` + `rules/registration_risk_logic.md` |
 | `buildTrafficStatus()` / `analyzeInland()` regBanner | `rules/registration_risk_logic.md` |
@@ -126,10 +126,12 @@ uidOverride > selectedUidOverride > companyHome
 ### Österreich (`at/`)
 - [`ustg_at_reihengeschaeft.md`](at/ustg_at_reihengeschaeft.md) — § 3 Abs. 8/15 UStG AT, Art. 6/7 UStG 1994, EPROHA-Kontext
 - [`ustg_at_dreieck.md`](at/ustg_at_dreieck.md) — Art. 25 UStG AT, KZ 077, natLaw()-Dispatch AT vs. DE
+- [`eproha-buchungskreise.md`](at/eproha-buchungskreise.md) — **AT- vs. DE-Buchungskreis**, A0/AF/DH-Entscheidungslogik, `_sapEffectiveCountry()`, vollständige SAP-Matrix EPROHA
 
 ### Deutschland (`de/`)
 - [`ustg_de_3_6a.md`](de/ustg_de_3_6a.md) — § 3 Abs. 6a UStG, § 13b RC-Block bei Warenlieferung, EPDE-Kontext
 - [`ustae_reihengeschaeft.md`](de/ustae_reihengeschaeft.md) — Abschn. 3.14/25b UStAE, § 14a Abs. 7, BFH XI R 35/22
+- [`epde-buchungskreise.md`](de/epde-buchungskreise.md) — **DE- vs. 7 EU-Buchungskreise**, G0/DH-Entscheidungslogik, RC NL-Ausnahme, IT inversione contabile, vollständige SAP-Matrix EPDE (8 UIDs)
 
 ### Schweiz (`ch/`)
 - [`mwst_ch_ort_lieferung.md`](ch/mwst_ch_ort_lieferung.md) — Art. 7/23/10/67 MWSTG, computeTaxCH(), Drittland-Routing
@@ -142,3 +144,4 @@ uidOverride > selectedUidOverride > companyHome
 - [`rc_country_rules.md`](rules/rc_country_rules.md) — _checkRCBlock() für BE/PL/CZ/SI/LV/EE/IT; DE-RC-Prüfung liegt in `computeTax()` (Rendering-Layer), nicht in `_checkRCBlock()` (VATEngine). Engine kennt keinen DE-spezifischen RC-Block.
 - [`registration_risk_logic.md`](rules/registration_risk_logic.md) — 6 Risk-Types A–F, triangleMitigatesReg, severity-Werte
 - [`place_of_supply.md`](rules/place_of_supply.md) — Art. 32/36 MwStSystRL, num-Signal, Inland-Sonderfall, Export-Check
+- [`reference-cases.md`](reference-cases.md) — **Referenzfälle mit verifizierten Ergebnissen** (movingIndex, Lieferort, SAP-Stkz.); 14 Fälle aus SMOKE_TESTS, alle Transport-Varianten, Dreiecksgeschäft-Blockierungsgründe, EPROHA + EPDE
