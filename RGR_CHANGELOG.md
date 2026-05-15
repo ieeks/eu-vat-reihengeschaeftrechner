@@ -2,6 +2,22 @@
 
 ---
 
+## v4.3 · 15.05.2026 — Session 24
+
+### Bugfixes
+
+- **SAP-Badge L1-Delivery-Box** — bei Inlands-Reihengeschäft (Lieferort = Abgangsland) wurde in der L1-Box fälschlich kein Badge gerendert; `buildDeliveryBox()` gibt Badge jetzt korrekt aus.
+- **`renderUIDInline()` Inlandsfall** — zeigte bei Inlands-Reihengeschäft falsche UID; greift jetzt korrekt auf `placeOfSupply`-UID zurück.
+- **OT-M2 Browser-DOM-Robustheit** — Tests OT-M2-01/02/03 setzen `cp-0` und `cp-1` jetzt explizit; verhindert Fehlschlag wenn `analyze2()` im Browser einen cp-1-Wert aus einer vorherigen Mode-3-Session liest statt des `dest`-Fallbacks.
+
+### vat-knowledge — neue Referenzdokumentation
+
+- **`reference-cases.md`** — 14 menschenlesbare Referenzfälle mit verifizierten Ergebnissen (movingIndex, Lieferort, SAP-Codes Ein-/Ausgang, Dreiecksgeschäft-Status); alle Transport-Varianten (supplier/middle/customer/middle2), IG-Erwerb vs. IG-Lieferung, Quick Fix lit. a/b/c, Dreiecksgeschäft-Blockierungsgründe; deckt EPROHA + EPDE ab. Querverweise auf SMOKE_TESTS-IDs.
+- **`at/eproha-buchungskreise.md`** — vollständige SAP-Matrix AT/DE/CH-Buchungskreis (AF/A0/VE/A2/DH/D0/VH/DS/B5/IB); A0 vs. AF Entscheidungstabelle (Drittland vs. EU); DH vs. AF (DE- vs. AT-Buchungskreis); `_sapEffectiveCountry()`-Logik erklärt; IT-Sonderfall inversione contabile (IC Ausgang / VT Eingang, kein IT-Buchungskreis).
+- **`de/epde-buchungskreise.md`** — vollständige SAP-Matrix für alle 8 EPDE-UIDs (DE/SI/LV/EE/NL/BE/CZ/PL); G0 vs. DH Entscheidungstabelle; RC-NL-Ausnahme (Art. 12 Wet OB — einziger erlaubter RC bei EPDE); IT inversione contabile (IC/IP/VI); Warnung: BE/LV/EE/NL haben kein IG-Lieferung Ausgangs-Stkz.
+
+---
+
 ## v4.3 · 14.05.2026 — Session 23
 
 ### Infrastruktur & UX
