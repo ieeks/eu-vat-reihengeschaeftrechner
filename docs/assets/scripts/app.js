@@ -2543,7 +2543,7 @@ function analyzeInland(ctx) {
 
     // SAP-Badge für meine Lieferung
     const inlandTreatment = isItRC ? 'rc' : 'domestic';
-    const isMyBuyer = to.label.includes('Ich');
+    const isMyBuyer = toParty.label.includes('Ich');
     const sapRole = isMyBuyer ? 'buyer' : 'seller';
     const inlandSAP = (isMySupply || isMyBuyer) ? sapBadge(land, inlandTreatment, sapRole) : '';
 
