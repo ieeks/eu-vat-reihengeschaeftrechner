@@ -17,7 +17,7 @@
 | SAP-Codes / `_sapEffectiveCountry()` | `rules/uid_usage_rules.md` · `at/eproha-buchungskreise.md` · `de/epde-buchungskreise.md` |
 | `buildKurzbeschreibung()` / `summaryItems` | `rules/uid_usage_rules.md` |
 | `buildVergleichTab()` | `rules/triangle_conditions.md` + `rules/registration_risk_logic.md` |
-| `buildTrafficStatus()` / `analyzeInland()` regBanner | `rules/registration_risk_logic.md` |
+| `buildTrafficStatus()` / `analyzeInland()` regBanner | `rules/registration_risk_logic.md` · `rules/inland_chain.md` |
 | `analyze2()` / EPROHA AT-Lager | `at/ustg_at_reihengeschaeft.md` |
 | `analyzeCH()` / `computeTaxCH()` | `ch/mwst_ch_ort_lieferung.md` |
 | `buildKonsiLagerCH()` | `ch/mwst_ch_konsignationslager.md` |
@@ -145,3 +145,4 @@ uidOverride > selectedUidOverride > companyHome
 - [`registration_risk_logic.md`](rules/registration_risk_logic.md) — 6 Risk-Types A–F, triangleMitigatesReg, severity-Werte
 - [`place_of_supply.md`](rules/place_of_supply.md) — Art. 32/36 MwStSystRL, num-Signal, Inland-Sonderfall, Export-Check
 - [`reference-cases.md`](reference-cases.md) — **Referenzfälle mit verifizierten Ergebnissen** (movingIndex, Lieferort, SAP-Stkz.); 14 Fälle aus SMOKE_TESTS, alle Transport-Varianten, Dreiecksgeschäft-Blockierungsgründe, EPROHA + EPDE
+- [`rules/inland_chain.md`](rules/inland_chain.md) — **Inlands-Reihengeschäft** (dep===dest): meStatus-Logik, SAP-Matrizen EPROHA + EPDE, IT inversione contabile, 4 Referenzfälle, NL/EE-Sonderfälle
