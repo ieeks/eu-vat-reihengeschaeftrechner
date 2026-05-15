@@ -2,6 +2,18 @@
 
 ---
 
+## v4.3 · 15.05.2026 — Session 25
+
+### Tests
+
+- **SMOKE_TESTS CH/GB EPROHA** — 4 neue Tests (CH-EP1, CH-EP2, GB-EP1, GB-EP2) für EPROHA als Zwischenhändler auf EU→CH- und EU→GB-Ketten; decken Transport=middle (L2 bewegend, lit. b) und Transport=supplier (L1 bewegend) ab; schließen die Lücke der bisherigen CH-SV1/2/3 die nur EPDE-Fälle abgedeckt haben. 33→37 Smoke Tests.
+
+### vat-knowledge
+
+- **`rules/inland_chain.md`** — neue Seite für Inlands-Reihengeschäft (dep===dest): `analyzeInland()`-Trigger, `partyStatus()`-Entscheidungslogik (domestic/itRC/needsReg), vollständige SAP-Matrizen EPROHA + EPDE, IT inversione contabile (Art. 17 DPR 633/1972), 4 Referenzfälle (R1–R4), bekannte Lücken NL (Art. 12 Wet OB) und EE (Satzabweichung 22% vs. 24%) dokumentiert.
+
+---
+
 ## v4.3 · 15.05.2026 — Session 24
 
 ### Bugfixes

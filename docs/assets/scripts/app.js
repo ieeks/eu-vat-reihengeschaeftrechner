@@ -7994,6 +7994,66 @@ const SMOKE_TESTS = [
     }
   },
 
+  // ── EPROHA CH-Export (B003a / B003b) ─────────────────────────────────────
+
+  // CH-EP1 = B003a: AT→AT(EPROHA)→CH, Transport=Ich (middle) — L2 bewegend (lit. b: AT-Ansässigkeits-UID)
+  {
+    id: 'CH-EP1',
+    name: 'AT→AT(EPROHA)→CH, Transport=Ich (middle) — L2 bewegend, Ausfuhr AT',
+    source: '§ 7 UStG AT / Art. 146 MwStSystRL — EPROHA transportiert mit AT-UID (Ansässigkeit) → lit. b → L2 bewegend',
+    ctx: { s1:'AT', s2:'AT', s4:'CH', dep:'AT', dest:'CH', transport:'middle',
+           mode:3, mePosition:2, company:'EPROHA' },
+    expect: {
+      movingIndex: 1,    // L2 bewegend (Mittler transportiert mit Ansässigkeits-UID = lit. b)
+      igLieferung: true, // L2 = steuerfreie Ausfuhr aus AT
+      lieferortL1: 'AT', // L1 ruhend vor Bewegung → Lieferort = dep
+    }
+  },
+
+  // CH-EP2 = B003b: AT→DE(EPROHA)→CH, Transport=Lieferant (supplier) — L1 bewegend
+  {
+    id: 'CH-EP2',
+    name: 'AT→DE(EPROHA)→CH, Transport=Lieferant (supplier) — L1 bewegend, EPROHA nicht Exporteur',
+    source: '§ 7 UStG AT / Art. 146 MwStSystRL — U1 transportiert → L1 bewegend, EPROHA auf L2 ruhend in CH',
+    ctx: { s1:'AT', s2:'DE', s4:'CH', dep:'AT', dest:'CH', transport:'supplier',
+           mode:3, mePosition:2, company:'EPROHA' },
+    expect: {
+      movingIndex: 0,    // L1 bewegend (Lieferant transportiert)
+      igLieferung: true, // L1 = steuerfreie Ausfuhr aus AT
+      lieferortL2: 'CH', // L2 ruhend nach Bewegung → Lieferort = dest (CH)
+    }
+  },
+
+  // ── EPROHA GB-Export (GB-Analogfälle) ────────────────────────────────────
+
+  // GB-EP1: AT→AT(EPROHA)→GB, Transport=Ich (middle) — L2 bewegend
+  {
+    id: 'GB-EP1',
+    name: 'AT→AT(EPROHA)→GB, Transport=Ich (middle) — L2 bewegend, Ausfuhr AT',
+    source: '§ 7 UStG AT / Art. 146 MwStSystRL — EPROHA transportiert → lit. b → L2 bewegend, Post-Brexit GB',
+    ctx: { s1:'AT', s2:'AT', s4:'GB', dep:'AT', dest:'GB', transport:'middle',
+           mode:3, mePosition:2, company:'EPROHA' },
+    expect: {
+      movingIndex: 1,    // L2 bewegend
+      igLieferung: true, // L2 = steuerfreie Ausfuhr aus AT nach GB
+      lieferortL1: 'AT', // L1 ruhend → dep
+    }
+  },
+
+  // GB-EP2: AT→DE(EPROHA)→GB, Transport=Lieferant (supplier) — L1 bewegend
+  {
+    id: 'GB-EP2',
+    name: 'AT→DE(EPROHA)→GB, Transport=Lieferant (supplier) — L1 bewegend, EPROHA nicht Exporteur',
+    source: '§ 7 UStG AT / Art. 146 MwStSystRL — U1 transportiert → L1 bewegend, EPROHA L2 ruhend in GB',
+    ctx: { s1:'AT', s2:'DE', s4:'GB', dep:'AT', dest:'GB', transport:'supplier',
+           mode:3, mePosition:2, company:'EPROHA' },
+    expect: {
+      movingIndex: 0,    // L1 bewegend
+      igLieferung: true, // L1 = steuerfreie Ausfuhr
+      lieferortL2: 'GB', // L2 ruhend → dest (GB)
+    }
+  },
+
 ];
 
 // ── Smoke Test Runner ───────────────────────────────────────────────────────
