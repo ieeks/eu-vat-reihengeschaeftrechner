@@ -8054,6 +8054,120 @@ const SMOKE_TESTS = [
     }
   },
 
+  // ── REAL_CASES_2026 ───────────────────────────────────────────────────────
+
+  // RC-HU-DE-LITC: EPDE holt in HU ab, tritt mit DE-UID auf (keine HU-UID)
+  // → lit. c (Default): keine Abgangsland-UID mitgeteilt → L1 bewegend
+  // → L1 = IG-Lieferung HU→DE (0%), EPDE IG-Erwerb in DE. Kein HU-Risiko.
+  {
+    id: 'RC-HU-DE-LITC',
+    name: 'HU→DE(EPDE)→DE, Transport=Ich, keine HU-UID — lit. c, L1 bewegend, kein HU-Risiko',
+    source: 'Art. 36a Abs. 2 MwStSystRL / § 3 Abs. 15 Z 1 lit. c UStG AT — Standardregel: keine Abgangsland-UID → L1 bewegend',
+    company: 'EPDE',
+    ctx: { s1:'HU', s2:'DE', s4:'DE', dep:'HU', dest:'DE', transport:'middle',
+           mode:3, mePosition:2, uidOverride: null },
+    expect: {
+      movingIndex: 0,        // lit. c → L1 bewegend (EPDE hat keine HU-UID)
+      igLieferung: true,     // L1 = IG-Lieferung HU→DE 0%
+      lieferortL2: 'DE',     // L2 ruhend in DE (19%)
+      regRequired: [],       // kein HU-Risiko
+    }
+  },
+
+  // RC-HU-DE-LITA: EPDE holt in HU ab und tritt mit HU-UID auf (hypothetisch registriert)
+  // → lit. b (Abgangsland-UID mitgeteilt) → L2 bewegend
+  // → L1 = ruhend in HU (27% HU-Inland), L2 = IG-Lieferung HU→DE 0%
+  // → HU-Registrierung Voraussetzung (hier: HU-UID in vatIds vorhanden)
+  {
+    id: 'RC-HU-DE-LITA',
+    name: 'HU→DE(EPDE+HU-UID)→DE, Transport=Ich, HU-UID mitgeteilt — lit. b, L2 bewegend, HU-Registrierung',
+    source: 'Art. 36a Abs. 3 MwStSystRL / § 3 Abs. 15 Z 1 lit. b UStG AT — Abgangsland-UID mitgeteilt → L2 bewegend',
+    company: 'EPDE',
+    ctx: { s1:'HU', s2:'DE', s4:'DE', dep:'HU', dest:'DE', transport:'middle',
+           mode:3, mePosition:2, uidOverride: 'HU',
+           vatIds: { DE:'DE449663039', SI:'SI66423562', LV:'LV90013367396',
+                     EE:'EE102839441', NL:'NL827914052B01', BE:'BE1022245089',
+                     CZ:'CZ687387072', PL:'PL5263841834', HU:'HU12345678' } },
+    expect: {
+      movingIndex: 1,        // lit. b → L2 bewegend (HU-UID als Abgangsland-UID mitgeteilt)
+      igLieferung: true,     // L2 = IG-Lieferung HU→DE 0%
+      lieferortL1: 'HU',    // L1 ruhend in HU (27% HU-Inland)
+    }
+  },
+
+  // RC-SAPPI-1: DE(Sappi)→DE(EPDE)→IT, Lieferant transportiert, EPDE mit DE-UID (Default)
+  // → movingIndex=0, L1 bewegend (IG-Lieferung DE→IT)
+  // → Dreiecksgeschäft blockiert: EPDE-DE-UID = dep-Land-UID (Art. 141 lit. b verletzt)
+  // → EPDE tätigt IG-Erwerb in IT ohne IT-UID → Registrierungspflicht IT
+  {
+    id: 'RC-SAPPI-1',
+    name: 'DE(Sappi)→DE(EPDE)→IT, Transport=Lieferant, DE-UID — Dreieck blockiert, Reg-Pflicht IT',
+    source: 'Art. 141 lit. b MwStSystRL — EPDE-UID aus dep-Land (DE) → Dreiecksgeschäft nicht anwendbar',
+    company: 'EPDE',
+    ctx: { s1:'DE', s2:'DE', s4:'IT', dep:'DE', dest:'IT', transport:'supplier',
+           mode:3, mePosition:2, uidOverride: null },
+    expect: {
+      movingIndex: 0,            // Lieferant transportiert → L1 bewegend
+      trianglePossible: false,   // DE-UID = dep-Land → Art. 141 lit. b blockiert
+      regRequired: ['IT'],       // EPDE IG-Erwerb in IT ohne IT-UID
+    }
+  },
+
+  // RC-SAPPI-2: DE(Sappi)→DE(EPDE)→IT, Lieferant transportiert, EPDE mit BE-UID (Override)
+  // → Dreiecksgeschäft möglich: BE ≠ dep(DE), BE ≠ dest(IT)
+  // → kein IT-Risiko
+  {
+    id: 'RC-SAPPI-2',
+    name: 'DE(Sappi)→DE(EPDE)→IT, Transport=Lieferant, BE-UID-Override — Dreiecksgeschäft möglich',
+    source: 'Art. 141 lit. b MwStSystRL — EPDE-UID BE ≠ dep(DE) ≠ dest(IT) → Dreiecksgeschäft anwendbar',
+    company: 'EPDE',
+    ctx: { s1:'DE', s2:'DE', s4:'IT', dep:'DE', dest:'IT', transport:'supplier',
+           mode:3, mePosition:2, uidOverride: 'BE' },
+    expect: {
+      movingIndex: 0,            // Lieferant transportiert → L1 bewegend
+      trianglePossible: true,    // BE-UID erfüllt Art. 141 lit. b
+      regRequired: [],           // Dreiecksgeschäft mitigiert IT-Registrierungspflicht
+    }
+  },
+
+  // RC-SAPPI-3: DE(Sappi)→DE(EPDE)→IT, EPDE holt ab (Fallback wenn kein Dreieck möglich)
+  // → EPDE teilt DE-UID mit (= dep-Land-UID = lit. a/b) → movingIndex=1 (L2 bewegend)
+  // → L1: ruhend DE (19% Inlandsrechnung Sappi→EPDE), L2: IG-Lieferung DE→IT 0%
+  // → kein IT-Risiko, kein Dreiecksgeschäft nötig
+  {
+    id: 'RC-SAPPI-3',
+    name: 'DE(Sappi)→DE(EPDE)→IT, Transport=Ich (Abholung) — lit. b, L2 bewegend, kein IT-Risiko',
+    source: 'Art. 36a Abs. 3 MwStSystRL — EPDE teilt DE-UID (= dep-Land) mit → L2 bewegend, EPDE ist IG-Lieferant',
+    company: 'EPDE',
+    ctx: { s1:'DE', s2:'DE', s4:'IT', dep:'DE', dest:'IT', transport:'middle',
+           mode:3, mePosition:2, uidOverride: null },
+    expect: {
+      movingIndex: 1,            // DE-UID = dep-Land-UID → lit. b → L2 bewegend
+      trianglePossible: false,   // movingIndex=1: kein Dreiecksgeschäft nötig/möglich
+      regRequired: [],           // L2 = IG-Lieferung DE→IT mit DE-UID → kein IT-Risiko
+    }
+  },
+
+  // RC-BG-AT-BG: dep===dest=BG, EPROHA hat keine BG-UID → needsReg
+  {
+    id: 'RC-BG-AT-BG',
+    name: 'BG→AT(EPROHA)→BG · dep===dest · Inlands-RG, needsReg BG',
+    source: '§ 3 Abs. 6 UStG AT — dep===dest=BG: alle Lieferungen in BG steuerbar; EPROHA hat keine BG-UID → Registrierungspflicht',
+    company: 'EPROHA',
+    ctx: { s1:'BG', s2:'AT', s4:'BG', dep:'BG', dest:'BG', transport:'supplier', mode:3 },
+    expect: { depEqDest: true }
+  },
+
+  // RC-BG-DE-BG: dep===dest=BG, EPDE hat keine BG-UID → needsReg
+  {
+    id: 'RC-BG-DE-BG',
+    name: 'BG→DE(EPDE)→BG · dep===dest · Inlands-RG, needsReg BG',
+    source: '§ 3 Abs. 6a UStG — dep===dest=BG: alle Lieferungen in BG steuerbar; EPDE hat keine BG-UID → Registrierungspflicht',
+    company: 'EPDE',
+    ctx: { s1:'BG', s2:'DE', s4:'BG', dep:'BG', dest:'BG', transport:'supplier', mode:3 },
+    expect: { depEqDest: true }
+  },
+
 ];
 
 // ── Smoke Test Runner ───────────────────────────────────────────────────────

@@ -62,6 +62,6 @@ iPhone-optimiert: Warnungen + Diagramm + primäre Kurzbeschreibung, sekundäre I
 ⋯-Menü → 🏷 Dev Mode: Hover-Tooltip zeigt Komponenten-Namen
 
 ## Tests
-37 Smoke · 13 Render · 8 Output · 12 Invarianten
+44 Smoke · 13 Render · 8 Output · 12 Invarianten
 
 `Reihengeschaeftsrechner_22.html` — Single-file, direkt im Browser.

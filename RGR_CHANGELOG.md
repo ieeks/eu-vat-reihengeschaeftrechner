@@ -7,6 +7,7 @@
 ### Tests
 
 - **SMOKE_TESTS CH/GB EPROHA** — 4 neue Tests (CH-EP1, CH-EP2, GB-EP1, GB-EP2) für EPROHA als Zwischenhändler auf EU→CH- und EU→GB-Ketten; decken Transport=middle (L2 bewegend, lit. b) und Transport=supplier (L1 bewegend) ab; schließen die Lücke der bisherigen CH-SV1/2/3 die nur EPDE-Fälle abgedeckt haben. 33→37 Smoke Tests.
+- **SMOKE_TESTS REAL_CASES_2026** — 7 neue Tests aus realen Geschäftsfällen: RC-HU-DE-LITC (EPDE holt in HU ab, lit. c, kein HU-Risiko), RC-HU-DE-LITA (EPDE mit HU-UID, lit. b, L2 bewegend), RC-SAPPI-1 (DE→EPDE→IT Lieferant, Dreieck blockiert, Reg-Pflicht IT), RC-SAPPI-2 (BE-UID-Override, Dreiecksgeschäft möglich), RC-SAPPI-3 (Abholung Fallback, kein IT-Risiko), RC-BG-AT-BG + RC-BG-DE-BG (dep===dest BG, needsReg). 37→44 Smoke Tests.
 
 ### vat-knowledge
 
