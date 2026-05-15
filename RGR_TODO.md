@@ -1,6 +1,6 @@
 # RGR TODO — Reihengeschäftsrechner v4.3
 
-Stand: 14.05.2026
+Stand: 15.05.2026
 
 ---
 
@@ -21,6 +21,9 @@ Stand: 14.05.2026
 - [x] **Vergleich-Tab scrollbar auf iPad Air** — `min-height: 0` + `-webkit-overflow-scrolling: touch` auf `.pane-right-body` (Session 23)
 - [x] **Self-hosted Fonts** — Google Fonts Abhängigkeit entfernt, woff2 lokal in `docs/assets/fonts/` (Session 23)
 - [x] **PDF-Export** — `window.print()` + verbesserter `@media print`: Titel, nur aktiver Tab, kollabierte Sektionen aufgeklappt (Session 23)
+- [x] **SAP-Badge L1-Delivery-Box** — bei Inlands-Reihengeschäft kein Badge gerendert; korrigiert (Session 24)
+- [x] **OT-M2 Browser-DOM-Robustheit** — Tests setzen cp-0/cp-1 explizit; stale DOM-Wert aus Mode-3-Session verhindert (Session 24)
+- [x] **vat-knowledge Referenzfälle + Buchungskreis-Doku** — `reference-cases.md`, `at/eproha-buchungskreise.md`, `de/epde-buchungskreise.md` (Session 24)
 
 ---
 
@@ -90,11 +93,11 @@ Stand: 14.05.2026
 
 ## P2 — Nice-to-have
 
-- [ ] **vat-knowledge erweitern** — konkrete Fallbeispiele mit erwartetem Output (NL→AT→DE etc.), EPROHA AT/DE-Buchungskreis-Doku, Inlands-Reihengeschäft-Seite, SAP-Kennzeichen-Mapping als vollständige Tabelle, bekannte Grenzfälle (BG→AT→BG, HU→DE EXW, Sappi)
+- [ ] **vat-knowledge: Inlands-Reihengeschäft-Seite** — eigene Seite für § 3 Abs. 6 UStG, analoges Format zu den Buchungskreis-Dateien
+- [ ] **vat-knowledge: bekannte Grenzfälle** — BG→AT→BG, HU→DE EXW, Sappi DE→EPDE→IT
 - [ ] **Code-Modularisierung** — IIFE-Module, tieferer AppState nach UI-Helper-Basis
 - [ ] **External Verify Button**
 - [ ] **Belegnachweis-Checkliste** (nur Expert)
-- [ ] **PDF-Export**
 - [ ] **Mode 5 localStorage**
 
 ---

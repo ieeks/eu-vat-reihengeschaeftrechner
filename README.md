@@ -1,4 +1,4 @@
-# EU VAT Reihengeschäftsrechner v4.2
+# EU VAT Reihengeschäftsrechner v4.3
 
 Internes Compliance-Tool für EPDE und EPROHA.  
 Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Handlungsempfehlungen.
@@ -48,9 +48,8 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 - **Experten-Modus** — 5 Tabs + Perspektivwechsel
 
 ## Aktueller Fokus
-- **Quick Check Tab:** Full-Width-Modus aktiv — linke Spalte wird ausgeblendet, Ergebnis-Panel auf 100 % (Session 21)
-- Finale Browserabnahme v4.2 ausstehend
-- `/vat-knowledge/` Wissensbasis: 16 Markdown-Dateien (EU/AT/DE/CH Recht ↔ Code-Mapping)
+- **v4.3 live** — Light Theme, Header-Modus-Tabs, Self-hosted Fonts, PDF-Export (Sessions 22–23)
+- `/vat-knowledge/` Wissensbasis: 19 Markdown-Dateien (EU/AT/DE/CH Recht ↔ Code-Mapping), inkl. Referenzfälle + EPROHA/EPDE Buchungskreis-Doku
 
 ## Drittland-Support
 - **CH (Schweiz):** 2P und 3P, DAP/DDP, BAZG, EUSt 8,1%, FHA
