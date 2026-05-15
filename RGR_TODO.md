@@ -90,6 +90,7 @@ Stand: 14.05.2026
 
 ## P2 — Nice-to-have
 
+- [ ] **vat-knowledge erweitern** — konkrete Fallbeispiele mit erwartetem Output (NL→AT→DE etc.), EPROHA AT/DE-Buchungskreis-Doku, Inlands-Reihengeschäft-Seite, SAP-Kennzeichen-Mapping als vollständige Tabelle, bekannte Grenzfälle (BG→AT→BG, HU→DE EXW, Sappi)
 - [ ] **Code-Modularisierung** — IIFE-Module, tieferer AppState nach UI-Helper-Basis
 - [ ] **External Verify Button**
 - [ ] **Belegnachweis-Checkliste** (nur Expert)
