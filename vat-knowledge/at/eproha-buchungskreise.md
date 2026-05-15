@@ -52,6 +52,19 @@ Land des Lieferorts (transaction country), unabhängig von der UID.
 | CH-Inlandslieferung (8,1% CH-MWST) | **B5** | **IB** | CH-MWST-Abrechnung |
 | Ausfuhr AT → CH (aus AT heraus) | **A0** | — | AT-Buchungskreis! |
 
+### IT-Sonderfall (kein IT-Buchungskreis, keine IT-UID)
+
+EPROHA hat keine IT-UID. IT hat Umkehrlogik: RC ist möglich wenn der Lieferant
+**nicht** IT-registriert ist (Art. 17 Abs. 2 DPR 633/1972).
+
+| Vorgang | Code Ausgang | Code Eingang | Meldung |
+|---|---|---|---|
+| L2 ruhend IT — inversione contabile | **IC** | — | AT-UVA (steuerfreie Lieferung) |
+| Eingangsrechnung IT-Lieferant (Vorsteuer) | — | **VT** | AT-UVA |
+
+EPROHA fakturiert 0% + Pflichttext „inversione contabile". IT-Empfänger führt
+22% IT-MwSt selbst ab. Kein IT-Buchungskreis erforderlich.
+
 ---
 
 ## A0 vs. AF — wann welcher Code?
@@ -141,14 +154,13 @@ wird automatisch der DE-Buchungskreis für die IG-Buchung verwendet.
 | EPROHA → AT-Inlandskunde | AT | **A2** (20% AT) | — | AT |
 | EPROHA → DE-Inlandskunde (Lager DE) | DE | **DS** (19% DE) | — | DE |
 | Dreiecksgeschäft (EPROHA als mittlerer Erwerber) | AT | **AF** | — | AT (ZM KZ 077) |
+| L2 ruhend IT (inversione contabile) | AT | **IC** | — | AT (kein IT-Buchungskreis) |
+| Eingangsrechnung IT-Lieferant | AT | — | **VT** | AT |
 
 ---
 
 ## Offene Fälle / bekannte Lücken
 
-- **EPROHA IT-Domestic:** kein eigenes IT-Ausgangs-Stkz in SAP vorhanden.
-  L2 ruhend in IT → inversione contabile (IT-Kunde führt RC ab) → **SAP IC** Ausgang,
-  **SAP VT** Eingang (IT-Rechnung des Lieferanten). Kein IT-Buchungskreis für EPROHA.
 - **EPROHA als Dreieck-Erwerber mit DE-UID:** theoretisch möglich (dreiecks in DE),
   aber kein SAP_TAX_MAP-Eintrag für `EPROHA DE dreiecks` — würde auf AT-Buchungskreis
   zurückfallen. Bisher kein Praxisfall bekannt.
