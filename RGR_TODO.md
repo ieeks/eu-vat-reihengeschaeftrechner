@@ -93,7 +93,7 @@ Stand: 15.05.2026
 
 ## P2 — Nice-to-have
 
-- [ ] **vat-knowledge: Inlands-Reihengeschäft-Seite** — eigene Seite für § 3 Abs. 6 UStG, analoges Format zu den Buchungskreis-Dateien
+- [x] **vat-knowledge: Inlands-Reihengeschäft-Seite** — `rules/inland_chain.md`: meStatus, SAP-Matrizen EPROHA+EPDE, IT inversione contabile, 4 Referenzfälle (Session 25)
 - [ ] **vat-knowledge: bekannte Grenzfälle** — BG→AT→BG, HU→DE EXW, Sappi DE→EPDE→IT
 - [ ] **Code-Modularisierung** — IIFE-Module, tieferer AppState nach UI-Helper-Basis
 - [ ] **External Verify Button**
