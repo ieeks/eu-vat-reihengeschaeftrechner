@@ -145,4 +145,5 @@ uidOverride > selectedUidOverride > companyHome
 - [`registration_risk_logic.md`](rules/registration_risk_logic.md) — 6 Risk-Types A–F, triangleMitigatesReg, severity-Werte
 - [`place_of_supply.md`](rules/place_of_supply.md) — Art. 32/36 MwStSystRL, num-Signal, Inland-Sonderfall, Export-Check
 - [`reference-cases.md`](reference-cases.md) — **Referenzfälle mit verifizierten Ergebnissen** (movingIndex, Lieferort, SAP-Stkz.); 14 Fälle aus SMOKE_TESTS, alle Transport-Varianten, Dreiecksgeschäft-Blockierungsgründe, EPROHA + EPDE
+- [`edge-cases.md`](edge-cases.md) — **Bekannte Grenzfälle** (dep===dest BG, HU EXW lit. c/b, Sappi DE→EPDE→IT Dreieck-Block); je mit Varianten, Handlungsempfehlung, SMOKE_TEST-Verweis
 - [`rules/inland_chain.md`](rules/inland_chain.md) — **Inlands-Reihengeschäft** (dep===dest): meStatus-Logik, SAP-Matrizen EPROHA + EPDE, IT inversione contabile, 4 Referenzfälle, NL/EE-Sonderfälle
