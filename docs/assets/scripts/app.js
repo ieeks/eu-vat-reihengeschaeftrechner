@@ -4422,8 +4422,7 @@ function analyze2() {
                 ${_dVat
                   ? `<br><span style="color:var(--teal)">✅ EPROHA hat ${cn(dest)}-UID:
                      <strong>${_dVat}</strong></span>`
-                  : `<br><span style="color:var(--tx-3)">Kunde tätigt ig. Erwerb selbst
-                     (${cn(dest)}-UID des Kunden erforderlich).</span>`
+                  : `<br>${rH({type:'warn', icon:'🆔', text:`<strong>${cn(dest)}-UID des Kunden erforderlich</strong> — Kunde tätigt ig. Erwerb selbst. Ohne gültige Kunden-UID entfällt die Steuerbefreiung.`})}`
                 }
               </div>
               <div class="decision-step-refs">
