@@ -160,8 +160,8 @@ Quelle: `SAP_TAX_MAP` in app.js (2026_EPCA_Tax_Account_determination_S4P.xlsx)
 
 | Treatment | Out | In | Bedeutung |
 |---|---|---|---|
-| `ic-exempt` | **AF** | — | IG-Lieferung AT 0% (steuerfreie ig Ausgangslieferung) |
-| `ic-acquisition` | — | **VE** | IG-Erwerb AT 20% (ESA/ESE) |
+| `ic-exempt` | **AF** | **AF** | IG-Lieferung AT 0% — OUT+IN gleich, Netto 0 |
+| `ic-acquisition` | **VE** | **VE** | IG-Erwerb AT 20% (ESA/ESE) — OUT+IN gleich, Netto 0 |
 | `domestic` | **A2** | **V2** | Inlandslieferung AT 20% |
 | `export` | **A0** | — | Ausfuhr ins Drittland 0% (CH, UK, CN …) |
 | `dreiecks` | **AF** | — | Dreiecksgeschäft AT (Erwerbsteuer 0%) |
@@ -172,8 +172,8 @@ Quelle: `SAP_TAX_MAP` in app.js (2026_EPCA_Tax_Account_determination_S4P.xlsx)
 
 | Treatment | Out | In | Bedeutung |
 |---|---|---|---|
-| `ic-exempt` | **DH** | — | IG-Lieferung DE 0% |
-| `ic-acquisition` | — | **VH** | IG-Erwerb DE 19% |
+| `ic-exempt` | **DH** | **DH** | IG-Lieferung DE 0% — OUT+IN gleich, Netto 0 |
+| `ic-acquisition` | **VH** | **VH** | IG-Erwerb DE 19% (ESA/ESE) — OUT+IN gleich, Netto 0 |
 | `domestic` | **DS** | **VD** | Inlandslieferung DE 19% |
 | `export` | **D0** | — | Ausfuhr Drittland 0% (über DE-UID) |
 
@@ -181,8 +181,8 @@ Quelle: `SAP_TAX_MAP` in app.js (2026_EPCA_Tax_Account_determination_S4P.xlsx)
 
 | Treatment | Out | In | Bedeutung |
 |---|---|---|---|
-| `ic-exempt` | **DH** | — | IG-Lieferung DE 0% |
-| `ic-acquisition` | — | **VH** | IG-Erwerb DE 19% (ESA/ESE) |
+| `ic-exempt` | **DH** | **DH** | IG-Lieferung DE 0% — OUT+IN gleich, Netto 0 |
+| `ic-acquisition` | **VH** | **VH** | IG-Erwerb DE 19% (ESA/ESE) — OUT+IN gleich, Netto 0 |
 | `domestic` | **DS** | **VD** | Inlandslieferung DE 19% |
 | `export` | **G0** | — | Ausfuhrlieferung DE 0% (§ 6 UStG; auch DE→CH) |
 | `rc` | — | **DC** | Reverse Charge DE 19% (§ 13b UStG) |
@@ -191,13 +191,15 @@ Quelle: `SAP_TAX_MAP` in app.js (2026_EPCA_Tax_Account_determination_S4P.xlsx)
 
 | UID-Land | Treatment | Out | In |
 |---|---|---|---|
-| CZ | `ic-exempt` | **OB** | — |
-| CZ | `ic-acquisition` | — | **UR** |
-| SI | `ic-exempt` | **C1** | — |
-| SI | `ic-acquisition` | — | **EC** |
-| PL | `ic-exempt` | **T1** | — |
-| PL | `ic-acquisition` | — | **W5** |
+| CZ | `ic-exempt` | **OB** | **OB** |
+| CZ | `ic-acquisition` | **UR** | **UR** |
+| SI | `ic-exempt` | **C1** | **C1** |
+| SI | `ic-acquisition` | **EC** | **EC** |
+| PL | `ic-exempt` | **T1** | **T1** |
+| PL | `ic-acquisition` | **W5** | **W5** |
+| BE | `ic-acquisition` | **BP** | **BP** |
 | BE | `domestic` | **BS** | **BI** |
+| IT | `ic-acquisition` | **IP** | **IP** |
 | IT | `rc` | **IC** | **VI** |
 
 > **Merkhilfe:** AF = ig-Lieferung (EU, EPROHA-AT) · A0 = Ausfuhr Drittland (EPROHA-AT) · DH = ig-Lieferung (DE-UID) · G0 = Ausfuhr Drittland (EPDE-DE)
