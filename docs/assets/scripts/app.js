@@ -9338,8 +9338,10 @@ function buildVergleichTab(baseCtx, baseEng) {
     let treatment = sup.vatTreatment;
     if (sup.iAmTheBuyer && treatment === 'ic-exempt') treatment = 'ic-acquisition';
     // Pass uidCountry for ig/export treatments so AF/DH/NP etc. resolve correctly.
+    // For buyer ic-acquisition: prefer dest UID (ig-Erwerb findet im Bestimmungsland statt).
     const uidCountry = (treatment === 'ic-exempt' || treatment === 'ic-acquisition')
-      ? (selectedUidOverride || myHome) : null;
+      ? (selectedUidOverride || (sup.iAmTheBuyer && MY_VAT_IDS[dest] ? dest : myHome))
+      : null;
     if (sup.iAmTheSeller) return sapBadge(pos, treatment, 'seller', uidCountry) || '–';
     if (sup.iAmTheBuyer)  return sapBadge(pos, treatment, 'buyer',  uidCountry) || '–';
     return '–';
