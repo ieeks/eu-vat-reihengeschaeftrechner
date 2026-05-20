@@ -146,11 +146,61 @@ getTransportLetter()  → UI-Brücke für Transport-Buttons / Labels
 ## SAP-Badge Logik
 ```
 badge-ig      → treatment ic-exempt / ic-acquisition
-badge-export  → treatment export → A0 (EPROHA AT-UID) / D0 (EPROHA DE-UID) / G0 (EPDE DE→CH)
+badge-export  → treatment export
 badge-rc      → treatment rc
 badge-resting → treatment domestic
 ```
 Export-Routing: `_sapEffectiveCountry` enthält 'export' in `uidTreatments` → SAP-Lookup über UID-Land
+
+## SAP-Steuerkennzeichen (MWSKZ) — Vollständiges Mapping
+
+Quelle: `SAP_TAX_MAP` in app.js (2026_EPCA_Tax_Account_determination_S4P.xlsx)
+
+**EPROHA — AT-UID**
+
+| Treatment | Out | In | Bedeutung |
+|---|---|---|---|
+| `ic-exempt` | **AF** | — | IG-Lieferung AT 0% (steuerfreie ig Ausgangslieferung) |
+| `ic-acquisition` | — | **VE** | IG-Erwerb AT 20% (ESA/ESE) |
+| `domestic` | **A2** | **V2** | Inlandslieferung AT 20% |
+| `export` | **A0** | — | Ausfuhr ins Drittland 0% (CH, UK, CN …) |
+| `dreiecks` | **AF** | — | Dreiecksgeschäft AT (Erwerbsteuer 0%) |
+| `rc` | **RC** | **RC** | Reverse Charge AT (RCA/RCE) |
+| `not-taxable` | **X0** | — | Nicht steuerbar AT |
+
+**EPROHA — DE-UID**
+
+| Treatment | Out | In | Bedeutung |
+|---|---|---|---|
+| `ic-exempt` | **DH** | — | IG-Lieferung DE 0% |
+| `ic-acquisition` | — | **VH** | IG-Erwerb DE 19% |
+| `domestic` | **DS** | **VD** | Inlandslieferung DE 19% |
+| `export` | **D0** | — | Ausfuhr Drittland 0% (über DE-UID) |
+
+**EPDE — DE-UID**
+
+| Treatment | Out | In | Bedeutung |
+|---|---|---|---|
+| `ic-exempt` | **DH** | — | IG-Lieferung DE 0% |
+| `ic-acquisition` | — | **VH** | IG-Erwerb DE 19% (ESA/ESE) |
+| `domestic` | **DS** | **VD** | Inlandslieferung DE 19% |
+| `export` | **G0** | — | Ausfuhrlieferung DE 0% (§ 6 UStG; auch DE→CH) |
+| `rc` | — | **DC** | Reverse Charge DE 19% (§ 13b UStG) |
+
+**EPDE — weitere UIDs**
+
+| UID-Land | Treatment | Out | In |
+|---|---|---|---|
+| CZ | `ic-exempt` | **OB** | — |
+| CZ | `ic-acquisition` | — | **UR** |
+| SI | `ic-exempt` | **C1** | — |
+| SI | `ic-acquisition` | — | **EC** |
+| PL | `ic-exempt` | **T1** | — |
+| PL | `ic-acquisition` | — | **W5** |
+| BE | `domestic` | **BS** | **BI** |
+| IT | `rc` | **IC** | **VI** |
+
+> **Merkhilfe:** AF = ig-Lieferung (EU, EPROHA-AT) · A0 = Ausfuhr Drittland (EPROHA-AT) · DH = ig-Lieferung (DE-UID) · G0 = Ausfuhr Drittland (EPDE-DE)
 
 ## Header
 ```
@@ -218,7 +268,7 @@ npm run check:pages
 7. Sprache immer DE
 8. buildInvoiceSnapshot() gibt '' zurück
 9. Alle 5 Files nach jeder Session updaten
-10. badge-export für Ausfuhr (nicht badge-ig) → A0 statt AF
+10. badge-export für Ausfuhr (nicht badge-ig) → AF = IG-Lieferung EU / A0 = Ausfuhr Drittland (EPROHA-AT) / G0 = Ausfuhr Drittland (EPDE-DE)
 11. Decision Flow nur aus bestehendem Engine-Output ableiten, keine neue Steuerlogik erfinden
 12. Neue Änderungen primär in `docs/` umsetzen; Legacy-Single-File nicht wieder zur Hauptquelle machen
 13. Hosting-Dokumentation auf tatsächlichen GitHub-Pages-Stand halten
