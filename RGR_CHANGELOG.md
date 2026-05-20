@@ -12,6 +12,10 @@
 - **`reference-cases.md` Fall C4** — verifizierter EPDE-Produktionsfall `AT→EPDE(NL-UID)→NL`, Transport durch AT-Lieferant: L1 IG-Lieferung AT→NL (SAP NP für EPDE-Eingang), L2 NL-RC (SAP NC) statt § 25b-Dreieck (durch NL-UID blockiert nach Art. 141 lit. a). Direkter Vergleich der UID-Wahl NL vs. DE (wirtschaftlich identisch, unterschiedlicher Rechtsweg + Meldepflicht). SAP-Kurzreferenz oben um NP/NC/NI ergänzt. Querverweis in `nl/wet_ob_nl_reihengeschaeft.md` als Praxisbeispiel-Sektion.
 - **NL-Datei gegen Primärquellen verifiziert** — Art. 5 lid 1 a, Art. 9 lid 1 (Wortlaut „De belasting bedraagt 21 percent"), Art. 12 lid 3, Art. 37a, Art. 37c gegen wetten.overheid.nl, Belastingdienst und Vakstudie-Encyclopedie geprüft. Korrekturen: (1) Art. 37c hat gesetzlich **3 onderdelen a/b/c** statt 5 — die „5 Bedingungen" sind eine Praxis-Lesart, die Art. 37c + Art. 12 lid 3 + Art. 37a kombiniert; (2) NL-Wortlaut verlangt strenger als EU-RL, dass Partij C in NL **gevestigd** sein muss, nicht nur geregistreerd (Art. 37c b juncto Art. 12 lid 3) — Belastingdienst wendet aber richtlinienkonforme Auslegung an; (3) Art. 37a ICP-Quartalsoption bei IG-Warenlieferungen < EUR 50.000/Quartal ergänzt. Quellen-Footer in der Datei.
 
+### rechtskonformitaet.md
+
+- **D2 ergänzt** — „NL-Dreiecksgeschäft: milde Belastingdienst-Auslegung statt strenger Wortauslegung". Spiegelbild zu D1: Tool folgt der milden Verwaltungspraxis (bloße NL-Registrierung des C reicht), obwohl Art. 37c onderdeel b iVm. Art. 12 lid 3 Wet OB wörtlich Ansässigkeit verlangt. Konsistenzprinzip mit D1: Tool spiegelt jeweils die tatsächliche Verwaltungspraxis, nicht den Wortlaut. Reverse-Trigger + Revisionspfad dokumentiert.
+
 ### Nicht angefasst
 - VATEngine IIFE
 - analyze() / analyze2()
