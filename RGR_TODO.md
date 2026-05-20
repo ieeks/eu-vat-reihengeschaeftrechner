@@ -1,6 +1,6 @@
 # RGR TODO — Reihengeschäftsrechner v4.3
 
-Stand: 15.05.2026
+Stand: 20.05.2026
 
 ---
 
@@ -72,7 +72,7 @@ Stand: 15.05.2026
 ## P1 — Wichtig
 
 - [x] **Drop-Shipment Browserabnahme** — Mode 2 / EPROHA abgenommen (Session 24)
-- [ ] **Typeahead Länder-Picker** — Native select ersetzen
+- [x] **Typeahead Länder-Picker** — Native select ersetzen; `initTypeaheadPickers()` aktiviert + Emoji-Bug behoben (Session 26)
 - [x] **REAL_CASES_2026 Tests** — RC-HU-DE-LITC/LITA, RC-SAPPI-1/2/3, RC-BG-AT-BG, RC-BG-DE-BG als SMOKE_TESTS (Session 25)
 - [ ] **Vergleich-Tab: Struktur-Dimension** — 3P/4P/Dreieck als zweite Achse
 - [ ] **VATEngine: establishments-Datenmodell pro Partei** —

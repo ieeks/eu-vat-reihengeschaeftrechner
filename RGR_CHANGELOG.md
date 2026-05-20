@@ -2,6 +2,32 @@
 
 ---
 
+## v4.3 · 20.05.2026 — Session 26
+
+### SAP-Steuerkennzeichen
+
+- **AF vs. A0 korrigiert** — AF = steuerfreie IG-Lieferung EU (EPROHA AT-UID); A0 = Ausfuhr Drittland (CH, UK, CN …). Korrektur in CLAUDE.md-Dokumentation und `SAP_TAX_MAP`-Kommentaren.
+- **ic-exempt + ic-acquisition: OUT = IN** — IG-Buchungen (Lieferung + Erwerb) buchen dasselbe MWSKZ für Ausgangs- und Vorsteuerseite, Netto = 0. Betrifft alle UIDs: AT (AF/VE), DE (DH/VH), CZ (OB/UR), SI (C1/EC), PL (T1/W5), BE (BP), IT (IP), EE (EP), LV (LP), NL (NP). Vorher hatte ic-exempt `in:null` und ic-acquisition `out:null`.
+
+### UI
+
+- **Header größer** — `height` 52 → 60 px; `h-title` 15 → 17 px; Mode-Tabs + Co-Pill 13 → 14 px; Logo-Icon 26 → 28 px. Mobile bleibt bei 44 px.
+- **Typeahead-Länderpicker aktiviert** — `initTypeaheadPickers()` war vollständig implementiert aber nie aufgerufen. Jetzt nach `renderPickers()` (Moduswechsel) und einmalig beim `DOMContentLoaded`. Tippen filtert sofort (Name + ISO-Code), Arrow-Keys + Enter zur Auswahl, Escape schließt.
+- **Typeahead Emoji-Bug behoben** — Flag-Emojis (2 Unicode-Zeichen) wurden beim Überschreiben per `input.select()` nicht vollständig ersetzt → Filter bekam Alttext als Query. Fix: `input.value = ''` on focus statt `input.select()`.
+
+### Bugfixes Vergleich-Tab
+
+- **`sapCode()`: ic-exempt → ic-acquisition für Käufer** — VATEngine speichert `vatTreatment = 'ic-exempt'` für bewegte Lieferungen aus Verkäufer-Sicht, unabhängig von der Perspektive. Vergleich hat das direkt übergeben → zeigte Verkäufer-Code auch für Käufer. Fix: `iAmTheBuyer && treatment === 'ic-exempt'` → `treatment = 'ic-acquisition'`. Bug wurde durch OUT=IN-Fix sichtbar (vorher war `ic-exempt.in = null` → stilles `''`).
+- **`sapCode()`: uidCountry übergeben** — ohne `uidCountry` fiel `_sapEffectiveCountry` auf `home='DE'` zurück → DH statt NP. Jetzt: `selectedUidOverride || myHome` wird übergeben.
+- **`sapCode()`: Käufer ic-acquisition bevorzugt Zielland-UID** — ig-Erwerb findet im Bestimmungsland statt. Wenn EPDE dort registriert ist (`MY_VAT_IDS[dest]` vorhanden), wird `dest`-UID verwendet statt home-UID. Beispiel: dest=NL → NP statt VH.
+
+### Nicht angefasst
+- VATEngine IIFE
+- analyze()
+- analyze2() Kernpfade
+
+---
+
 ## v4.3 · 15.05.2026 — Session 25
 
 ### Tests
