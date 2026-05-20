@@ -47,8 +47,8 @@ const SAP_TAX_MAP = {
   EPDE: {
     DE: {
       'domestic':             { out:'DS', in:'VD',  desc:'Ausgangssteuer DE 19% / Vorsteuer DE 19%' },
-      'ic-exempt':            { out:'DH', in:null,  desc:'IG-Lieferung 0% (steuerfreie Ausfuhr DE)' },
-      'ic-acquisition':       { out:null, in:'VH',  desc:'IG-Erwerb DE 19% (ESA/ESE)' },
+      'ic-exempt':            { out:'DH', in:'DH',  desc:'IG-Lieferung 0% (steuerfreie Ausfuhr DE) — OUT+IN gleich, Netto 0' },
+      'ic-acquisition':       { out:'VH', in:'VH',  desc:'IG-Erwerb DE 19% (ESA/ESE) — OUT+IN gleich, Netto 0' },
       'rc':                   { out:null, in:'DC',  desc:'Reverse Charge DE 19% (§ 13b UStG)' },
       'export':               { out:'G0', in:null,  desc:'Ausfuhrlieferung DE 0% (§ 6 UStG)' },
       'not-taxable':          { out:'XD', in:null,  desc:'Nicht steuerbar DE' },
@@ -61,43 +61,43 @@ const SAP_TAX_MAP = {
       // dieser Fall (EPDE liefert IG mit BE-UID als Verkäufer) ist bisher nicht aufgetreten.
       'domestic':             { out:'BS', in:'BI',  desc:'Ausgangssteuer BE 21% / Vorsteuer BE 21%' },
       'ic-exempt':            { out:null, in:null,  desc:'⚠ Kein SAP-Stkz vorhanden — IG-Lieferung mit BE-UID als Verkäufer bisher nicht in SAP angelegt. Neues Kennzeichen erforderlich (Pendant zu DH, aber für BE-Meldung).' },
-      'ic-acquisition':       { out:null, in:'BP',  desc:'IG-Erwerb BE 21%' },
+      'ic-acquisition':       { out:'BP', in:'BP',  desc:'IG-Erwerb BE 21% — OUT+IN gleich, Netto 0' },
       'rc':                   { out:'BS', in:'BI',  desc:'RC blockiert (Art. 51 §2 WBTW) → EPDE weist 21% BE-MwSt aus, kein eigenes RC-Stkz vorhanden' },
     },
     CZ: {
       'domestic':             { out:'AE', in:'VC',  desc:'Ausgangssteuer CZ 21% / Vorsteuer CZ 21%' },
-      'ic-exempt':            { out:'OB', in:null,  desc:'IG-Lieferung 0% CZ' },
-      'ic-acquisition':       { out:null, in:'UR',  desc:'IG-Erwerb CZ 21%' },
+      'ic-exempt':            { out:'OB', in:'OB',  desc:'IG-Lieferung 0% CZ — OUT+IN gleich, Netto 0' },
+      'ic-acquisition':       { out:'UR', in:'UR',  desc:'IG-Erwerb CZ 21% — OUT+IN gleich, Netto 0' },
       'rc':                   { out:'AE', in:'VC',  desc:'RC CZ: Lieferant muss 21% ausweisen (§ 92a ZDPH)' },
     },
     EE: {
       'domestic':             { out:'ES', in:'EI',  desc:'Ausgangssteuer EE 22% / Vorsteuer EE 22%' },
       'ic-exempt':            { out:null, in:null,  desc:'⚠ Kein SAP-Stkz vorhanden — IG-Lieferung mit EE-UID als Verkäufer bisher nicht in SAP angelegt. Neues Kennzeichen erforderlich (Pendant zu C1/OB/T1, aber für EE-Meldung).' },
-      'ic-acquisition':       { out:null, in:'EP',  desc:'IG-Erwerb EE 22%' },
+      'ic-acquisition':       { out:'EP', in:'EP',  desc:'IG-Erwerb EE 22% — OUT+IN gleich, Netto 0' },
       'rc':                   { out:'ES', in:'EI',  desc:'RC EE: Lieferant muss 22% ausweisen (KMSS § 41¹)' },
     },
     LV: {
       'domestic':             { out:'LS', in:'LI',  desc:'Ausgangssteuer LV 21% / Vorsteuer LV 21%' },
       'ic-exempt':            { out:null, in:null,  desc:'⚠ Kein SAP-Stkz vorhanden — IG-Lieferung mit LV-UID als Verkäufer bisher nicht in SAP angelegt. Neues Kennzeichen erforderlich (Pendant zu C1/OB/T1, aber für LV-Meldung).' },
-      'ic-acquisition':       { out:null, in:'LP',  desc:'IG-Erwerb LV 21%' },
+      'ic-acquisition':       { out:'LP', in:'LP',  desc:'IG-Erwerb LV 21% — OUT+IN gleich, Netto 0' },
       'rc':                   { out:'LS', in:'LI',  desc:'RC LV: Lieferant muss 21% ausweisen (Art. 141 PVN)' },
     },
     NL: {
       'domestic':             { out:null, in:'NI',  desc:'Vorsteuer NL 21%' },
       'ic-exempt':            { out:null, in:null,  desc:'⚠ Kein SAP-Stkz vorhanden — IG-Lieferung mit NL-UID als Verkäufer bisher nicht in SAP angelegt. Neues Kennzeichen erforderlich (für NL-Meldung).' },
-      'ic-acquisition':       { out:null, in:'NP',  desc:'IG-Erwerb NL 21%' },
+      'ic-acquisition':       { out:'NP', in:'NP',  desc:'IG-Erwerb NL 21% — OUT+IN gleich, Netto 0' },
       'rc':                   { out:'NC', in:'NI',  desc:'Reverse Charge NL 0% (Art. 12 Abs. 3 Wet OB)' },
     },
     PL: {
       'domestic':             { out:'A4', in:'B7',  desc:'Ausgangssteuer PL 23% / Vorsteuer PL 23%' },
-      'ic-exempt':            { out:'T1', in:null,  desc:'IG-Lieferung 0% PL' },
-      'ic-acquisition':       { out:null, in:'W5',  desc:'IG-Erwerb PL 23%' },
+      'ic-exempt':            { out:'T1', in:'T1',  desc:'IG-Lieferung 0% PL — OUT+IN gleich, Netto 0' },
+      'ic-acquisition':       { out:'W5', in:'W5',  desc:'IG-Erwerb PL 23% — OUT+IN gleich, Netto 0' },
       'rc':                   { out:'A4', in:'B7',  desc:'RC PL: Lieferant muss 23% ausweisen (Art. 17 ustawa)' },
     },
     SI: {
       'domestic':             { out:'CB', in:'SI',  desc:'Ausgangssteuer SI 22% / Vorsteuer SI 22%' },
-      'ic-exempt':            { out:'C1', in:null,  desc:'IG-Lieferung 0% SI (Erwerbsteuer SI 0%)' },
-      'ic-acquisition':       { out:null, in:'EC',  desc:'IG-Erwerb SI 22%' },
+      'ic-exempt':            { out:'C1', in:'C1',  desc:'IG-Lieferung 0% SI — OUT+IN gleich, Netto 0' },
+      'ic-acquisition':       { out:'EC', in:'EC',  desc:'IG-Erwerb SI 22% — OUT+IN gleich, Netto 0' },
       'rc':                   { out:'CB', in:'SI',  desc:'RC SI: Lieferant muss 22% ausweisen (čl. 76 ZDDV-1)' },
     },
     CH: {
@@ -105,7 +105,7 @@ const SAP_TAX_MAP = {
     },
     IT: {
       'rc':                   { out:'IC', in:'VI',  desc:'Inversione contabile IT 0% (Art. 17 DPR 633)' },
-      'ic-acquisition':       { out:null, in:'IP',  desc:'IG-Erwerb IT 22%' },
+      'ic-acquisition':       { out:'IP', in:'IP',  desc:'IG-Erwerb IT 22% — OUT+IN gleich, Netto 0' },
       'domestic-input':       { out:null, in:'VI',  desc:'Vorsteuer IT 22%' },
       'domestic':             { out:null, in:'VI',  desc:'Vorsteuer IT 22% (Eingangsrechnung)' },
     },
@@ -113,8 +113,8 @@ const SAP_TAX_MAP = {
   EPROHA: {
     AT: {
       'domestic':             { out:'A2', in:'V2',  desc:'Ausgangssteuer AT 20% / Vorsteuer AT 20%' },
-      'ic-exempt':            { out:'AF', in:null,  desc:'IG-Lieferung AT 0% (Erwerbsteuer 0%)' },
-      'ic-acquisition':       { out:null, in:'VE',  desc:'IG-Erwerb AT 20% (ESA/ESE)' },
+      'ic-exempt':            { out:'AF', in:'AF',  desc:'IG-Lieferung AT 0% — OUT+IN gleich, Netto 0' },
+      'ic-acquisition':       { out:'VE', in:'VE',  desc:'IG-Erwerb AT 20% (ESA/ESE) — OUT+IN gleich, Netto 0' },
       'rc':                   { out:'RC', in:'RC',  desc:'Reverse Charge AT (RCA/RCE)' },
       'export':               { out:'A0', in:null,  desc:'Ausfuhr AT 0%' },
       'dreiecks':             { out:'AF', in:null,  desc:'Dreiecksgeschäft AT — Erwerbsteuer 0%' },
@@ -122,8 +122,8 @@ const SAP_TAX_MAP = {
     },
     DE: {
       'domestic':             { out:'DS', in:'VD',  desc:'Ausgangssteuer DE 19% / Vorsteuer DE 19%' },
-      'ic-exempt':            { out:'DH', in:null,  desc:'IG-Lieferung 0% (Erwerbsteuer 0%) — UID DE' },
-      'ic-acquisition':       { out:null, in:'VH',  desc:'IG-Erwerb DE 19%' },
+      'ic-exempt':            { out:'DH', in:'DH',  desc:'IG-Lieferung 0% — OUT+IN gleich, Netto 0 — UID DE' },
+      'ic-acquisition':       { out:'VH', in:'VH',  desc:'IG-Erwerb DE 19% (ESA/ESE) — OUT+IN gleich, Netto 0' },
       'export':               { out:'D0', in:null,  desc:'Ausfuhr DE→CH 0% (§ 6 UStG) — nur bei DE-UID' },
     },
     CH: {
