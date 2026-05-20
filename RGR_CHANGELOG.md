@@ -10,6 +10,7 @@
 - **Index aktualisiert** — `CLAUDE-vat-knowledge.md` Pflichtlektüre-Tabelle um Eintrag „NL-RC / NL-Dreieck" erweitert, neuer Abschnitt „Niederlande (`nl/`)" im Datei­index. `CLAUDE.md`: vat-knowledge-Zähler 16 → 17, Länder-Liste EU/AT/DE/CH/NL.
 
 - **`reference-cases.md` Fall C4** — verifizierter EPDE-Produktionsfall `AT→EPDE(NL-UID)→NL`, Transport durch AT-Lieferant: L1 IG-Lieferung AT→NL (SAP NP für EPDE-Eingang), L2 NL-RC (SAP NC) statt § 25b-Dreieck (durch NL-UID blockiert nach Art. 141 lit. a). Direkter Vergleich der UID-Wahl NL vs. DE (wirtschaftlich identisch, unterschiedlicher Rechtsweg + Meldepflicht). SAP-Kurzreferenz oben um NP/NC/NI ergänzt. Querverweis in `nl/wet_ob_nl_reihengeschaeft.md` als Praxisbeispiel-Sektion.
+- **NL-Datei gegen Primärquellen verifiziert** — Art. 5 lid 1 a, Art. 9 lid 1 (Wortlaut „De belasting bedraagt 21 percent"), Art. 12 lid 3, Art. 37a, Art. 37c gegen wetten.overheid.nl, Belastingdienst und Vakstudie-Encyclopedie geprüft. Korrekturen: (1) Art. 37c hat gesetzlich **3 onderdelen a/b/c** statt 5 — die „5 Bedingungen" sind eine Praxis-Lesart, die Art. 37c + Art. 12 lid 3 + Art. 37a kombiniert; (2) NL-Wortlaut verlangt strenger als EU-RL, dass Partij C in NL **gevestigd** sein muss, nicht nur geregistreerd (Art. 37c b juncto Art. 12 lid 3) — Belastingdienst wendet aber richtlinienkonforme Auslegung an; (3) Art. 37a ICP-Quartalsoption bei IG-Warenlieferungen < EUR 50.000/Quartal ergänzt. Quellen-Footer in der Datei.
 
 ### Nicht angefasst
 - VATEngine IIFE

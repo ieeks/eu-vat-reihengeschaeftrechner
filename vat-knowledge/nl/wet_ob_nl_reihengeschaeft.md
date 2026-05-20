@@ -6,9 +6,10 @@
 
 ---
 
-## Art. 5 Wet OB 1968 — Lieferort
-Abs. 1 Bst. a: Lieferort bei Beförderung/Versendung = Ort des Beginns
-der Beförderung. Entspricht Art. 32 MwStSystRL.
+## Art. 5 lid 1 letter a Wet OB 1968 — Lieferort
+„De plaats waar een levering wordt verricht is […] ingeval het goed in
+verband met de levering wordt verzonden of vervoerd, de plaats waar de
+verzending of het vervoer aanvangt." Entspricht Art. 32 MwStSystRL.
 Im Code: `placeOfSupply = dep` bei `isMoving` (gemeinsame Engine-Logik,
 kein NL-Sonderpfad).
 
@@ -33,30 +34,49 @@ Im Code:
 - Pflichttext-Sprache: Englisch oder Niederländisch akzeptiert
 
 ## Art. 37c Wet OB 1968 — Dreiecksgeschäft (NL als Bestimmungsland)
-NL-Umsetzung Art. 141 MwStSystRL. Fünf Bedingungen — alle materiell
-erforderlich:
+NL-Umsetzung Art. 141 MwStSystRL. Titel im Wet OB:
+„Achterwege blijven heffing; voorwaarden; driehoekstransactie".
+**Gesetzlich drei onderdelen (a/b/c)**, in der Praxis erweitert durch
+verschränkte Verweise auf Art. 12 lid 3 (RC) und Art. 37a (ICP-Meldung).
 
-| Bed. | Inhalt | Code-Check |
-|---|---|---|
-| (1) | Zwischenhändler nicht in NL ansässig | `establishments` enthält NL nicht |
-| (2) | Direktlieferung an NL-Abnehmer | `s4 === dest === 'NL'` |
-| (3) | Ware kommt **nicht** aus dem MS, der dem ZH die NL-UID erteilt hat | `_detectTriangle3()` Zeile 1089: `dest === 'NL' && s1 === 'NL'` → `_noTriangle(...)` |
-| (4) | NL-Abnehmer schuldet Steuer per RC (Art. 197) | implizit über `rcCountry: dest` |
-| (5) | ZM-Pflicht nach Art. 37a Wet OB erfüllt | wird auf Rechnungs-/Meldepflichten-Ebene gerendert |
+Materielle Bedingungen kombiniert (5-Bedingungen-Lesart, wie im Code
+hinterlegt):
+
+| Bed. | Inhalt | Rechtsgrundlage NL | Code-Check |
+|---|---|---|---|
+| (1) | Zwischenhändler nicht in NL ansässig | Art. 37c onderdeel a | `establishments` enthält NL nicht |
+| (2) | Direktlieferung an NL-Abnehmer | Art. 37c onderdeel b | `s4 === dest === 'NL'` |
+| (3) | Ware kommt **nicht** aus dem MS, der dem ZH die NL-UID erteilt hat | Art. 37c onderdeel c | `_detectTriangle3()` Zeile 1089: `dest === 'NL' && s1 === 'NL'` → `_noTriangle(...)` |
+| (4) | NL-Abnehmer schuldet Steuer per RC | Art. 37c onderdeel b juncto Art. 12 lid 3 / Art. 197 MwStSystRL | implizit über `rcCountry: dest` |
+| (5) | ICP-Pflicht nach Art. 37a Wet OB erfüllt | Art. 37a | wird auf Rechnungs-/Meldepflichten-Ebene gerendert |
+
+**Strenge NL-Bedingung (Art. 37c onderdeel b iVm. Art. 12 lid 3):**
+Wortlaut verlangt, dass Partij C in NL **gevestigd** (= ansässig, mit
+Betriebsstätte) ist — nicht nur registriert. Damit ist die NL-Umsetzung
+strenger als Art. 141 MwStSystRL. Die **Belastingdienst** wendet jedoch
+seit dem EuGH-Urteil zu Art. 141 eine richtlinienkonforme (mildere)
+Auslegung an — bloße NL-Registrierung des C reicht in der Praxis.
+Quelle: PwC „Ruimere toepassing vereenvoudigde ABC-regeling".
 
 **Praxisfolge:** Wenn EPDE die DE-UID nutzt (nicht NL-UID) und Ware aus DE
 nach NL geht, ist Bed. (3) eingehalten → Dreiecksgeschäft möglich. Setzt
 EPDE die NL-UID, blockiert Art. 141 lit. a die Vereinfachung schon vorher
 (`!!vatIds[dest]` in `_detectTriangle3()`).
 
-## Art. 37a Wet OB 1968 — ZM-Pflicht NL
-Monatlich, spätestens letzter Tag des Folgemonats. **Materielle Voraussetzung**
-der Dreiecksgeschäft-Vereinfachung nach Art. 37c. Längere Frist als z.B.
-DE (vierteljährlich möglich). Im Code als Legal-Reference `nl37a` registriert
+## Art. 37a Wet OB 1968 — ICP-Meldung (ZM-Pflicht NL)
+Standard: **monatlich**, spätestens letzter Tag des Folgemonats — elektronisch
+bei der Belastingdienst (Opgaaf intracommunautaire prestaties, „ICP").
+**Quartalsoption:** zulässig, wenn IG-Warenlieferungen sowohl im laufenden
+Quartal **als auch in jedem der 4 vorhergehenden Quartale** EUR 50.000
+nicht übersteigen; wird die Schwelle überschritten, ab diesem Quartal
+monatlich. **Materielle Voraussetzung** der Dreiecksgeschäft-Vereinfachung
+nach Art. 37c. Im Code als Legal-Reference `nl37a` registriert
 (app.js Zeile 1946).
 
-## Art. 9 Abs. 1 Wet OB 1968 — Steuersatz
-Allgemeiner Satz: **21 %**. Im Code: `COUNTRIES['NL'].std = 21` (Zeile 167).
+## Art. 9 lid 1 Wet OB 1968 — Steuersatz
+Wortlaut: „De belasting bedraagt 21 percent." Allgemeiner Satz für
+Lieferungen und Dienstleistungen. Im Code: `COUNTRIES['NL'].std = 21`
+(Zeile 167). Reduzierter Satz (Tabel I): 9 %. Nullsatz (Tabel II): 0 %.
 
 ---
 
@@ -161,3 +181,8 @@ Details: `rules/rc_country_rules.md` · `de/epde-buchungskreise.md`
 `de/epde-buchungskreise.md` · `eu/art141_triangle.md` · `eu/art138_mwstrl.md`
 *Code:* `_checkRCBlock()` · `_detectTriangle3()` · `SAP_TAX_MAP['EPDE']['NL']` ·
 `RC_WORDING['NL']` in `docs/assets/scripts/app.js`
+
+*Quellen (verifiziert Mai 2026):* wetten.overheid.nl (BWBR0002629) ·
+Belastingdienst „Vereenvoudigde ABC-levering" · Fiscale Encyclopedie
+De Vakstudie Art. 37c · PwC „Ruimere toepassing vereenvoudigde
+ABC-regeling" · belastingdienst.nl „Opgaaf intracommunautaire prestaties"
