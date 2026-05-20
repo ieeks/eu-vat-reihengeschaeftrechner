@@ -24,6 +24,7 @@ Stand: 20.05.2026
 - [x] **SAP-Badge L1-Delivery-Box** — bei Inlands-Reihengeschäft kein Badge gerendert; korrigiert (Session 24)
 - [x] **OT-M2 Browser-DOM-Robustheit** — Tests setzen cp-0/cp-1 explizit; stale DOM-Wert aus Mode-3-Session verhindert (Session 24)
 - [x] **vat-knowledge Referenzfälle + Buchungskreis-Doku** — `reference-cases.md`, `at/eproha-buchungskreise.md`, `de/epde-buchungskreise.md` (Session 24)
+- [x] **vat-knowledge NL-Länderdatei** — `nl/wet_ob_nl_reihengeschaeft.md` (Art. 5/12/37a/37c Wet OB, RC-Sonderfall trotz Direktregistrierung, EPDE NL-UID); Index in `CLAUDE-vat-knowledge.md` + `CLAUDE.md` (16 → 17 Dateien) aktualisiert (Session 27)
 
 ---
 
