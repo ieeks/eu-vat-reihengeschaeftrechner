@@ -11856,5 +11856,4 @@ document.addEventListener('DOMContentLoaded', function init() {
   showChangelogBanner();
   renderBMFBanner();
   initKeyboardNavigation();
-  initTypeaheadPickers();
 });
