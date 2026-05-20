@@ -10287,13 +10287,13 @@ function initTypeaheadPickers() {
     }
 
     input.addEventListener('focus', () => {
-      input.select();
+      input.value = '';
       buildOptions('');
       dd.classList.add('open');
     });
 
     input.addEventListener('input', () => {
-      buildOptions(input.value);
+      buildOptions(input.value.trim());
       dd.classList.add('open');
     });
 
