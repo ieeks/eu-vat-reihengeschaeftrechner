@@ -9333,8 +9333,15 @@ function buildVergleichTab(baseCtx, baseEng) {
     const sup = s[idx];
     if (!sup) return '–';
     const pos = sup.isMoving ? dep : (idx < results[tr].movingIndex ? dep : dest);
-    if (sup.iAmTheSeller) return sapBadge(pos, sup.vatTreatment, 'seller') || '–';
-    if (sup.iAmTheBuyer)  return sapBadge(pos, sup.vatTreatment, 'buyer')  || '–';
+    // Engine stores ic-exempt for moving supply regardless of perspective.
+    // For buyer: convert to ic-acquisition (mirrors main renderer logic).
+    let treatment = sup.vatTreatment;
+    if (sup.iAmTheBuyer && treatment === 'ic-exempt') treatment = 'ic-acquisition';
+    // Pass uidCountry for ig/export treatments so AF/DH/NP etc. resolve correctly.
+    const uidCountry = (treatment === 'ic-exempt' || treatment === 'ic-acquisition')
+      ? (selectedUidOverride || myHome) : null;
+    if (sup.iAmTheSeller) return sapBadge(pos, treatment, 'seller', uidCountry) || '–';
+    if (sup.iAmTheBuyer)  return sapBadge(pos, treatment, 'buyer',  uidCountry) || '–';
     return '–';
   }
 
