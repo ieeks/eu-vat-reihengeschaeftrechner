@@ -111,6 +111,41 @@ und der Standardfall RC ist.
 
 ---
 
+## Praxisbeispiel (verifizierter EPDE-Produktionsfall)
+
+**Konstellation:** `AT → EPDE (NL-UID) → NL-Kunde`, Transport durch AT-Lieferant
+(Warenfluss direkt von AT zum NL-Kunden).
+
+```
+🇦🇹 AT ──L1──▶ 🇩🇪 DE/EPDE ──L2──▶ 🇳🇱 NL
+       Lieferant fährt direkt nach NL
+       EPDE tritt mit NL-UID auf
+```
+
+**Ablauf:**
+
+| Lieferung | Behandlung | EPDE-Buchung | Pflichttext / Meldung |
+|---|---|---|---|
+| L1 AT→EPDE | IG-Lieferung AT → NL (0 %) | IG-Erwerb NL · **SAP NP** | AT-Lieferant in AT-ZM (Empfänger: EPDE NL-UID) |
+| L2 EPDE→NL-Kunde | RC NL (0 %) Art. 12 Abs. 3 Wet OB | **SAP NC** | „BTW verlegd" + NL-ZM monatlich (Art. 37a Wet OB) |
+
+**Kernpunkt:** Dreiecksgeschäft ist blockiert (Art. 141 lit. a — EPDE hat NL-UID
+im Bestimmungsland), trotzdem fällt **kein lokales NL-MwSt-Ausweisen** an, weil
+Art. 12 Abs. 3 Wet OB den RC trotz NL-Direktregistrierung erlaubt. Wäre EPDE
+in NL ansässig (Betriebsstätte), wäre dieser RC-Weg versperrt und EPDE müsste
+21 % NL-MwSt auf der L2-Rechnung ausweisen.
+
+**Alternative UID-Wahl:** Hätte EPDE die DE-UID statt der NL-UID verwendet,
+wäre Art. 141 MwStSystRL (Dreiecksgeschäft) anwendbar gewesen — wirtschaftlich
+identisches Ergebnis, aber Buchung **DH** statt NC und DE-ZM mit Dreieck-Kennzeichen
+statt monatlicher NL-ZM. Die NL-UID-Variante ist administrativ aufwendiger, wird
+aber gewählt, wenn der NL-Kunde NL-UID auf der Rechnung erwartet oder EPDE
+ohnehin in NL meldet.
+
+Vollständige Tabelle inkl. Belegnachweis: `reference-cases.md` · Fall **C4**.
+
+---
+
 ## Abgrenzung zu BE / PL / CZ / SI / LV / EE
 
 Alle 6 anderen EPDE-Direktregistrierungen **blockieren** RC, sobald EPDE

@@ -9,6 +9,8 @@
 - **`nl/wet_ob_nl_reihengeschaeft.md`** — neue Länderdatei für die Niederlande (EPDE NL-UID NL827914052B01, Direktregistrierung ohne Betriebsstätte). Dokumentiert Art. 5 Wet OB (Lieferort), **Art. 12 Abs. 3 Wet OB als RC-Sonderfall trotz Direktregistrierung** (einziger EPDE-Buchungskreis mit erlaubtem RC), Art. 37c Wet OB (Dreiecksgeschäft NL als Bestimmungsland, 5 Bedingungen inkl. Bed. 3 Code-Edge-Case `dest==='NL' && s1==='NL'`), Art. 37a Wet OB (ZM monatlich). Verweist auf `SAP_TAX_MAP['EPDE']['NL']` (NC/NI/NP), `RC_WORDING['NL']` und `computeTax()`-RC-Fallback bei `domestic.out===null`. Abgrenzung zu BE/PL/CZ/SI/LV/EE (RC dort blockiert).
 - **Index aktualisiert** — `CLAUDE-vat-knowledge.md` Pflichtlektüre-Tabelle um Eintrag „NL-RC / NL-Dreieck" erweitert, neuer Abschnitt „Niederlande (`nl/`)" im Datei­index. `CLAUDE.md`: vat-knowledge-Zähler 16 → 17, Länder-Liste EU/AT/DE/CH/NL.
 
+- **`reference-cases.md` Fall C4** — verifizierter EPDE-Produktionsfall `AT→EPDE(NL-UID)→NL`, Transport durch AT-Lieferant: L1 IG-Lieferung AT→NL (SAP NP für EPDE-Eingang), L2 NL-RC (SAP NC) statt § 25b-Dreieck (durch NL-UID blockiert nach Art. 141 lit. a). Direkter Vergleich der UID-Wahl NL vs. DE (wirtschaftlich identisch, unterschiedlicher Rechtsweg + Meldepflicht). SAP-Kurzreferenz oben um NP/NC/NI ergänzt. Querverweis in `nl/wet_ob_nl_reihengeschaeft.md` als Praxisbeispiel-Sektion.
+
 ### Nicht angefasst
 - VATEngine IIFE
 - analyze() / analyze2()

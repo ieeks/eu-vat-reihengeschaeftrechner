@@ -25,6 +25,9 @@
 | Ausfuhr DE (Ausgang) | 0% § 6 UStG | — | **G0** |
 | RC IT inversione (Ausgang) | 0% Art. 17 DPR 633 | **IC** | **IC** |
 | RC IT inversione (Eingang) | Vorsteuer IT 22% | **VT** | **VI** |
+| IG-Erwerb in NL (Eingang) | ig. Erwerb NL 21% | — | **NP** |
+| RC NL (Ausgang) | 0% Art. 12 Abs. 3 Wet OB | — | **NC** |
+| RC NL (Eingang Vorsteuer) | Vorsteuer NL 21% | — | **NI** |
 
 ---
 
@@ -286,6 +289,49 @@ EPDE fakturiert L2 mit NL-UID, NL-Empfänger wendet RC an (sofern steuerpflichti
 **EPDE-Perspektive:** EPDE tätigt IG-Erwerb in DE (Saldo 0: VH = Vorsteuer, Erwerbsteuer in UVA).
 L2 ist reine DE-Inlandslieferung. Kein RC (§ 13b UStG gilt nicht für Warenlieferungen
 zwischen zwei DE-registrierten Unternehmen, wenn kein Grundstücksbezug).
+
+---
+
+### C4 · AT → DE/EPDE (NL-UID) → NL · Transport: Lieferant · NL-RC Sonderfall
+
+**Testfall:** verifizierter Produktionsfall · **Quelle:** EPDE-Praxis · **Analogie:** C2/DG-10 (FR statt AT)
+
+```
+🇦🇹 AT ──L1──▶ 🇩🇪 DE/EPDE ──L2──▶ 🇳🇱 NL
+       Lieferant fährt direkt nach NL
+       EPDE tritt mit NL-UID (NL827914052B01) auf
+```
+
+**Transportzuordnung:** A transportiert → **L1 bewegend** (movingIndex=0)
+
+| Lieferung | Ort | Behandlung | EPDE-Eingang (L1-Käufer) | EPDE-Ausgang (L2-Verkäufer) |
+|---|---|---|---|---|
+| L1 · AT→NL | 🇦🇹 AT (Abgang) | IG-Lieferung 0% aus AT → Erwerb in NL | IG-Erwerb NL 21% · **SAP NP** | — |
+| L2 · NL→NL | 🇳🇱 NL (ruhend) | RC NL 0% (Art. 12 Abs. 3 Wet OB) | — | RC NL · **SAP NC** + „BTW verlegd" |
+
+**Dreiecksgeschäft:** ❌ blockiert — EPDE hat NL-UID (Art. 141 lit. a: B darf keine UID im Bestimmungsland haben).
+Ergebnis: kein § 25b-Vereinfachungsverfahren, stattdessen NL-RC nach Art. 12 Abs. 3 Wet OB 1968.
+
+**Warum kein lokales NL-MwSt-Ausweisen?** EPDE ist in NL nur direkt registriert (keine NL-Betriebsstätte).
+Art. 12 Abs. 3 Wet OB erlaubt RC ausdrücklich auch bei Direktregistrierung — anders als BE/PL/CZ/SI/LV/EE,
+wo eine Registrierung den RC blockiert. NL ist der einzige Sonderfall.
+
+**Vergleich der UID-Wahl:**
+
+| EPDE-UID | Rechtsweg | SAP L2 | Meldepflicht |
+|---|---|---|---|
+| **NL** (dieser Fall) | Art. 12 Abs. 3 Wet OB (RC) | **NC** | NL-ZM monatlich (Art. 37a Wet OB) |
+| **DE** | Art. 141 MwStSystRL (Dreieck) | **DH** + § 25b-Pflichttext | DE-ZM mit Dreieck-Kennzeichen |
+
+Wirtschaftlich identisch (kein MwSt-Abfluss). Die NL-UID-Variante ist administrativ aufwendiger
+(monatliche NL-ZM), wird aber gewählt, wenn der NL-Kunde NL-UID auf der Rechnung erwartet oder EPDE
+für andere NL-Lieferungen ohnehin in NL meldet.
+
+**Belegnachweis:** Gelangensbestätigung oder CMR (§ 7 AT UStR — AT als Abgangsland);
+NL-Pflichttext „BTW verlegd" oder „VAT reverse-charged" auf L2-Rechnung (Art. 12 Abs. 3 Wet OB / Art. 194 MwStSystRL).
+
+**ZM:** EPDE meldet aus NL (NL-UID, Empfänger NL-Kunden-UID) monatlich bis letzter Tag Folgemonat (Art. 37a Wet OB).
+AT-Lieferant meldet seine IG-Lieferung in der AT-ZM (Empfänger: EPDE NL-UID).
 
 ---
 
