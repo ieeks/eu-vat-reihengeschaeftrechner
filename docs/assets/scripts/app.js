@@ -11269,6 +11269,7 @@ function renderAll() {
 
   // Always render pickers so cp-* selects exist (needed when switching back from mode 5)
   renderPickers();
+  initTypeaheadPickers();
 
   // Sync mePosSection visibility — must happen every renderAll, not just on button click
   const mps = $('mePosSection');
@@ -11846,4 +11847,5 @@ document.addEventListener('DOMContentLoaded', function init() {
   showChangelogBanner();
   renderBMFBanner();
   initKeyboardNavigation();
+  initTypeaheadPickers();
 });
