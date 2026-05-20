@@ -10018,20 +10018,37 @@ function renderUIDInline() {
   const vids = MY_VAT_IDS;
   const n = countries.length;
 
-  // Determine buyer/seller positions relative to meIdx
-  // Als Käufer: L before me (meIdx-1 → meIdx), Als Verkäufer: L after me (meIdx → meIdx+1)
   const buyerRole  = meIdx === 0 ? 'L1' : `L${meIdx}`;
   const sellerRole = meIdx >= n - 1 ? `L${n-1}` : `L${meIdx + 1}`;
 
-  // Relevant UIDs for this scenario
-  const myCountry  = countries[meIdx] || countries[0];
-  const departure  = countries[0];
-  const destination = countries[n - 1];
-  // Inland chain (dep === dest): both deliveries are domestic in that country → use that UID
-  // Otherwise: use UID of my position country, fall back to first available UID
-  const relevantCountry = (departure === destination) ? departure : myCountry;
-  const homeUID = vids[relevantCountry] || vids[myCountry] || '';
-  const buyerUID = (selectedUidOverride && vids[selectedUidOverride]) ? vids[selectedUidOverride] : homeUID;
+  const departure    = countries[0];
+  const destination  = countries[n - 1];
+  const myCountry    = countries[meIdx] || countries[0];
+  const home         = COMPANIES[currentCompany]?.home || myCountry;
+  const has          = c => !!(c && vids[c]);
+
+  let buyerCode, sellerCode;
+
+  if (selectedUidOverride && vids[selectedUidOverride]) {
+    buyerCode  = selectedUidOverride;
+    sellerCode = selectedUidOverride;
+  } else if (departure === destination) {
+    // Inlandslieferung: beide Rollen im gleichen Land
+    buyerCode = sellerCode = has(departure) ? departure : home;
+  } else {
+    const tr = getCanonicalTransport();
+    // Käufer auf L1: bewegend wenn Lieferant/Middle → dest-UID; ruhend wenn Kunde → dep-UID
+    const l1Moving = tr !== 'customer';
+    buyerCode  = l1Moving ? (has(destination) ? destination : home)
+                          : (has(departure)   ? departure   : home);
+    // Verkäufer auf L2: ruhend wenn Lieferant → dest-UID; bewegend wenn Kunde/Middle → dep-UID
+    const l2Resting = tr === 'supplier';
+    sellerCode = l2Resting ? (has(destination) ? destination : home)
+                           : (has(departure)   ? departure   : home);
+  }
+
+  const buyerUID  = vids[buyerCode]  || '';
+  const sellerUID = vids[sellerCode] || '';
 
   el.innerHTML = `<div class="uid-inline-grid">
     <div class="uid-inline-field">
@@ -10040,7 +10057,7 @@ function renderUIDInline() {
     </div>
     <div class="uid-inline-field">
       <div class="uid-inline-label">Als Verkäufer (${sellerRole})</div>
-      <div class="uid-inline-val">${buyerUID || '—'}</div>
+      <div class="uid-inline-val">${sellerUID || '—'}</div>
     </div>
   </div>`;
 }
