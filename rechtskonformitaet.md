@@ -65,6 +65,33 @@ Steuerrechtliche Beratung (2024) hat explizit bestätigt, dass die SI-Registrier
 
 ---
 
+### D2 — NL-Dreiecksgeschäft: milde Belastingdienst-Auslegung statt strenger Wortauslegung
+
+**Fundstelle:** `_detectTriangle3()` — kein Check auf „gevestigd vs. geregistreerd" beim NL-Kunden (C).
+
+**Was das Gesetz sagt:** Art. 37c onderdeel b iVm. Art. 12 lid 3 Wet OB 1968 verlangt wörtlich, dass Partij C in NL **gevestigd** sein muss (= Sitz oder feste Niederlassung). Eine bloße NL-USt-Registrierung wäre nach strengem Wortlaut nicht ausreichend → Dreiecksgeschäft-Vereinfachung würde scheitern.
+
+**Belege für die milde Auslegung:**
+1. Art. 141 lit. a RL 2006/112/EG verlangt nur Registrierung, keine Niederlassung
+2. EuGH-Rechtsprechung zu Art. 141 (Quick-Fixes-Kontext): richtlinienkonforme Auslegung gebietet, registrierte Erwerber zu akzeptieren
+3. Belastingdienst-Praxis: explizit richtlinienkonforme Auslegung — bloße NL-Registrierung des C reicht (Quelle: PwC „Ruimere toepassing vereenvoudigde ABC-regeling")
+4. Belastingdienst-Veröffentlichung „Vereenvoudigde ABC-levering" nennt nur „BTW-identificatienummer in Nederland" als Voraussetzung, nicht „gevestigd"
+
+**Warum das Tool die milde Auslegung übernimmt:**
+NL ist — anders als SI/PL/CZ in D1 — eine Behörde, die die liberale Lesart **offiziell und konsistent anwendet**. Der EuGH hat Art. 141 als auf reine Registrierung abstellend bestätigt. Eine strenge Tool-Lesart („nur gevestigd genügt") würde Vereinfachungen blockieren, die die Belastingdienst tatsächlich zulässt — Übervorsicht ohne Schutzwirkung.
+
+**Das Tool wählt bewusst die Belastingdienst-konforme Option.**
+
+**Spiegelbild zu D1:** D1 = Tool **strenger** als Wortlaut (folgt strenger Behördenpraxis SI/PL/CZ). D2 = Tool **milder** als Wortlaut (folgt milder Behördenpraxis NL). Beide Wahlen folgen demselben Prinzip: tatsächliche Verwaltungspraxis am Ort der Prüfung schlägt Wortlaut.
+
+**Restrisiko / Reverse-Trigger:** Würde die Belastingdienst je zur strikten Wortauslegung zurückkehren (sehr unwahrscheinlich nach EuGH-Rechtsprechung), würde das Tool Vereinfachungen anzeigen, die dann nicht greifen. Indikator: neue Belastingdienst-Mededeling oder negatives Hoge-Raad-Urteil zu Art. 37c. Aktion: `_detectTriangle3()` müsste einen NL-spezifischen Establishment-Check für C ergänzen — analog zu D1-Revisionspfad, nur invertiert.
+
+**Praktische Relevanz für EPDE:** gering — EPDE ist immer B, die „gevestigd"-Frage betrifft den NL-Kunden (C). Industrielle EPDE-Kunden in NL sind typischerweise NL-ansässig, nicht reine Registrierungs-Konstrukte.
+
+**Verweis:** `vat-knowledge/nl/wet_ob_nl_reihengeschaeft.md` (Art. 37c-Sektion).
+
+---
+
 ### F3 — Quick-Fix: manuell gewählte dep-UID ohne tatsächliche Registrierung ⚠️ nicht relevant für Tool
 
 **Fundstelle:** `_applyQuickFix`, Zeilen 936–952

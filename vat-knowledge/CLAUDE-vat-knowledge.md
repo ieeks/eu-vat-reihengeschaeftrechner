@@ -23,6 +23,7 @@
 | `buildKonsiLagerCH()` | `ch/mwst_ch_konsignationslager.md` |
 | Dreiecksgeschäft AT | `at/ustg_at_dreieck.md` |
 | Dreiecksgeschäft DE | `de/ustae_reihengeschaeft.md` |
+| NL-RC / NL-Dreieck (Art. 12 / Art. 37c Wet OB) | `nl/wet_ob_nl_reihengeschaeft.md` |
 | Quick Fix allgemein | `eu/quick_fixes_2020.md` |
 | IG-Lieferung / Art. 138 | `eu/art138_mwstrl.md` |
 | DE § 3 Abs. 6a / § 13b | `de/ustg_de_3_6a.md` |
@@ -132,6 +133,9 @@ uidOverride > selectedUidOverride > companyHome
 - [`ustg_de_3_6a.md`](de/ustg_de_3_6a.md) — § 3 Abs. 6a UStG, § 13b RC-Block bei Warenlieferung, EPDE-Kontext
 - [`ustae_reihengeschaeft.md`](de/ustae_reihengeschaeft.md) — Abschn. 3.14/25b UStAE, § 14a Abs. 7, BFH XI R 35/22
 - [`epde-buchungskreise.md`](de/epde-buchungskreise.md) — **DE- vs. 7 EU-Buchungskreise**, G0/DH-Entscheidungslogik, RC NL-Ausnahme, IT inversione contabile, vollständige SAP-Matrix EPDE (8 UIDs)
+
+### Niederlande (`nl/`)
+- [`wet_ob_nl_reihengeschaeft.md`](nl/wet_ob_nl_reihengeschaeft.md) — Art. 5/12/37a/37c Wet OB 1968, **RC-Sonderfall trotz Direktregistrierung** (Art. 12 Abs. 3), Dreiecksgeschäft NL als Bestimmungsland (5 Bedingungen), EPDE NL-UID NL827914052B01
 
 ### Schweiz (`ch/`)
 - [`mwst_ch_ort_lieferung.md`](ch/mwst_ch_ort_lieferung.md) — Art. 7/23/10/67 MWSTG, computeTaxCH(), Drittland-Routing
