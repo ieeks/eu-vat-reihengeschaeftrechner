@@ -1306,8 +1306,12 @@ function buildFlowDiagram(parties, movingDeliveryIdx, departure, destination, is
     // Always use SVG triangle layout for 3-party — isDreiecks controls arrow styling
     return `<div data-component="buildFlowDiagram">` + buildTriangleSVG(parties, movingDeliveryIdx, departure, destination, isDreiecks) + `</div>`;
   }
-  if (isDreiecks && parties.length === 4) {
-    return `<div data-component="buildFlowDiagram">` + buildTriangleSVG4(parties, movingDeliveryIdx, departure, destination) + `</div>`;
+  if (parties.length === 4) {
+    // Dreiecksvereinfachung → Diamant; Normalfall → gestufte Kette im Referenz-Stil
+    const svg4 = isDreiecks
+      ? buildTriangleSVG4(parties, movingDeliveryIdx, departure, destination)
+      : buildChainSVG4(parties, movingDeliveryIdx, departure, destination);
+    return `<div data-component="buildFlowDiagram">` + svg4 + `</div>`;
   }
   // ── fallback: horizontal flow (non-triangle) ──────────────────────────
   const n = parties.length;
@@ -1587,6 +1591,123 @@ function buildTriangleSVG4(parties, movingIdx, departure, destination) {
     '<span style="display:flex;align-items:center;gap:5px;"><svg width="24" height="4"><line x1="0" y1="2" x2="24" y2="2" stroke="'+COL_BLUE+'" stroke-width="2"/></svg> L1 · IGL (bewegte Lieferung)</span>'+
     '<span style="display:flex;align-items:center;gap:5px;"><svg width="24" height="4"><line x1="0" y1="2" x2="24" y2="2" stroke="'+COL_VIOLET+'" stroke-width="2"/></svg> L2 · Dreiecksgeschäft (RC)</span>'+
     '<span style="display:flex;align-items:center;gap:5px;"><svg width="24" height="4"><line x1="0" y1="2" x2="24" y2="2" stroke="'+COL_TEAL+'" stroke-width="2"/></svg> L3 · Ruhende Lieferung</span>'+
+    '<span style="display:flex;align-items:center;gap:5px;"><svg width="24" height="4"><line x1="0" y1="2" x2="24" y2="2" stroke="'+COL_INK+'" stroke-width="1.5"/></svg> Warenfluss physisch</span>'+
+    '</div></div></div>';
+}
+
+// ── SVG stepped/diamond diagram for 4-party NORMAL case (no Dreiecksvereinfachung) ──
+// Stil wie Referenzbild B021j: Rechnungskette A→B→C→D oben, physische Warenbewegung
+// A→D als gerade Achse unten. Pro Strecke ein Label mit der echten Behandlung
+// (bewegte = IG/Ausfuhr 0%, ruhend = Regelsatz am Lieferort). KEINE Länder-Sätze in
+// den Boxen — die verwirren, weil sie nicht der Liefer-Satz sind.
+function buildChainSVG4(parties, movingIdx, departure, destination) {
+  const A = parties[0], B = parties[1], C = parties[2], D = parties[3];
+  const nodes = [A, B, C, D];
+
+  const W = 800, H = 290;
+  const NW = 110, NH = 66;
+
+  const pos = [
+    {x:90,  y:200}, // A bottom-left  (Lieferant)
+    {x:250, y:58 }, // B top-left
+    {x:550, y:58 }, // C top-right
+    {x:710, y:200}, // D bottom-right (Empfänger)
+  ];
+
+  const _cs = getComputedStyle(document.documentElement);
+  const COL_BLUE   = _cs.getPropertyValue('--blue').trim()   || '#2563eb';
+  const COL_TX3    = _cs.getPropertyValue('--tx-3').trim()    || '#9ca3af';
+  const COL_SURF   = _cs.getPropertyValue('--surface').trim() || '#ffffff';
+  const COL_BORDER = _cs.getPropertyValue('--border').trim()  || '#e8e7e4';
+  const COL_TX1    = _cs.getPropertyValue('--tx-1').trim()    || '#1c1c1b';
+  const COL_INK    = _cs.getPropertyValue('--ink').trim()     || '#1c1c1b';
+
+  function edgePts(x1,y1,x2,y2,pad=56){
+    const dx=x2-x1,dy=y2-y1,d=Math.sqrt(dx*dx+dy*dy),ux=dx/d,uy=dy/d;
+    return {sx:x1+ux*pad,sy:y1+uy*pad,ex:x2-ux*pad,ey:y2-uy*pad};
+  }
+  const mid=(a,b)=>(a+b)/2;
+
+  let _mid=0;
+  function arrow(sx,sy,ex,ey,color,width=2,dashed=false){
+    const id='c4'+(++_mid);
+    const dash=dashed?'stroke-dasharray="6 4"':'';
+    return '<defs><marker id="'+id+'" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="'+color+'"/></marker></defs>'+
+      '<line x1="'+sx+'" y1="'+sy+'" x2="'+ex+'" y2="'+ey+'" stroke="'+color+'" stroke-width="'+width+'" '+dash+' marker-end="url(#'+id+')"/>';
+  }
+
+  function edgeLabel(x,y,lines,color,tw=96){
+    const lh=12,pad=5,th=lines.length*lh+pad;
+    let out='<rect x="'+(x-tw/2)+'" y="'+(y-th/2)+'" width="'+tw+'" height="'+th+'" rx="3" fill="'+COL_SURF+'" stroke="'+color+'" stroke-width="1" opacity="0.96"/>';
+    lines.forEach((l,i)=>{
+      out+='<text x="'+x+'" y="'+(y-th/2+pad+lh*(i+0.75))+'" text-anchor="middle" font-size="8.5" font-weight="600" fill="'+color+'" font-family="IBM Plex Mono,monospace">'+l+'</text>';
+    });
+    return out;
+  }
+
+  function node(cx,cy,p,col,isMe,uidLine){
+    const x=cx-NW/2, nh=uidLine?NH+12:NH, y=cy-nh/2, sw=isMe?'2':'1.5';
+    return '<rect x="'+x+'" y="'+y+'" width="'+NW+'" height="'+nh+'" rx="6" fill="'+COL_SURF+'" stroke="'+col+'" stroke-width="'+sw+'"/>'+
+      '<text x="'+cx+'" y="'+(cy-12)+'" text-anchor="middle" font-size="17" dominant-baseline="middle">'+flag(p.code)+'</text>'+
+      '<text x="'+cx+'" y="'+(cy+5)+'" text-anchor="middle" font-size="10" font-weight="600" fill="'+COL_TX1+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+p.code+'</text>'+
+      '<text x="'+cx+'" y="'+(cy+18)+'" text-anchor="middle" font-size="8.5" fill="'+col+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+p.role+'</text>'+
+      (uidLine?'<text x="'+cx+'" y="'+(cy+30)+'" text-anchor="middle" font-size="7.5" font-weight="700" fill="'+COL_BLUE+'" font-family="IBM Plex Mono,monospace">'+uidLine+'</text>':'');
+  }
+
+  // Pro Strecke das echte Label ableiten (nur aus movingIdx + Lieferort, keine neue Steuerlogik)
+  function legLabel(i){
+    const num='L'+(i+1);
+    if (i === movingIdx) {
+      const treat = isNonEU(destination) ? 'Ausfuhr · 0%' : 'IG · 0%';
+      return {lines:['⚡ '+num+' · bewegt', treat], col:COL_BLUE, width:2.5, dashed:false};
+    }
+    const place = i < movingIdx ? departure : destination;
+    return {lines:[num+' · ruhend', rate(place)+'% '+place], col:COL_TX3, width:1.6, dashed:true};
+  }
+
+  // Rechnungskette: L1 A→B, L2 B→C, L3 C→D
+  const segs = [[0,1],[1,2],[2,3]];
+  let chainSvg='';
+  segs.forEach(([from,to],i)=>{
+    const e = edgePts(pos[from].x,pos[from].y,pos[to].x,pos[to].y,52);
+    const ll = legLabel(i);
+    const lx = mid(e.sx,e.ex) + (i===0?-6:i===2?6:0);
+    const ly = mid(e.sy,e.ey) + (i===1?-22:0);
+    chainSvg += arrow(e.sx,e.sy,e.ex,e.ey,ll.col,ll.width,ll.dashed) + edgeLabel(lx,ly,ll.lines,ll.col);
+  });
+
+  // Physische Warenbewegung A→D (gerade Achse unten)
+  const goodsY = pos[0].y;
+  const adSx = pos[0].x + NW/2 + 4, adEx = pos[3].x - NW/2 - 4;
+  const tLetter = getTransportLetter();
+  const tIdx = ['A','B','C','D'].indexOf(tLetter);
+  const tParty = tIdx >= 0 ? nodes[tIdx] : null;
+  const transportTxt = tParty
+    ? 'Transport durch '+tParty.code+' ('+tLetter+') veranlasst'
+    : 'Direkte Warenbewegung';
+  const goodsSvg = arrow(adSx,goodsY,adEx,goodsY,COL_INK,1.5)+
+    '<text x="'+mid(adSx,adEx)+'" y="'+(goodsY+20)+'" text-anchor="middle" font-size="8.5" fill="'+COL_TX1+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+transportTxt+' · Ware: '+cn(departure)+' → '+cn(destination)+'</text>';
+
+  // Nodes (über den Pfeilen). "Ich"-Knoten hervorheben + UID anzeigen.
+  const meIdx = (typeof mePosition === 'number') ? mePosition - 1 : -1;
+  const meUid = (selectedUidOverride && MY_VAT_IDS[selectedUidOverride])
+    ? selectedUidOverride + ': ' + MY_VAT_IDS[selectedUidOverride]
+    : null;
+  let nodeSvg='';
+  nodes.forEach((p,i)=>{
+    const isMe = i === meIdx;
+    nodeSvg += node(pos[i].x,pos[i].y,p, isMe?COL_BLUE:COL_BORDER, isMe, isMe?meUid:null);
+  });
+
+  return '<div class="flow-diagram">'+
+    '<div class="flow-title">📦 Warenfluss &amp; Fakturierung</div>'+
+    '<div class="flow-diagram-body">'+
+    '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;overflow:visible;">'+
+    chainSvg + goodsSvg + nodeSvg +
+    '</svg>'+
+    '<div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:8px;font-family:monospace;font-size:0.65rem;color:var(--tx-3);">'+
+    '<span style="display:flex;align-items:center;gap:5px;"><svg width="24" height="4"><line x1="0" y1="2" x2="24" y2="2" stroke="'+COL_BLUE+'" stroke-width="2.5"/></svg> Bewegte Lieferung (0%)</span>'+
+    '<span style="display:flex;align-items:center;gap:5px;"><svg width="24" height="4"><line x1="0" y1="2" x2="24" y2="2" stroke="'+COL_TX3+'" stroke-width="1.6" stroke-dasharray="5 3"/></svg> Ruhende Lieferung (Regelsatz Lieferort)</span>'+
     '<span style="display:flex;align-items:center;gap:5px;"><svg width="24" height="4"><line x1="0" y1="2" x2="24" y2="2" stroke="'+COL_INK+'" stroke-width="1.5"/></svg> Warenfluss physisch</span>'+
     '</div></div></div>';
 }

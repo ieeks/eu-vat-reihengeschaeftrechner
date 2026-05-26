@@ -2,6 +2,22 @@
 
 ---
 
+## v4.3 · 26.05.2026 — Session 28
+
+### Warenflussdiagramm 4P (Normalfall)
+
+- **`buildChainSVG4()` neu** — gestuftes Diamant-/Ketten-SVG im Referenz-Stil (B021j) für den **4-Parteien-Normalfall ohne Dreiecksvereinfachung**. Ersetzt das bisher verwendete horizontale Fallback-Layout. Rechnungskette A→B→C→D oben, physische Warenbewegung A→D als gerade Achse unten mit **Transport-Veranlasser-Label** (`getTransportLetter()` → „Transport durch DE (B) veranlasst").
+- **Behandlung pro Strecke statt Länder-Sätze in Boxen** — Hintergrund: Im alten Layout zeigten die Boxen `rate(p.code)%` (statischer Länder-Regelsatz, z. B. NL 21 %, BE 21 %), was wie ein Liefer-Steuersatz aussah und verwirrte. Jetzt trägt jede Strecke ihr echtes Label: bewegte Lieferung = `IG · 0%` (bzw. `Ausfuhr · 0%` bei Drittland-Bestimmung via `isNonEU(dest)`), ruhende Lieferung = `Regelsatz % am Lieferort` (vor bewegt → Abgangsland, nach bewegt → Bestimmungsland). Ableitung **nur** aus bestehendem `movingIdx`/Lieferort — keine neue Steuerlogik (Regel 11).
+- **Routing in `buildFlowDiagram()`** — 4P-Zweig: `isDreiecks` → `buildTriangleSVG4()` (Diamant), sonst → `buildChainSVG4()`. 3P (`buildTriangleSVG`) und 2P/Mode-2-Fallback unverändert.
+- **„Ich"-Knoten** hervorgehoben (blauer Rahmen) + UID-Zeile bei `selectedUidOverride`.
+
+### Nicht angefasst
+- VATEngine IIFE
+- analyze() / analyze2()
+- `buildTriangleSVG` (3P), `buildTriangleSVG4` (4P Dreieck), horizontaler 2P-Fallback
+
+---
+
 ## v4.3 · 20.05.2026 — Session 27
 
 ### vat-knowledge
