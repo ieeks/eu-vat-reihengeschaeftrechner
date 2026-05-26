@@ -25,6 +25,8 @@ Stand: 20.05.2026
 - [x] **OT-M2 Browser-DOM-Robustheit** — Tests setzen cp-0/cp-1 explizit; stale DOM-Wert aus Mode-3-Session verhindert (Session 24)
 - [x] **vat-knowledge Referenzfälle + Buchungskreis-Doku** — `reference-cases.md`, `at/eproha-buchungskreise.md`, `de/epde-buchungskreise.md` (Session 24)
 - [x] **vat-knowledge NL-Länderdatei** — `nl/wet_ob_nl_reihengeschaeft.md` (Art. 5/12/37a/37c Wet OB, RC-Sonderfall trotz Direktregistrierung, EPDE NL-UID); Index in `CLAUDE-vat-knowledge.md` + `CLAUDE.md` (16 → 17 Dateien) aktualisiert (Session 27)
+- [x] **Mode 2 Drop-Shipment für EU-Kunden** — neuer `analyze2()`-Branch: EPROHA(AT) = erster Lieferant → EU-Kunde (z.B. DE) → abweichender Warenempfänger (z.B. IT) = Reihengeschäft/Dreiecksgeschäft (AF/Reverse Charge), Drittland-Empfänger = Ausfuhr (A0); `renderContextToggles()` zeigt Drop-Shipment nun für jeden EU-Kunden (Session 28)
+- [x] **Warenfluss-Diagramme vereinheitlicht** — Transport-Veranlasser in 4P-Dreieck + 3P + Normalfall; 4P-SVG `max-width` 1100px, 3P 715px; 3P-Labels auf Chip-Stil (Box + Rahmen) wie 4P umgestellt (Session 28)
 
 ---
 

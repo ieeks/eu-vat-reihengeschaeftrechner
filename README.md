@@ -32,7 +32,7 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 | 3P | Standard-Reihengeschäft (inkl. CH/GB Export) |
 |---|---|
 | 4P | EuG T-646/24 Dreiecksgeschäft |
-| 2P | EPROHA Direktlieferung (AT→EU/CH/GB) |
+| 2P | EPROHA Direktlieferung (AT→EU/CH/GB) · Drop-Shipment an Endkunden des Kunden (Reihengeschäft/Dreiecksgeschäft) |
 | Lohn | Art. 17 Abs. 2 lit. f MwStSystRL |
 
 ## Output
@@ -48,6 +48,8 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 - **Experten-Modus** — 5 Tabs + Perspektivwechsel
 
 ## Aktueller Fokus
+- **Mode 2 Drop-Shipment für EU-Kunden** — EPROHA als erster Lieferant an einen EU-Kunden mit abweichendem Warenempfänger-Land (z.B. DE-Kunde, Ware nach IT) → Dreiecksgeschäft (AF/Reverse Charge) bzw. Ausfuhr bei Drittland-Empfänger (Session 28)
+- **Warenfluss-Diagramme vereinheitlicht** — Transport-Veranlasser-Label + Chip-Stil in 3P/4P/Drop-Shipment, größere SVGs (Session 28)
 - **v4.3 live** — Light Theme, Header-Modus-Tabs, Self-hosted Fonts, PDF-Export (Sessions 22–23)
 - `/vat-knowledge/` Wissensbasis: 19 Markdown-Dateien (EU/AT/DE/CH Recht ↔ Code-Mapping), inkl. Referenzfälle + EPROHA/EPDE Buchungskreis-Doku
 
