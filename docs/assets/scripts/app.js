@@ -1432,12 +1432,15 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
     `;
   }
 
-  // Simple text label above arrow
-  function arrowLabel(x, y, lines, color) {
-    return lines.map((l, i) =>
-      `<text x="${x}" y="${y + i * 11}" text-anchor="middle"
-        font-size="9" font-weight="600" fill="${color}" font-family="IBM Plex Mono,monospace">${l}</text>`
-    ).join('');
+  // Chip-Label im Stil des 4P-Diagramms (Box + farbiger Rahmen + Mono-Text), zentriert auf (x,y)
+  function arrowLabel(x, y, lines, color, tw = 92) {
+    const lh = 12, pad = 5, th = lines.length * lh + pad;
+    let out = `<rect x="${x - tw/2}" y="${y - th/2}" width="${tw}" height="${th}" rx="3" fill="${COL_SURF2}" stroke="${color}" stroke-width="1" opacity="0.96"/>`;
+    lines.forEach((l, i) => {
+      out += `<text x="${x}" y="${y - th/2 + pad + lh*(i+0.75)}" text-anchor="middle"
+        font-size="8.5" font-weight="600" fill="${color}" font-family="IBM Plex Mono,monospace">${l}</text>`;
+    });
+    return out;
   }
 
   // Goods flow label below the A→C line
@@ -1481,11 +1484,11 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
 
       <!-- L1: A → B -->
       ${arrow(ab.sx, ab.sy, ab.ex, ab.ey, L1col)}
-      ${arrowLabel(mid(ab.sx,ab.ex)-20, mid(ab.sy,ab.ey)-26, L1lbl, L1col)}
+      ${arrowLabel(mid(ab.sx,ab.ex)-8, mid(ab.sy,ab.ey), L1lbl, L1col)}
 
       <!-- L2: B → C -->
       ${arrow(bc.sx, bc.sy, bc.ex, bc.ey, L2col)}
-      ${arrowLabel(mid(bc.sx,bc.ex)+20, mid(bc.sy,bc.ey)-26, L2lbl, L2col)}
+      ${arrowLabel(mid(bc.sx,bc.ex)+8, mid(bc.sy,bc.ey), L2lbl, L2col)}
 
       <!-- Nodes -->
       ${node(AX, AY, A, L1col !== '#6B7280', L1col !== '#6B7280' ? L1col : COL_BORDER)}
