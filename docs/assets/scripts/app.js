@@ -1444,6 +1444,12 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
   const acMidX = mid(ac.sx, ac.ex);
   const acMidY = mid(ac.sy, ac.ey) + 14;
 
+  // Transport-Veranlasser für die Warenfluss-Achse (wie im 4P-Diagramm)
+  const _tLetter = getTransportLetter();
+  const _tIdx = ['A','B','C'].indexOf(_tLetter);
+  const _tParty = _tIdx >= 0 ? [A,B,C][_tIdx] : null;
+  const _goodsTxt = _tParty ? 'Transport durch '+_tParty.code+' ('+_tLetter+') veranlasst' : '';
+
   // Dynamic colors — depend on which supply is moving and whether triangle applies
   const noMoving = movingIdx === -1;
   const L1moving = movingIdx === 0;
@@ -1467,10 +1473,11 @@ function buildTriangleSVG(parties, movingIdx, departure, destination, isDreiecks
   <div class="flow-diagram">
     <div class="flow-title">Warenfluss${isDreiecks ? ' · Dreiecksgeschäft' : ''}</div>
     <div class="flow-diagram-body">
-    <svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block;margin:0 auto;overflow:visible;">
+    <svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:715px;display:block;margin:0 auto;overflow:visible;">
 
       <!-- Goods flow A → C (physical, dashed) -->
       ${arrow(ac.sx, ac.sy, ac.ex, ac.ey, COL_TX3, true)}
+      ${_goodsTxt ? `<text x="${acMidX}" y="${acMidY}" text-anchor="middle" font-size="9" font-weight="500" fill="${COL_TX1}" font-family="IBM Plex Sans,system-ui,sans-serif">${_goodsTxt}</text>` : ''}
 
       <!-- L1: A → B -->
       ${arrow(ab.sx, ab.sy, ab.ex, ab.ey, L1col)}
