@@ -1561,6 +1561,14 @@ function buildTriangleSVG4(parties, movingIdx, departure, destination) {
   const adSx = AX + NW/2 + 4, adEy = goodsY, adEx = DX - NW/2 - 4, adSy = goodsY;
   const l3rate = rate(D.code);
 
+  // Transport-Veranlasser für die Warenfluss-Achse (wie im Referenz-Stil „Transport durch U2 veranlasst")
+  const _tLetter = getTransportLetter();
+  const _tIdx = ['A','B','C','D'].indexOf(_tLetter);
+  const _tParty = _tIdx >= 0 ? [A,B,C,D][_tIdx] : null;
+  const _goodsTxt = _tParty
+    ? 'Transport durch '+_tParty.code+' ('+_tLetter+') veranlasst'
+    : 'Direkte Warenbewegung vom Abgangsort zum Bestimmungsort';
+
   return '<div class="flow-diagram">'+
     '<div class="flow-title">📦 Warenfluss · 4-Parteien Dreiecksgeschäft (EuG T-646/24)</div>'+
     '<div class="flow-diagram-body">'+
@@ -1578,7 +1586,7 @@ function buildTriangleSVG4(parties, movingIdx, departure, destination) {
 
     // Physical goods flow A→D: horizontal solid dark arrow
     arrow(adSx,adSy,adEx,adEy,COL_INK,1.5)+
-    '<text x="'+mid(adSx,adEx)+'" y="'+(goodsY+20)+'" text-anchor="middle" font-size="8.5" fill="'+COL_TX1+'" font-family="IBM Plex Sans,system-ui,sans-serif">Direkte Warenbewegung vom Abgangsort zum Bestimmungsort</text>'+
+    '<text x="'+mid(adSx,adEx)+'" y="'+(goodsY+20)+'" text-anchor="middle" font-size="8.5" fill="'+COL_TX1+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+_goodsTxt+'</text>'+
 
     // Nodes (on top of arrows)
     node(AX,AY,A,COL_BLUE,false)+
