@@ -4,6 +4,10 @@
 
 ## v4.3 · 26.05.2026 — Session 28
 
+### 3P-Diagramm · Chip-Labels wie 4P
+
+- **`arrowLabel` (in `buildTriangleSVG`) auf Chip-Stil umgestellt** — bisher nackter Mono-Text, jetzt Box mit farbigem Rahmen + Surface-Fill (opacity 0.96) wie `edgeLabel` im 4P-Diagramm. Labels werden auf dem Pfeil-Mittelpunkt zentriert (statt mit `-26` darüber). Betrifft 3P-Modus **und** Drop-Shipment-Modus (beide rendern über `buildTriangleSVG`).
+
 ### Mode 2 · Drop-Shipment für EU-Kunden (Reihengeschäft / Dreiecksgeschäft)
 
 - **Neuer `analyze2()`-Branch** — bisher griff der Drop-Shipment-Pfad nur, wenn der Kunde in **AT** sitzt. Neu: EPROHA(AT) als **erster Lieferant** an einen **EU-Kunden (z. B. DE)** mit **abweichendem Warenempfänger-Land (z. B. IT)**. Bedingung: `dropShipDest && dropShipDest !== dest && dropShipDest !== 'AT' && !isNonEU(dest)`. Bestehende Pfade unberührt (Regel: nur **neue** Branches in `analyze2()`).
