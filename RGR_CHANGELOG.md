@@ -10,6 +10,14 @@
 - **Behandlung pro Strecke statt Länder-Sätze in Boxen** — Hintergrund: Im alten Layout zeigten die Boxen `rate(p.code)%` (statischer Länder-Regelsatz, z. B. NL 21 %, BE 21 %), was wie ein Liefer-Steuersatz aussah und verwirrte. Jetzt trägt jede Strecke ihr echtes Label: bewegte Lieferung = `IG · 0%` (bzw. `Ausfuhr · 0%` bei Drittland-Bestimmung via `isNonEU(dest)`), ruhende Lieferung = `Regelsatz % am Lieferort` (vor bewegt → Abgangsland, nach bewegt → Bestimmungsland). Ableitung **nur** aus bestehendem `movingIdx`/Lieferort — keine neue Steuerlogik (Regel 11).
 - **Routing in `buildFlowDiagram()`** — 4P-Zweig: `isDreiecks` → `buildTriangleSVG4()` (Diamant), sonst → `buildChainSVG4()`. 3P (`buildTriangleSVG`) und 2P/Mode-2-Fallback unverändert.
 - **„Ich"-Knoten** hervorgehoben (blauer Rahmen) + UID-Zeile bei `selectedUidOverride`.
+- **Transport-Veranlasser im Dreieck-SVG** — `buildTriangleSVG4` zeigt auf der Warenfluss-Achse jetzt „Transport durch X (L) veranlasst" (via `getTransportLetter()`) statt des statischen „Direkte Warenbewegung …"-Texts, analog zum Normalfall-Diagramm und zum Referenz-Stil (B021j: „Transport durch U2 veranlasst").
+- **Größe/Legende beider 4P-SVGs** — `buildTriangleSVG4` (Dreieck) + `buildChainSVG4` (Normal): SVG `max-width:700px;margin:0 auto` (vorher unbegrenztes `width:100%` → Überskalierung auf breiten Screens); Legende `0.65rem`→`0.74rem`, Farbe `--tx-3`→`--tx-2` (lesbarer).
+
+### Hosting-Audit + TODO-Pflege
+
+- **Live-Hosting (statisch) verifiziert** — relative Asset-Pfade, 9 self-hosted Fonts (kein Google), `index.html`-Redirect, v1/v2-Toggle-Links und `check:pages` ✓. Live-URL-Render im Browser in CI-Umgebung nicht prüfbar (Outbound geblockt).
+- **Cache-Busting v1 gefixt** — `pages.yml`-sed ersetzt den `?v=`-Platzhalter jetzt in `docs/index.html` **und** `docs/v1/index.html` (vorher nur v2 → v1-Fallback bekam dauerhaft `?v=dev`). Offen bleibt: kein CNAME-File trotz Custom-Domain `manuel-app.dev` (erst Pages-Settings prüfen, bevor CNAME angelegt wird).
+- **Bulk-Modus / CSV-Batch (Highlight #3) aus TODO entfernt** — wird nicht umgesetzt (Entscheidung Nutzer).
 
 ### Nicht angefasst
 - VATEngine IIFE
