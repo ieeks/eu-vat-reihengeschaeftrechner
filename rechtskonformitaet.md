@@ -30,6 +30,7 @@ Quellen:
 | ZM-Pflicht Dreiecksgeschäft-Kennzeichnung | condition e (met:false als Warnung) | § 18a Abs. 7 UStG / Art. 42 + 265 RL |
 | Art. 141 lit. c: Ware geht direkt an Endabnehmer (C's Kunde D), nicht physisch zu C | Bedingung gilt als erfüllt — korrekt | EuG T-646/24, Rn. 48+50 |
 | 4P-Kette: Dreiecksgeschäft-Vereinfachung auf B anwendbar | Tool hat 4P-Modus (`_detectTriangle4`) | EuG T-646/24, Rn. 38+50 |
+| Mode 2 Drop-Shipment: EPROHA (AT) = erster Lieferer → EU-Kunde → abweichender Warenempfänger | `analyze2()`-Branch: EPROHA macht steuerfreie IG-Lieferung an Kunden-UID (AF); Kunde = mittlerer Unternehmer mit Dreiecksvereinfachung, Empfänger = RC | Art. 138 / Art. 141 / Art. 197 RL 2006/112/EG · Art. 25 UStG AT |
 | EuGH C-247/21 Luxury Trust: Pflichtangaben materiell | Warnung in Output vorhanden | EuGH C-247/21 |
 | EuGH C-430/09 Euro Tyre: UID-Zeitpunkt entscheidend | Hinweis in Quick-Fix-Output | EuGH C-430/09 |
 | EuGH C-628/16 Kreuzmayr: mitgeteilte UID entscheidet | Hinweis in Quick-Fix-Output | EuGH C-628/16 |
