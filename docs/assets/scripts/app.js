@@ -4490,6 +4490,76 @@ function analyze2() {
       html += rH({type:'warn', icon:'🚗', text:`<strong>Abholung durch Kunden (EXW):</strong> Lieferort = AT-Lager. EPROHA hat keine Kontrolle über die Ausfuhr — Ausfuhrbestätigung vom Kunden/Spediteur einfordern! Ohne ATLAS-Nachweis → 20% AT-MwSt-Risiko.`});
     }
 
+  // ── AT → EU-Kunde + Drop-Shipment (Reihengeschäft / Dreiecksgeschäft) ──────
+  //    EPROHA(AT) = erster Lieferant → Kunde(dest) → Warenempfänger(dropShipDest)
+  } else if (dropShipDest && dropShipDest !== dest && dropShipDest !== 'AT' && !isNonEU(dest)) {
+    const bCode = dest;              // Kunde (mittlerer Unternehmer / Erwerber)
+    const cCode = dropShipDest;      // Warenempfänger (Endkunde des Kunden)
+    const cRate = rate(cCode);
+    const cIsNonEU = isNonEU(cCode);
+    const isTriangle = !cIsNonEU;    // AT, bCode, cCode sind drei verschiedene EU-MS
+    const lawTri = 'Art. 25 UStG AT / Art. 141 MwStSystRL';
+
+    html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--amber);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">
+      📦 Reihengeschäft — EPROHA liefert direkt an den Warenempfänger des Kunden
+    </div>`;
+
+    html += `<div class="mode2-flow">${buildFlowDiagram(
+      [{code:'AT',role:'EPROHA (Lager)'},{code:bCode,role:'Kunde'},{code:cCode,role:'Warenempfänger'}],
+      0, 'AT', cCode, isTriangle, -1, -1
+    )}</div>`;
+
+    if (cIsNonEU) {
+      html += `<div style="padding:12px 16px;background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.25);border-radius:var(--r-md);margin-bottom:14px;font-size:0.78rem;color:var(--tx-2);line-height:1.7;">
+        <strong style="color:var(--teal);">Konstellation:</strong>
+        EPROHA (AT) fakturiert an ${flag(bCode)} <strong>${cn(bCode)}-Kunden</strong> · Ware geht direkt nach ${flag(cCode)} <strong>${cn(cCode)}</strong> (Drittland).
+      </div>`;
+      html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: A0</strong> (Ausfuhr AT 0% — § 7 UStG AT / Art. 146 MwStSystRL)`});
+      html += rH({type:'ok', icon:'🇦🇹', text:`Rechnung an ${cn(bCode)}-Kunden: <strong>0% MwSt (Ausfuhrlieferung)</strong>. AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>.`});
+      html += rH({type:'warn', icon:'🛃', text:`Ausfuhrnachweis (ATLAS/e-dec) erforderlich — Bestimmungsland ${cn(cCode)} ist Drittland. Zollanmeldung in AT.`});
+    } else {
+      html += `<div style="padding:12px 16px;background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.25);border-radius:var(--r-md);margin-bottom:14px;font-size:0.78rem;color:var(--tx-2);line-height:1.7;">
+        <strong style="color:var(--teal);">Konstellation:</strong>
+        EPROHA (AT) → ${flag(bCode)} <strong>${cn(bCode)}-Kunde</strong> → ${flag(cCode)} <strong>${cn(cCode)} (Warenempfänger)</strong>. Ware gelangt physisch AT → ${cn(cCode)}.${isTriangle ? `<br>Drei verschiedene Mitgliedstaaten (AT · ${cn(bCode)} · ${cn(cCode)}) → <strong>Dreiecksgeschäft</strong> (${lawTri}).` : ''}
+      </div>`;
+
+      html += `<div style="padding:14px 18px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.35);border-radius:var(--r-md);margin-bottom:14px;line-height:1.7;">
+        <div style="font-size:0.82rem;font-weight:600;color:var(--red);margin-bottom:6px;">🆔 Voraussetzung steuerfreie IG-Lieferung</div>
+        <div style="font-size:0.78rem;color:var(--tx-1);">
+          ${cn(bCode)}-Kunde muss eine gültige <strong>${cn(bCode)}-UID</strong> mitteilen — sonst fakturiert EPROHA <strong>20% AT-MwSt</strong>.<br>
+          <span style="color:var(--tx-2);">Art. 6 Abs. 1 iVm. Art. 7 UStG 1994 / Art. 138 MwStSystRL</span>
+        </div>
+      </div>`;
+
+      html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: AF</strong> (IG-Lieferung AT 0% — Art. 6 Abs. 1 iVm. Art. 7 UStG 1994) · <em>nur mit ${cn(bCode)}-UID des Kunden</em>`});
+      html += rH({type:'ok', icon:'⚡', text:
+        `<strong>EPROHA = erster Lieferant:</strong> bewegte Lieferung = <strong>steuerfreie ig. Lieferung 0%</strong> (Transport durch EPROHA). Rechnung mit AT-UID <strong>${myATVat||'ATU...'}</strong> an die <strong>${cn(bCode)}-UID</strong> des Kunden.`
+      });
+      html += rH({type:'warn', icon:'📦', text:
+        `<strong>Belegnachweis:</strong> Gelangensbestätigung des Warenempfängers in <strong>${cn(cCode)}</strong> einholen — die Ware kommt dort an, NICHT in ${cn(bCode)}! Alternativ CMR mit Empfangsbestätigung.`
+      });
+      html += rH({type:'info', icon:'📝', text:`ZM-Meldung: EPROHA meldet die IG-Lieferung mit der <strong>${cn(bCode)}-UID des Kunden</strong> + Betrag. Frist: 25. des Folgemonats.`});
+
+      if (isTriangle) {
+        html += rH({type:'info', icon:'△', text:
+          `<strong>Dreiecksgeschäft (${lawTri}):</strong> Der ${cn(bCode)}-Kunde ist mittlerer Unternehmer (Erwerber): er meldet den ig. Erwerb in ${cn(cCode)} als „deemed taxed", muss sich dort NICHT registrieren und wälzt die Lieferung an den ${cn(cCode)}-Empfänger per <strong>Reverse Charge</strong> ab. EPROHA selbst erbringt „nur" die normale ig. Lieferung an die ${cn(bCode)}-UID.`
+        });
+        html += rH({type:'info', icon:'🧾', text:
+          `<strong>${cn(cCode)}-Empfänger:</strong> schuldet die ${cn(cCode)}-USt (${cRate}%) per Reverse Charge und kann sie ggf. als Vorsteuer abziehen.`
+        });
+      } else {
+        html += rH({type:'warn', icon:'🆔', text:
+          `<strong>${cn(bCode)}-Kunde — ig. Erwerb in ${cn(cCode)}:</strong> Der Erwerb entsteht im Bestimmungsland ${cn(cCode)} → ${cRate}% Erwerbsteuer (UID aus ${cn(cCode)} erforderlich).`
+        });
+      }
+    }
+
+    if (isAbholung) {
+      html += rH({type:'warn', icon:'🚗', text:
+        `<strong>Abholung durch den Kunden (EXW):</strong> Lieferort = AT-Lager. Der Kunde bringt die Ware selbst nach ${cn(cCode)} — Gelangensbestätigung / Spediteursnachweis einfordern, sonst 20% AT-MwSt-Risiko.`
+      });
+    }
+
   // ── AT → EU-Land (IG-Lieferung) ────────────────────────────────────────────
   } else {
     const destRate = rate(dest);
@@ -10309,21 +10379,21 @@ function renderContextToggles() {
   if (currentMode === 2 && currentCompany === 'EPROHA') {
     const cp1 = $('cp-1');
     const kundeCountry = cp1?.value || 'IT';
-    if (kundeCountry === 'AT') {
+    if (!isNonEU(kundeCountry)) {   // EU-Kunde (AT, DE, IT, …) → Drop-Shipment / Reihengeschäft möglich
       const activeDS = !!dropShipDest;
-      const opts = EU.filter(c => !c.nonEU && c.code !== 'AT')
+      const opts = EU.filter(c => !c.nonEU && c.code !== kundeCountry)
         .map(c => `<option value="${c.code}"${dropShipDest===c.code?' selected':''}>${flag(c.code)} ${cn(c.code)}</option>`)
         .join('');
       el.innerHTML = `<div class="sec" style="margin-top:0;border-top:1px solid var(--border-light);">
         <div class="sec-hdr">📦 Drop-Shipment</div>
         <div class="sec-body">
-          <div class="sub" style="margin-bottom:8px;">Ware geht direkt an Endkunden des Kunden?</div>
+          <div class="sub" style="margin-bottom:8px;">Ware geht direkt an den Endkunden des Kunden?</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
             <button class="party-btn${activeDS?' active':''}" onclick="setDropShip(document.getElementById('dsDestPicker').value)">
               Ja · Direktlieferung an Warenempfänger
             </button>
             <button class="party-btn${!activeDS?' active':''}" onclick="clearDropShip()">
-              Nein · Abholung / Inland AT
+              Nein · normale Lieferung an Kunden
             </button>
           </div>
           ${activeDS ? `<div class="sub" style="margin-bottom:4px;">Warenempfänger-Land (Bestimmungsland)</div>

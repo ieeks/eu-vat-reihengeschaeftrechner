@@ -4,6 +4,13 @@
 
 ## v4.3 · 26.05.2026 — Session 28
 
+### Mode 2 · Drop-Shipment für EU-Kunden (Reihengeschäft / Dreiecksgeschäft)
+
+- **Neuer `analyze2()`-Branch** — bisher griff der Drop-Shipment-Pfad nur, wenn der Kunde in **AT** sitzt. Neu: EPROHA(AT) als **erster Lieferant** an einen **EU-Kunden (z. B. DE)** mit **abweichendem Warenempfänger-Land (z. B. IT)**. Bedingung: `dropShipDest && dropShipDest !== dest && dropShipDest !== 'AT' && !isNonEU(dest)`. Bestehende Pfade unberührt (Regel: nur **neue** Branches in `analyze2()`).
+  - EU-Warenempfänger → **Dreiecksgeschäft** (Art. 25 UStG AT / Art. 141): EPROHA = steuerfreie ig. Lieferung 0 % (**AF**), AT-UID → Kunden-UID, ZM auf Kunden-UID, Gelangensnachweis aus dem Empfängerland; Kunde = mittlerer Unternehmer (deemed taxed, keine Registrierung), Empfänger = Reverse Charge.
+  - Drittland-Warenempfänger (CH/GB) → **Ausfuhrlieferung** (**A0**, § 7 UStG AT / Art. 146).
+- **`renderContextToggles()` generalisiert** — Drop-Shipment-Sektion erscheint nun für **jeden EU-Kunden** (`!isNonEU(kundeCountry)`), nicht nur AT; Warenempfänger-Optionen schließen das **Kundenland** aus (`c.code !== kundeCountry`). „Nein"-Label neutralisiert.
+
 ### Warenflussdiagramm 4P (Normalfall)
 
 - **`buildChainSVG4()` neu** — gestuftes Diamant-/Ketten-SVG im Referenz-Stil (B021j) für den **4-Parteien-Normalfall ohne Dreiecksvereinfachung**. Ersetzt das bisher verwendete horizontale Fallback-Layout. Rechnungskette A→B→C→D oben, physische Warenbewegung A→D als gerade Achse unten mit **Transport-Veranlasser-Label** (`getTransportLetter()` → „Transport durch DE (B) veranlasst").

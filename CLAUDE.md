@@ -66,7 +66,7 @@ docs/assets/scripts/app.js
   computeTaxCH() ← export/import/domestic-l1/domestic-l2-ch
   computeTaxGB() ← export/domestic-l1/domestic-l2-gb (NEU v4.2)
   analyzeLohn() ← sup===con → Inland-Sonderfall (v4.1)
-  analyze2() ← Mode 2 EPROHA; enthält Drop-Shipment-Branch (dest=AT + dropShipDest≠AT)
+  analyze2() ← Mode 2 EPROHA; Drop-Shipment-Branches: (a) dest=AT + dropShipDest≠AT; (b) EU-Kunde dest≠AT + dropShipDest≠dest → Reihengeschäft/Dreiecksgeschäft (EPROHA=erster Lieferant)
   buildVergleichTab() ← ⚖ Vergleich-Tab (v4.1)
   simplifyBasisOutput() ← sekundäre Hints in Desktop-Panel bündeln
   setDropShip(country) / clearDropShip() ← Drop-Shipment State für Mode 2
