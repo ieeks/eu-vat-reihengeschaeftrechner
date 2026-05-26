@@ -52,6 +52,8 @@ docs/assets/scripts/app.js
   VATEngine IIFE (NICHT modifizieren)
     detectStructureRisks() Section F: resting-buyer-no-uid
   buildTrafficStatus() ← Top-Status aus Risiko-/Dreiecksstatus
+  buildFlowDiagram() ← Diagramm-Router: 3P→buildTriangleSVG · 4P Dreieck→buildTriangleSVG4 · 4P Normal→buildChainSVG4 · 2P/Mode2→horizontaler Fallback
+  buildChainSVG4() ← 4P Normalfall (ohne Dreieck) im Referenz-Stil B021j: Kette A→B→C→D + Warenachse A→D mit Transport-Veranlasser; Behandlung pro Strecke (bewegt IG/Ausfuhr 0%, ruhend Regelsatz Lieferort), KEINE Länder-Sätze in Boxen
   buildKurzbeschreibung() ← PRIMARY OUTPUT als Executive Summary + Decision Flow + SAP/UID-Hinweise
   buildInvoiceSnapshot() ← gibt '' zurück
   buildDreiecks3Result() ← selectedUidOverride
