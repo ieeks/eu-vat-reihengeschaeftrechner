@@ -1572,7 +1572,7 @@ function buildTriangleSVG4(parties, movingIdx, departure, destination) {
   return '<div class="flow-diagram">'+
     '<div class="flow-title">📦 Warenfluss · 4-Parteien Dreiecksgeschäft (EuG T-646/24)</div>'+
     '<div class="flow-diagram-body">'+
-    '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;overflow:visible;max-width:900px;margin:0 auto;">'+
+    '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;overflow:visible;max-width:1100px;margin:0 auto;">'+
 
     // Invoice chain: L1 A→B, L2 B→C, L3 C→D
     arrow(ab.sx,ab.sy,ab.ex,ab.ey,COL_BLUE)+
@@ -1586,7 +1586,7 @@ function buildTriangleSVG4(parties, movingIdx, departure, destination) {
 
     // Physical goods flow A→D: horizontal solid dark arrow
     arrow(adSx,adSy,adEx,adEy,COL_INK,1.5)+
-    '<text x="'+mid(adSx,adEx)+'" y="'+(goodsY+22)+'" text-anchor="middle" font-size="11" font-weight="500" fill="'+COL_TX1+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+_goodsTxt+'</text>'+
+    '<text x="'+mid(adSx,adEx)+'" y="'+(goodsY+22)+'" text-anchor="middle" font-size="9" font-weight="500" fill="'+COL_TX1+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+_goodsTxt+'</text>'+
 
     // Nodes (on top of arrows)
     node(AX,AY,A,COL_BLUE,false)+
@@ -1694,7 +1694,7 @@ function buildChainSVG4(parties, movingIdx, departure, destination) {
     ? 'Transport durch '+tParty.code+' ('+tLetter+') veranlasst'
     : 'Direkte Warenbewegung';
   const goodsSvg = arrow(adSx,goodsY,adEx,goodsY,COL_INK,1.5)+
-    '<text x="'+mid(adSx,adEx)+'" y="'+(goodsY+22)+'" text-anchor="middle" font-size="11" font-weight="500" fill="'+COL_TX1+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+transportTxt+' · Ware: '+cn(departure)+' → '+cn(destination)+'</text>';
+    '<text x="'+mid(adSx,adEx)+'" y="'+(goodsY+22)+'" text-anchor="middle" font-size="9" font-weight="500" fill="'+COL_TX1+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+transportTxt+' · Ware: '+cn(departure)+' → '+cn(destination)+'</text>';
 
   // Nodes (über den Pfeilen). "Ich"-Knoten hervorheben + UID anzeigen.
   const meIdx = (typeof mePosition === 'number') ? mePosition - 1 : -1;
@@ -1710,7 +1710,7 @@ function buildChainSVG4(parties, movingIdx, departure, destination) {
   return '<div class="flow-diagram">'+
     '<div class="flow-title">📦 Warenfluss &amp; Fakturierung</div>'+
     '<div class="flow-diagram-body">'+
-    '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;overflow:visible;max-width:900px;margin:0 auto;">'+
+    '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;overflow:visible;max-width:1100px;margin:0 auto;">'+
     chainSvg + goodsSvg + nodeSvg +
     '</svg>'+
     '<div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-family:monospace;font-size:0.74rem;color:var(--tx-2);">'+
