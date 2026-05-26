@@ -11,6 +11,11 @@
 - **Routing in `buildFlowDiagram()`** — 4P-Zweig: `isDreiecks` → `buildTriangleSVG4()` (Diamant), sonst → `buildChainSVG4()`. 3P (`buildTriangleSVG`) und 2P/Mode-2-Fallback unverändert.
 - **„Ich"-Knoten** hervorgehoben (blauer Rahmen) + UID-Zeile bei `selectedUidOverride`.
 
+### Hosting-Audit + TODO-Pflege
+
+- **Live-Hosting (statisch) verifiziert** — relative Asset-Pfade, 9 self-hosted Fonts (kein Google), `index.html`-Redirect, v1/v2-Toggle-Links und `check:pages` ✓. Live-URL-Render im Browser in CI-Umgebung nicht prüfbar (Outbound geblockt). Zwei offene Punkte im TODO dokumentiert: (1) `docs/v1/index.html ?v=dev` wird vom Deploy-sed nicht erfasst (Cache-Busting für v1-Fallback greift nicht), (2) kein CNAME-File trotz Custom-Domain.
+- **Bulk-Modus / CSV-Batch (Highlight #3) aus TODO entfernt** — wird nicht umgesetzt (Entscheidung Nutzer).
+
 ### Nicht angefasst
 - VATEngine IIFE
 - analyze() / analyze2()

@@ -34,6 +34,17 @@ Stand: 20.05.2026
 - [x] **GitHub Pages per Actions vorbereitet** — Workflow + Publish-Ordner `docs/`
 - [x] **Pages-Strukturcheck** — `npm run check:pages`
 - [ ] **Live-Hosting prüfen** — GitHub Pages URL, Assets, Fonts, Redirect, lokale Links
+  - Struktur lokal verifiziert (Session 28): relative Pfade (`./assets/...`) ✓ funktionieren
+    sowohl auf Custom-Domain-Root als auch auf Projekt-Subpfad; 9 self-hosted woff2 in
+    `docs/assets/fonts/` + `docs/v1/assets/fonts/` referenziert ✓, keine Google-Fonts-Reste ✓;
+    `index.html`-Redirect `→ ./docs/` ✓; v1/v2-Toggle-Links (`./v1/index.html` / `../index.html`) ✓;
+    `npm run check:pages` ✓; keine absoluten `/assets`-Pfade ✓.
+  - **Offen (1):** Live-URL-Render im echten Browser — in der CI-Umgebung nicht prüfbar
+    (Outbound-Fetch geblockt, 403 auf github.io + manuel-app.dev).
+  - **Offen (2) — Bug:** `docs/v1/index.html` enthält `?v=dev`, aber das Deploy-sed in
+    `pages.yml` ersetzt nur `docs/index.html` → für den v1-Fallback greift kein Cache-Busting.
+  - **Offen (3):** Kein CNAME-File im Repo trotz Custom-Domain `manuel-app.dev` — Domain
+    nur in Pages-Settings? Bei Actions-Deploy ggf. prüfen, ob Domain pro Deploy erhalten bleibt.
 
 ---
 
@@ -76,86 +87,6 @@ Stand: 20.05.2026
 - [x] **Typeahead Länder-Picker** — Native select ersetzen; `initTypeaheadPickers()` aktiviert + Emoji-Bug behoben (Session 26)
 - [x] **REAL_CASES_2026 Tests** — RC-HU-DE-LITC/LITA, RC-SAPPI-1/2/3, RC-BG-AT-BG, RC-BG-DE-BG als SMOKE_TESTS (Session 25)
 - [ ] **Vergleich-Tab: Struktur-Dimension** — 3P/4P/Dreieck als zweite Achse
-- [ ] **Bulk-Modus / CSV-Batch (Highlight #3)** — Mehrere Fälle in einem Lauf
-  prüfen statt einzeln. Verschiebt das Tool vom Einzelfall-Rechner zum
-  Quartalsabschluss-Werkzeug für Buchhaltung.
-
-  **Use-Case:** 50 noch nicht verbuchte Rechnungen mit Reihengeschäft-Verdacht.
-  Buchhalterin lädt CSV hoch, kriegt sortiert: 🟢 sofort verbuchbar / 🟡 Pflicht-
-  Prüfung nötig / 🔴 Reg-Risk. Output-CSV mit MWSKZ-Spalten direkt in SAP
-  importierbar.
-
-  **Architektur:**
-  - Eigene Seite `docs/bulk.html` (nicht Tab — eigener Workflow, mehr Platz)
-  - Verlinkt aus ⋯-Menü („📊 Bulk-Modus")
-  - Engine-API bereits vorhanden: `VATEngine.run(ctx)` + `VATEngine.classifySupplies(ctx, movingIndex)`
-    — gleiche `ctx`-Objekte wie in `SMOKE_TESTS` (app.js 7378 ff., 8174 ff.)
-  - Kein Touch an VATEngine IIFE, `analyze()` oder `analyze2()` (NEVER TOUCH)
-  - Neue Bulk-Funktionen in `docs/assets/scripts/bulk.js` (eigene Datei, isoliert)
-    oder am Ende von `app.js` — Vote: **eigene Datei**, damit Hauptdatei nicht
-    weiter wächst
-
-  **Komponenten:**
-  - `parseBulkCSV(text)` — Auto-Detection Separator `;` vs `,`, UTF-8 BOM,
-    Header-Validierung, Zeilen-Fehler sammeln (nicht abbrechen)
-  - `buildCtxFromRow(row, company)` — baut `ctx`-Objekt analog zu
-    `runSmokeTests()`-Pattern (app.js Zeile 8192) mit `Object.freeze`,
-    `s3 = s4` für 3P, parties-getter, hasVatIn/vatIdIn/rateOf/nameOf etc.
-    aus `COMPANIES[companyKey]`
-  - `runBulk(rows)` — Schleife mit `setTimeout(r,0)` alle 10 Zeilen für UI-Yield;
-    Progress-Bar; Fehler-Zeilen mit `{ok:false, error:msg}` statt throw
-  - `classifyStatus(result, supplies, risks)` — 🟢/🟡/🔴 nach Logik:
-    - 🟢 = SAP-Code eindeutig + keine Reg-Pflicht + kein Pflichttext-Risk
-    - 🟡 = SAP-Code da, aber Pflichttext-Mahnung / Luxury-Trust / Belegnachweis
-    - 🔴 = Reg-Pflicht erforderlich / Dreieck blockiert / Inputs inkonsistent
-  - `renderBulkTable(rows, results)` — Tabelle mit Filter-Chips (Status/Dreieck/Reg-Risk),
-    Klick auf Zeile → Detail-Panel rechts (Kurzbeschreibung + Diagramm reuse aus
-    bestehender Render-Pipeline, falls möglich; sonst minimaler Renderer)
-  - `exportBulkCSV(rows, results)` — Eingangs-CSV + angereicherte Spalten
-    (status, movingIdx, l1_sap_out/in, l2_sap_out/in, dreieck, reg_risk_country,
-    pflichttext, warnings, legal_basis), UTF-8 BOM, `;`-Separator (Excel-DE)
-
-  **CSV-Input-Format (Pflichtspalten fett):**
-  ```
-  caseId; **company**; **mode**; **s1**; **s2**; s3; **s4**;
-  dep; dest; **transport**; uidOverride; notes
-  ```
-  `company` = EPDE / EPROHA · `mode` = 3 / 4 · `transport` = supplier/middle/customer/middle2 ·
-  `uidOverride` = ISO-2 Ländercode oder leer · `dep`/`dest` leer = aus s1/s4 abgeleitet
-
-  **Template-Download:** Button generiert leere CSV mit Header + 2 Beispielzeilen
-  (3P + 4P), damit User nicht raten muss.
-
-  **Mode-Scope:** v1 nur `mode=3` und `mode=4`. Mode 2 (EPROHA AT-Lager) und
-  Mode 5 (Lohnveredelung) später — brauchen zusätzliche Felder.
-
-  **Drittland:** CH/GB-Ketten müssen mit durchlaufen, da `analyze()` selbst nicht
-  aufgerufen wird, sondern direkt `VATEngine.run(ctx)`. CH/GB-Branches sind im
-  Engine-Output nicht enthalten — entweder per Pre-Check vor VATEngine.run
-  (analog `analyze()`-Dispatch app.js ~5873) routen oder v1 auf EU-EU beschränken
-  und Drittland mit explizitem „skip — manuell"-Status markieren.
-
-  **Performance:** 100 Zeilen ≈ 5 s, 1.000 Zeilen ≈ 50 s. Progress-Bar nötig
-  ab > 50 Zeilen.
-
-  **Privacy:** Alles im Browser, keine Network-Calls (außer wenn VIES-
-  Validierung — Highlight #1 — parallel implementiert wird).
-
-  **Aufwand:** ~4 Tage
-  - 0.5 d Headless-Wrapper + ctx-Builder
-  - 0.5 d CSV-Parser + Validator
-  - 1 d Bulk-UI (`bulk.html`, Drag-Drop, Template-Download, Theme-Sync)
-  - 1 d Result-Table + Filter + Detail-Panel
-  - 0.5 d CSV-Export
-  - 0.5 d Mode 4P sauber + Drittland-Entscheidung
-  - 0.5 d Tests mit echten CSVs ≥ 50 Fälle, Browser-Abnahme
-
-  **Erweiterungsoption (P2):** Combo mit Highlight #1 (VIES) — UID-Override-Spalte
-  live validieren, ungültige UIDs als 🔴 markieren. Combo mit Highlight #2
-  (Audit-PDF) — Batch-Export N PDFs als ZIP.
-
-  **Nicht-Ziele v1:** kein Backend, kein Login, keine Multi-User-Sync,
-  keine Persistenz über Browser-Reload hinaus (Fall-Archiv = separates Highlight #5).
 - [ ] **VATEngine: establishments-Datenmodell pro Partei** —
   Niederlassung von Registrierung trennen. Aktuell kennt die Engine
   nur vatIds (hat UID / hat keine UID). Langfristig braucht jede
