@@ -10476,7 +10476,9 @@ function initTypeaheadPickers() {
     dd.className = 'ta-dropdown';
 
     wrap.appendChild(input);
-    wrap.appendChild(dd);
+    // Dropdown als 2. Grid-Zeile direkt ins .picker-grid hängen (in-flow, schiebt Inhalt nach unten)
+    const grid = wrap.closest('.picker-grid');
+    (grid || wrap).appendChild(dd);
 
     let activeIdx = -1;
 
