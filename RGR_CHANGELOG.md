@@ -13,7 +13,8 @@
 
 ### Hosting-Audit + TODO-Pflege
 
-- **Live-Hosting (statisch) verifiziert** — relative Asset-Pfade, 9 self-hosted Fonts (kein Google), `index.html`-Redirect, v1/v2-Toggle-Links und `check:pages` ✓. Live-URL-Render im Browser in CI-Umgebung nicht prüfbar (Outbound geblockt). Zwei offene Punkte im TODO dokumentiert: (1) `docs/v1/index.html ?v=dev` wird vom Deploy-sed nicht erfasst (Cache-Busting für v1-Fallback greift nicht), (2) kein CNAME-File trotz Custom-Domain.
+- **Live-Hosting (statisch) verifiziert** — relative Asset-Pfade, 9 self-hosted Fonts (kein Google), `index.html`-Redirect, v1/v2-Toggle-Links und `check:pages` ✓. Live-URL-Render im Browser in CI-Umgebung nicht prüfbar (Outbound geblockt).
+- **Cache-Busting v1 gefixt** — `pages.yml`-sed ersetzt den `?v=`-Platzhalter jetzt in `docs/index.html` **und** `docs/v1/index.html` (vorher nur v2 → v1-Fallback bekam dauerhaft `?v=dev`). Offen bleibt: kein CNAME-File trotz Custom-Domain `manuel-app.dev` (erst Pages-Settings prüfen, bevor CNAME angelegt wird).
 - **Bulk-Modus / CSV-Batch (Highlight #3) aus TODO entfernt** — wird nicht umgesetzt (Entscheidung Nutzer).
 
 ### Nicht angefasst

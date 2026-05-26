@@ -31,7 +31,7 @@ jobs:
       - name: Inject git hash for cache-busting
         run: |
           HASH=$(git rev-parse --short HEAD)
-          sed -i "s/?v=[^\"']*/?v=${HASH}/g" docs/index.html
+          sed -i "s/?v=[^\"']*/?v=${HASH}/g" docs/index.html docs/v1/index.html
 
       - name: Upload static site
         uses: actions/upload-pages-artifact@v4

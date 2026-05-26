@@ -41,8 +41,8 @@ Stand: 20.05.2026
     `npm run check:pages` ✓; keine absoluten `/assets`-Pfade ✓.
   - **Offen (1):** Live-URL-Render im echten Browser — in der CI-Umgebung nicht prüfbar
     (Outbound-Fetch geblockt, 403 auf github.io + manuel-app.dev).
-  - **Offen (2) — Bug:** `docs/v1/index.html` enthält `?v=dev`, aber das Deploy-sed in
-    `pages.yml` ersetzt nur `docs/index.html` → für den v1-Fallback greift kein Cache-Busting.
+  - ~~**Offen (2) — Bug:** `docs/v1/index.html` ?v=dev wird vom Deploy-sed nicht erfasst~~
+    → **gefixt (Session 28):** `pages.yml`-sed verarbeitet jetzt `docs/index.html` *und* `docs/v1/index.html`.
   - **Offen (3):** Kein CNAME-File im Repo trotz Custom-Domain `manuel-app.dev` — Domain
     nur in Pages-Settings? Bei Actions-Deploy ggf. prüfen, ob Domain pro Deploy erhalten bleibt.
 
