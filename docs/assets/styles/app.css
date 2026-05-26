@@ -669,7 +669,8 @@ header {
 /* Country pickers */
 .pickers-row { display: flex; flex-direction: column; gap: 10px; }
 .picker-grid {
-  display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: end;
+  display: grid; grid-template-columns: 28px 1fr;
+  column-gap: 8px; row-gap: 0; align-items: end;
 }
 .picker-circle {
   width: 22px; height: 22px; border-radius: 50%;
@@ -710,12 +711,20 @@ header {
 .ta-input:focus { border-color: var(--blue); }
 .ta-input::placeholder { color: var(--tx-3); }
 .ta-dropdown {
-  display: none; position: absolute; left: 0; right: 0; top: 100%;
-  background: var(--surface); border: 1px solid var(--border-md);
-  border-radius: var(--r); max-height: 200px; overflow-y: auto;
-  z-index: 80; box-shadow: 0 6px 16px rgba(0,0,0,0.12); margin-top: 2px;
+  /* In-Flow als 2. Grid-Zeile (Spalte 2): schiebt Transport/UID-Bereich sanft nach
+     unten und beim Schließen zurück. Kreis bleibt in Zeile 1 am Input ausgerichtet. */
+  grid-column: 2;
+  overflow: hidden;
+  max-height: 0; opacity: 0; margin-top: 0;
+  background: var(--surface); border: 0 solid var(--border-md);
+  border-radius: var(--r); box-shadow: none;
+  transition: max-height 0.22s ease, opacity 0.16s ease, margin-top 0.22s ease;
 }
-.ta-dropdown.open { display: block; }
+.ta-dropdown.open {
+  max-height: 240px; opacity: 1; margin-top: 4px;
+  overflow-y: auto; border-width: 1px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
 .ta-option {
   padding: 6px 10px; font-size: 0.78rem; color: var(--tx-1);
   cursor: pointer; display: flex; align-items: center; gap: 6px;

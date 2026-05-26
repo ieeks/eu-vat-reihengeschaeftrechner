@@ -4,6 +4,10 @@
 
 ## v4.3 · 26.05.2026 — Session 28
 
+### Länder-Picker · Dropdown schiebt Inhalt statt zu überlagern
+
+- **Typeahead-Dropdown jetzt in-flow** — bisher `position: absolute` (Overlay über Transport/UID). Neu: Dropdown wird als **2. Grid-Zeile (Spalte 2)** direkt ins `.picker-grid` gehängt (`grid-column: 2`), per `max-height`-Transition animiert (0 → 240px). Beim Öffnen „gleitet" der Transport-/UID-Bereich sanft nach unten, beim Auswählen/Schließen wieder zurück. Der A/B/C-Kreis bleibt in Zeile 1 am Input ausgerichtet (`align-items: end`, `row-gap: 0`) — robust auch bei umbrechenden Labels (4P).
+
 ### 3P-Diagramm · Chip-Labels wie 4P
 
 - **`arrowLabel` (in `buildTriangleSVG`) auf Chip-Stil umgestellt** — bisher nackter Mono-Text, jetzt Box mit farbigem Rahmen + Surface-Fill (opacity 0.96) wie `edgeLabel` im 4P-Diagramm. Labels werden auf dem Pfeil-Mittelpunkt zentriert (statt mit `-26` darüber). Betrifft 3P-Modus **und** Drop-Shipment-Modus (beide rendern über `buildTriangleSVG`).
