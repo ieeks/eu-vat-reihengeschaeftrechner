@@ -4049,9 +4049,7 @@ function analyzeLohn() {
 
     document.getElementById('resultContent').innerHTML = ihml;
     el.scrollIntoView({ behavior:'smooth', block:'start' });
-    const _lBtn = $('tabBtnVergleich');
-    if (_lBtn) _lBtn.style.display = 'none';
-    if (activeTab === 'vergleich') switchTabSilent('basis');
+    setVergleichBtnVisible(false);
     return;
   }
 
@@ -4218,9 +4216,7 @@ function analyzeLohn() {
 
   document.getElementById('resultContent').innerHTML = html;
   el.scrollIntoView({ behavior:'smooth', block:'start' });
-  const _lhBtn = $('tabBtnVergleich');
-  if (_lhBtn) _lhBtn.style.display = 'none';
-  if (activeTab === 'vergleich') switchTabSilent('basis');
+  setVergleichBtnVisible(false);
 }
 //
 //  Vereinfachter 2-Parteien-Modus für den häufigen Fall:
@@ -4716,9 +4712,7 @@ function analyze2() {
   document.getElementById('resultContent').innerHTML = html;
   el.scrollIntoView({ behavior:'smooth', block:'start' });
   // Vergleich-Tab nicht relevant für Modus 2
-  const _v2btn = $('tabBtnVergleich');
-  if (_v2btn) _v2btn.style.display = 'none';
-  if (activeTab === 'vergleich') switchTabSilent('basis');
+  setVergleichBtnVisible(false);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -6527,13 +6521,11 @@ function analyze() {
   }, 600);
 
   // ── Vergleich-Tab befüllen (nur 3P-Modus, grenzüberschreitend) ──────────
-  const tabBtnV = $('tabBtnVergleich');
   if (currentMode === 3 && dep !== dest) {
     buildVergleichTab(ctx, eng);
-    if (tabBtnV) tabBtnV.style.display = '';
+    setVergleichBtnVisible(true);
   } else {
-    if (tabBtnV) tabBtnV.style.display = 'none';
-    if (activeTab === 'vergleich') switchTabSilent('basis');
+    setVergleichBtnVisible(false);
     if ($('tab-vergleich')) $('tab-vergleich').innerHTML = '';
   }
 }
@@ -9426,7 +9418,13 @@ function switchView(view, btn) {
     renderQuickCheck();
   } else if (view === 'vergleich') {
     var vBtn = $('tabBtnVergleich');
-    switchTab('vergleich', vBtn || btn);
+    if (!vBtn || vBtn.style.display === 'none') {
+      // Vergleich in dieser Konstellation nicht verfügbar → zurück auf Standard
+      var bBtn = document.querySelector('#tabBar .tab-btn');
+      switchTab('basis', bBtn || btn);
+      return;
+    }
+    switchTab('vergleich', vBtn);
   }
 }
 
@@ -9446,6 +9444,25 @@ function switchTabSilent(id) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   $(`tab-${id}`)?.classList.add('active');
   document.documentElement.classList.toggle('qc-active', id === 'quickcheck');
+}
+
+// Vergleich-Verfügbarkeit: Tab-Bar-Button UND Header-View-Button synchron halten (nur Sichtbarkeit).
+function setVergleichBtnVisible(visible) {
+  const tb = $('tabBtnVergleich');
+  if (tb) tb.style.display = visible ? '' : 'none';
+  const hv = document.querySelector('.h-view-btn[data-view="vergleich"]');
+  if (hv) hv.style.display = visible ? '' : 'none';
+}
+
+// Ist der Vergleich-Tab versteckt, aber gerade aktiv → zurück auf Standard.
+// Wird am Ende von renderResult aufgerufen (nicht beim Verstecken selbst), damit
+// legitime 3P-Re-Renders den Nutzer nicht aus dem Vergleich-Tab werfen.
+function revertVergleichIfHidden() {
+  const tb = $('tabBtnVergleich');
+  if ((!tb || tb.style.display === 'none') && activeTab === 'vergleich') {
+    switchTabSilent('basis');
+    document.querySelectorAll('.h-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'standard'));
+  }
 }
 
 // ── Vergleich-Tab Modal ───────────────────────────────────────────────────
@@ -10759,6 +10776,10 @@ function simplifyBasisOutput(outputHtml) {
 
 // ── renderResult — master dispatcher ──────────────────────────────────
 function renderResult() {
+  // Vergleich-Tab standardmäßig aus; nur der 3P-grenzüberschreitende Hauptpfad (analyze())
+  // schaltet ihn über setVergleichBtnVisible(true) wieder ein.
+  setVergleichBtnVisible(false);
+
   // ── Mode 5 (Lohnveredelung): bridge v4 panel → v3.2 analyzeLohn() ──────────
   if (currentMode === 5) {
     // Ensure lohn panel selects exist (may not be rendered yet on first call)
@@ -10794,6 +10815,7 @@ function renderResult() {
     }
     $('tab-basis').innerHTML = `<div class="fade">${rc?.innerHTML || ''}</div>`;
     if (expertMode) { renderExpertBegrundung(); renderExpertLegal(); renderExpertInvoice(); renderExpertMelde(); renderExpertRPA(); }
+    revertVergleichIfHidden();
     return;
   }
 
@@ -10865,6 +10887,9 @@ function renderResult() {
     renderExpertMelde();
     renderExpertRPA();
   }
+
+  // Falls der Vergleich-Tab in dieser Konstellation nicht verfügbar ist, aktiv aber zurücksetzen
+  revertVergleichIfHidden();
 }
 
 // ── Flow diagram ───────────────────────────────────────────────────────
