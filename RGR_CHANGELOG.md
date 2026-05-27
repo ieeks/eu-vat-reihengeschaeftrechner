@@ -4,6 +4,11 @@
 
 ## v4.3 · 26.05.2026 — Session 28
 
+### Fix · Vergleich-Tab „lädt nicht" außerhalb 3P-grenzüberschreitend
+
+- **Bug:** Der Header-Button `⚖ Vergleich` war immer sichtbar, der Tab-Inhalt wird aber nur im 3P-grenzüberschreitenden Hauptpfad (`analyze()`) gebaut. In 4P / 2P / Lohn / Inland / CH-/GB-Export war `tabBtnVergleich` versteckt und das Panel leer — der Header-Button öffnete ein leeres Panel.
+- **Fix:** `setVergleichBtnVisible()` synchronisiert jetzt **beide** Buttons (Tab-Bar + Header-View). `renderResult()` setzt die Verfügbarkeit am Anfang auf „aus"; nur die 3P-Gate schaltet sie ein (gemeinsamer Choke-Point, deckt alle Early-Return-Pfade ab). Der activeTab-Revert (`revertVergleichIfHidden()`) läuft am Ende von `renderResult` — so wird der Nutzer bei legitimen 3P-Re-Renders **nicht** aus dem Vergleich-Tab geworfen. `switchView('vergleich')` fällt zusätzlich defensiv auf Standard zurück, wenn der Tab nicht verfügbar ist. Header-Button startet in `index.html` versteckt.
+
 ### 4P-Diagramm · Kontrast der ruhenden Labels & Knoten
 
 - **Lesbarkeit auf Desktop (und Mobile) verbessert** — in `buildChainSVG4` nutzten nicht-hervorgehobene Knoten `COL_BORDER` (#e8e7e4) auch als **Textfarbe** der Rollen-Zeile (`Lieferant (A)`, `2. ZH (C)`, `Kunde (D)`) → quasi unsichtbar; ruhende Chips (L2/L3) hatten Text in `COL_TX3` (#9ca3af) → zu blass. Neu: Rahmen- und Textfarbe getrennt — Rollen-Text in `--tx-2`, ruhende Chip-Texte in `--tx-2`, die **gestrichelte Linie bleibt dezent** (`--tx-3`). In `buildTriangleSVG4` zusätzlich der End-Kunde (D, `COL_BORDER`) lesbar gemacht. Schriftgrößen und Layout unverändert.
