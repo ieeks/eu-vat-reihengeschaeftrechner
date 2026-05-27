@@ -4,6 +4,10 @@
 
 ## v4.3 · 26.05.2026 — Session 28
 
+### 4P-Diagramm · Kontrast der ruhenden Labels & Knoten
+
+- **Lesbarkeit auf Desktop (und Mobile) verbessert** — in `buildChainSVG4` nutzten nicht-hervorgehobene Knoten `COL_BORDER` (#e8e7e4) auch als **Textfarbe** der Rollen-Zeile (`Lieferant (A)`, `2. ZH (C)`, `Kunde (D)`) → quasi unsichtbar; ruhende Chips (L2/L3) hatten Text in `COL_TX3` (#9ca3af) → zu blass. Neu: Rahmen- und Textfarbe getrennt — Rollen-Text in `--tx-2`, ruhende Chip-Texte in `--tx-2`, die **gestrichelte Linie bleibt dezent** (`--tx-3`). In `buildTriangleSVG4` zusätzlich der End-Kunde (D, `COL_BORDER`) lesbar gemacht. Schriftgrößen und Layout unverändert.
+
 ### 4P-Diagramm · Mobile-Lesbarkeit
 
 - **4P-SVG auf Phone nicht mehr unleserlich klein** — die 4P-viewBox (800) wurde per `width:100%` auf ~360px-Screens auf ~0.45× geschrumpft → 8.5px-Text landete bei ~3.8px (nur L1 fiel durch die kräftige Farbe auf). Neu: Marker-Klasse `flow-diagram-4p` an beiden 4P-Buildern; Mobile-Regel `min-width: 680px` auf das SVG → der vorhandene `overflow-x:auto`-Scroll der `.flow-diagram` greift, Text bleibt lesbar (~7px, über dem akzeptierten 3P-Niveau). Desktop und 3P (viewBox 520) unverändert.
