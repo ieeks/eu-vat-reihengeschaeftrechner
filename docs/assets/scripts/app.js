@@ -1579,7 +1579,7 @@ function buildTriangleSVG4(parties, movingIdx, departure, destination) {
     ? 'Transport durch '+_tParty.code+' ('+_tLetter+') veranlasst'
     : 'Direkte Warenbewegung vom Abgangsort zum Bestimmungsort';
 
-  return '<div class="flow-diagram">'+
+  return '<div class="flow-diagram flow-diagram-4p">'+
     '<div class="flow-title">📦 Warenfluss · 4-Parteien Dreiecksgeschäft (EuG T-646/24)</div>'+
     '<div class="flow-diagram-body">'+
     '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;overflow:visible;max-width:1100px;margin:0 auto;">'+
@@ -1717,7 +1717,7 @@ function buildChainSVG4(parties, movingIdx, departure, destination) {
     nodeSvg += node(pos[i].x,pos[i].y,p, isMe?COL_BLUE:COL_BORDER, isMe, isMe?meUid:null);
   });
 
-  return '<div class="flow-diagram">'+
+  return '<div class="flow-diagram flow-diagram-4p">'+
     '<div class="flow-title">📦 Warenfluss &amp; Fakturierung</div>'+
     '<div class="flow-diagram-body">'+
     '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;overflow:visible;max-width:1100px;margin:0 auto;">'+

@@ -1532,6 +1532,9 @@ header {
   .flow-title { cursor: pointer; }
   .flow-title::after { content: '▾ ausblenden' !important; }
   .flow-invoice-row { min-width: 400px; }
+  /* 4P-Diagramm (viewBox 800) nicht unter lesbare Größe schrumpfen → min-width + horizontaler Scroll
+     (3P viewBox 520 bleibt unverändert, passt auf Phone-Breite) */
+  .flow-diagram-4p .flow-diagram-body svg { min-width: 680px; }
 
   /* ── Kurzbeschreibung ── */
   .kurz-card { padding: 8px 10px !important; }
