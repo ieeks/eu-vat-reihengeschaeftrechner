@@ -4,6 +4,10 @@
 
 ## v4.3 · 26.05.2026 — Session 28
 
+### 4P-Diagramm · Mobile-Lesbarkeit
+
+- **4P-SVG auf Phone nicht mehr unleserlich klein** — die 4P-viewBox (800) wurde per `width:100%` auf ~360px-Screens auf ~0.45× geschrumpft → 8.5px-Text landete bei ~3.8px (nur L1 fiel durch die kräftige Farbe auf). Neu: Marker-Klasse `flow-diagram-4p` an beiden 4P-Buildern; Mobile-Regel `min-width: 680px` auf das SVG → der vorhandene `overflow-x:auto`-Scroll der `.flow-diagram` greift, Text bleibt lesbar (~7px, über dem akzeptierten 3P-Niveau). Desktop und 3P (viewBox 520) unverändert.
+
 ### Länder-Picker · Dropdown schiebt Inhalt statt zu überlagern
 
 - **Typeahead-Dropdown jetzt in-flow** — bisher `position: absolute` (Overlay über Transport/UID). Neu: Dropdown wird als **2. Grid-Zeile (Spalte 2)** direkt ins `.picker-grid` gehängt (`grid-column: 2`), per `max-height`-Transition animiert (0 → 240px). Beim Öffnen „gleitet" der Transport-/UID-Bereich sanft nach unten, beim Auswählen/Schließen wieder zurück. Der A/B/C-Kreis bleibt in Zeile 1 am Input ausgerichtet (`align-items: end`, `row-gap: 0`) — robust auch bei umbrechenden Labels (4P).
