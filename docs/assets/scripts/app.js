@@ -1530,6 +1530,7 @@ function buildTriangleSVG4(parties, movingIdx, departure, destination) {
   const COL_SURF   = _cs4.getPropertyValue('--surface').trim() || '#ffffff';
   const COL_BORDER = _cs4.getPropertyValue('--border').trim()  || '#e8e7e4';
   const COL_TX1    = _cs4.getPropertyValue('--tx-1').trim()    || '#1c1c1b';
+  const COL_TX2    = _cs4.getPropertyValue('--tx-2').trim()    || '#6b6b69';
   const COL_INK    = _cs4.getPropertyValue('--ink').trim()     || '#1c1c1b';
 
   function edgePts(x1,y1,x2,y2,pad=56) {
@@ -1560,7 +1561,7 @@ function buildTriangleSVG4(parties, movingIdx, departure, destination) {
     return '<rect x="'+x+'" y="'+y+'" width="'+NW+'" height="'+NH+'" rx="6" fill="'+COL_SURF+'" stroke="'+col+'" stroke-width="'+sw+'"/>'+
       '<text x="'+cx+'" y="'+(cy-12)+'" text-anchor="middle" font-size="17" dominant-baseline="middle">'+flag(p.code)+'</text>'+
       '<text x="'+cx+'" y="'+(cy+5)+'" text-anchor="middle" font-size="10" font-weight="600" fill="'+COL_TX1+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+p.code+'</text>'+
-      '<text x="'+cx+'" y="'+(cy+18)+'" text-anchor="middle" font-size="8.5" fill="'+col+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+p.role+'</text>';
+      '<text x="'+cx+'" y="'+(cy+18)+'" text-anchor="middle" font-size="8.5" fill="'+(col===COL_BORDER?COL_TX2:col)+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+p.role+'</text>';
   }
 
   const ab = edgePts(AX,AY,BX,BY,52);
@@ -1638,6 +1639,7 @@ function buildChainSVG4(parties, movingIdx, departure, destination) {
   const COL_SURF   = _cs.getPropertyValue('--surface').trim() || '#ffffff';
   const COL_BORDER = _cs.getPropertyValue('--border').trim()  || '#e8e7e4';
   const COL_TX1    = _cs.getPropertyValue('--tx-1').trim()    || '#1c1c1b';
+  const COL_TX2    = _cs.getPropertyValue('--tx-2').trim()    || '#6b6b69';
   const COL_INK    = _cs.getPropertyValue('--ink').trim()     || '#1c1c1b';
 
   function edgePts(x1,y1,x2,y2,pad=56){
@@ -1668,7 +1670,7 @@ function buildChainSVG4(parties, movingIdx, departure, destination) {
     return '<rect x="'+x+'" y="'+y+'" width="'+NW+'" height="'+nh+'" rx="6" fill="'+COL_SURF+'" stroke="'+col+'" stroke-width="'+sw+'"/>'+
       '<text x="'+cx+'" y="'+(cy-12)+'" text-anchor="middle" font-size="17" dominant-baseline="middle">'+flag(p.code)+'</text>'+
       '<text x="'+cx+'" y="'+(cy+5)+'" text-anchor="middle" font-size="10" font-weight="600" fill="'+COL_TX1+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+p.code+'</text>'+
-      '<text x="'+cx+'" y="'+(cy+18)+'" text-anchor="middle" font-size="8.5" fill="'+col+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+p.role+'</text>'+
+      '<text x="'+cx+'" y="'+(cy+18)+'" text-anchor="middle" font-size="8.5" fill="'+(isMe?COL_BLUE:COL_TX2)+'" font-family="IBM Plex Sans,system-ui,sans-serif">'+p.role+'</text>'+
       (uidLine?'<text x="'+cx+'" y="'+(cy+30)+'" text-anchor="middle" font-size="7.5" font-weight="700" fill="'+COL_BLUE+'" font-family="IBM Plex Mono,monospace">'+uidLine+'</text>':'');
   }
 
@@ -1677,10 +1679,11 @@ function buildChainSVG4(parties, movingIdx, departure, destination) {
     const num='L'+(i+1);
     if (i === movingIdx) {
       const treat = isNonEU(destination) ? 'Ausfuhr · 0%' : 'IG · 0%';
-      return {lines:['⚡ '+num+' · bewegt', treat], col:COL_BLUE, width:2.5, dashed:false};
+      return {lines:['⚡ '+num+' · bewegt', treat], col:COL_BLUE, lineCol:COL_BLUE, width:2.5, dashed:false};
     }
     const place = i < movingIdx ? departure : destination;
-    return {lines:[num+' · ruhend', rate(place)+'% '+place], col:COL_TX3, width:1.6, dashed:true};
+    // Chip-Text/Rahmen in lesbarem Mittelgrau (COL_TX2), die gestrichelte Linie bleibt dezent (COL_TX3)
+    return {lines:[num+' · ruhend', rate(place)+'% '+place], col:COL_TX2, lineCol:COL_TX3, width:1.6, dashed:true};
   }
 
   // Rechnungskette: L1 A→B, L2 B→C, L3 C→D
@@ -1691,7 +1694,7 @@ function buildChainSVG4(parties, movingIdx, departure, destination) {
     const ll = legLabel(i);
     const lx = mid(e.sx,e.ex) + (i===0?-6:i===2?6:0);
     const ly = mid(e.sy,e.ey) + (i===1?-22:0);
-    chainSvg += arrow(e.sx,e.sy,e.ex,e.ey,ll.col,ll.width,ll.dashed) + edgeLabel(lx,ly,ll.lines,ll.col);
+    chainSvg += arrow(e.sx,e.sy,e.ex,e.ey,ll.lineCol,ll.width,ll.dashed) + edgeLabel(lx,ly,ll.lines,ll.col);
   });
 
   // Physische Warenbewegung A→D (gerade Achse unten)
