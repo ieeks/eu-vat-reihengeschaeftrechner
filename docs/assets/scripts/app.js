@@ -9146,6 +9146,50 @@ function runOutputTests() {
       + (errs.length ? `<div style="margin-top:8px; padding-top:8px; border-top:1px solid #1e293b;">${errs.map(e=>`<div style="font-size:0.72rem; color:#f87171; padding:2px 0;">↳ ${e}</div>`).join('')}</div>` : '');
     resultsEl.appendChild(card);
   });
+
+  // ── QuickCheck 4-Parteien-Tests (Normalkette: 3 Lieferungen, 2 eigene Rechnungen) ──
+  // Felder: company, q4[4], mePos, transport, movingIndex, triangle, boxes[{role,type,sap?}].
+  // Werte gegen Engine verifiziert (Code-Review 06/2026). Box-Reihenfolge = L1,L2,L3.
+  const QC4_TESTS = [
+    { id:'QC4-01', name:'EPDE FR→DE→NL→IT, U2, Lieferant: L1 IG-Erwerb VH (Eingang), L2 IT-RC IC (Ausgang), L3 fremd',
+      company:'EPDE', q4:['FR','DE','NL','IT'], mePos:2, transport:'supplier', movingIndex:0, triangle:true,
+      boxes:[{role:'in',type:'ig-erwerb',sap:'VH'},{role:'out',type:'rc',sap:'IC'},{role:'info',type:'info'}] },
+    { id:'QC4-02', name:'EPDE FR→DE→NL→IT, U2, Kunde holt ab: bewegte L3 fremd, L1/L2 ruhend in FR → Reg. FR',
+      company:'EPDE', q4:['FR','DE','NL','IT'], mePos:2, transport:'customer', movingIndex:2, triangle:false,
+      boxes:[{role:'in',type:'domestic'},{role:'out',type:'resting'},{role:'info',type:'info'}], regRisk:'FR' },
+    { id:'QC4-03', name:'EPROHA DE→AT→NL→IT, U2, ich transportiere: L1 Eingang VD, L2 IG-Lieferung DH ab DE, L3 fremd',
+      company:'EPROHA', q4:['DE','AT','NL','IT'], mePos:2, transport:'middle', movingIndex:1, triangle:true,
+      boxes:[{role:'in',type:'domestic',sap:'VD'},{role:'out',type:'ig-lieferung',sap:'DH'},{role:'info',type:'info'}] },
+    { id:'QC4-04', name:'EPDE FR→PL→DE→IT, U3 (ich=C), Lieferant: L1 fremd, L2 Eingang, L3 IT-RC IC (Ausgang)',
+      company:'EPDE', q4:['FR','PL','DE','IT'], mePos:3, transport:'supplier', movingIndex:0, triangle:true,
+      boxes:[{role:'info',type:'info'},{role:'in',type:'domestic'},{role:'out',type:'rc',sap:'IC'}] },
+  ];
+  QC4_TESTS.forEach(t => {
+    const errs = [];
+    try {
+      qcState.company = t.company; qcState.q4 = t.q4.slice(); qcState.mePos = t.mePos; qcState.transport = t.transport; qcState.mode = '4p';
+      const r = buildQuickCheck4();
+      if (t.movingIndex !== undefined && r.movingIndex !== t.movingIndex) errs.push(`movingIndex: erwartet ${t.movingIndex}, erhalten ${r.movingIndex}`);
+      if (t.triangle   !== undefined && r.triangle !== t.triangle) errs.push(`triangle: erwartet ${t.triangle}, erhalten ${r.triangle}`);
+      if (t.regRisk    !== undefined && !r.regRisks.includes(t.regRisk)) errs.push(`regRisks fehlt ${t.regRisk}: ${r.regRisks.join(',')||'-'}`);
+      (t.boxes || []).forEach((exp, i) => {
+        const b = r.boxes[i];
+        if (!b) { errs.push(`Box L${i+1} fehlt`); return; }
+        if (exp.role && b.role !== exp.role) errs.push(`L${i+1}.role: erwartet ${exp.role}, erhalten ${b.role}`);
+        if (exp.type && b.type !== exp.type) errs.push(`L${i+1}.type: erwartet ${exp.type}, erhalten ${b.type}`);
+        if (exp.sap  && b.sapCode !== exp.sap) errs.push(`L${i+1}.sap: erwartet ${exp.sap}, erhalten ${b.sapCode}`);
+      });
+    } catch(e) { errs.push(`Exception: ${e.message}`); }
+    const ok = errs.length === 0;
+    if (ok) passed++; else failed++;
+    const card = document.createElement('div');
+    card.style.cssText = `background:#0c1222; border:1px solid ${ok ? '#1e3a2e' : '#3d1515'}; border-radius:8px; padding:12px 16px;`;
+    card.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><span>${ok ? '✅' : '❌'}</span>`
+      + `<div><span style="color:#64748b; font-size:0.7rem; font-family:var(--mono);">${t.id}</span>`
+      + `<span style="margin-left:8px; color:#e2e8f0; font-size:0.82rem; font-weight:600;">${t.name}</span></div></div>`
+      + (errs.length ? `<div style="margin-top:8px; padding-top:8px; border-top:1px solid #1e293b;">${errs.map(e=>`<div style="font-size:0.72rem; color:#f87171; padding:2px 0;">↳ ${e}</div>`).join('')}</div>` : '');
+    resultsEl.appendChild(card);
+  });
   qcState = savedQc;
 
   summaryEl.style.display = 'block';
@@ -11648,7 +11692,8 @@ function handleURLParams() {
 //  Eigener State, völlig unabhängig vom Haupt-Formular.
 // ═══════════════════════════════════════════════════════════════════════
 
-let qcState = { company: 'EPDE', dep: 'DE', dest: 'PL', transport: 'supplier', mode: '3p' };
+let qcState = { company: 'EPDE', dep: 'DE', dest: 'PL', transport: 'supplier', mode: '3p',
+                q4: ['FR', 'DE', 'NL', 'IT'], mePos: 2 };
 
 // Länder alphabetisch sortiert (EU-27 + CH + GB)
 const QC_COUNTRIES = EU.slice().sort((a, b) => a.name.localeCompare(b.name, 'de'));
@@ -11985,6 +12030,145 @@ function buildQuickCheck() {
   return { movingL1, l1, l2, triangle, triangleUidCountry, triangleUid, regRisks, art36aHint, dep, dest, company, home };
 }
 
+// ── QuickCheck 4-Parteien ─────────────────────────────────────────────────
+// Normalkette (keine Dreieck-AF-Überlagerung, Dreieck nur als Hinweis-Chip).
+// 4 Parteien → 3 Lieferungen L1(A→B)/L2(B→C)/L3(C→D). Die Engine markiert pro
+// Strecke iAmTheBuyer/iAmTheSeller → genau 2 davon sind meine Rechnungen
+// (Eingang/Ausgang), die dritte ist eine Fremdlieferung (nur Kontext).
+function _qcBox4(s, role, company, vatIds, home) {
+  const _myUid  = (c) => vatIds[c] || c;
+  const fromN   = _qcCountryName(s.from);
+  const toN     = _qcCountryName(s.to);
+  const pos     = s.placeOfSupply;
+  const t       = s.vatTreatment;
+  const b = { from:s.from, to:s.to, isMoving:s.isMoving, role,
+              type:'', title:'', taxInfo:'', sapCode:null, sapDesc:null, sapNote:null, reqs:[], regRisk:null };
+
+  // ── Fremdlieferung (nicht meine Rechnung) ──
+  if (role === 'info') {
+    b.type    = 'info';
+    b.title   = `Fremde Lieferung: ${fromN} → ${toN}`;
+    b.taxInfo = s.isMoving
+      ? 'bewegte Lieferung (Warenbewegung) — fremde Parteien'
+      : `ruhende Lieferung — lokale Besteuerung in ${_qcCountryName(pos)}`;
+    b.sapNote = 'Nicht deine Rechnung — keine eigene SAP-Buchung';
+    b.reqs    = [s.isMoving ? 'Warenbewegung auf dieser Strecke' : 'ruhende Lieferung im Lieferort-Land'];
+    return b;
+  }
+
+  // ── Meine Eingangsrechnung (ich bin Käufer) ──
+  if (role === 'in') {
+    if (t === 'ic-exempt') {
+      // bewegter Einkauf = IG-Erwerb über Heimat-UID (VE/VH)
+      const e = SAP_TAX_MAP[company]?.[home]?.['ic-acquisition'];
+      b.type='ig-erwerb'; b.title='Innergem. Erwerb (IG-Erwerb)';
+      b.taxInfo='0 % — IG-Erwerb (Erwerbsteuer, netto 0)';
+      b.sapCode=e?.in||null; b.sapDesc=e?.desc||null;
+      b.reqs=[`UID ${company} (${_myUid(home)})`, `UID Lieferant (${s.from})`, 'Erwerbsbesteuerung + Vorsteuerabzug'];
+    } else if (t === 'rc') {
+      const e = SAP_TAX_MAP[company]?.[pos]?.['rc'] || SAP_TAX_MAP[company]?.[home]?.['rc'];
+      b.type='rc'; b.title=`Reverse Charge — ${_qcCountryName(pos)}`;
+      b.taxInfo='0 % — Steuerschuldner bist du (RC)';
+      b.sapCode=e?.in||null; b.sapDesc=e?.desc||null; b.sapNote=s.rcBlockReason||null;
+      b.reqs=[`UID ${company}`, `UID Lieferant (${s.from})`, '"Steuerschuldner ist der Leistungsempfänger"'];
+    } else {
+      const hasUID=!!vatIds[pos]||pos===home, rate=_qcRate(pos);
+      const e=SAP_TAX_MAP[company]?.[pos]?.['domestic']||SAP_TAX_MAP[company]?.[home]?.['domestic'];
+      b.type='domestic'; b.title=`Inländischer Einkauf — ${_qcCountryName(pos)} ${rate} %`;
+      b.taxInfo=`${rate} % ${pos}-MwSt (Vorsteuer)`;
+      b.sapCode=hasUID?(e?.in||null):null; b.sapDesc=hasUID?(e?.desc||null):null;
+      b.sapNote=hasUID?null:`Kein SAP-Kennzeichen — ${company} hat keine ${pos}-UID`;
+      b.reqs=[`Eingangsrechnung ${rate} % ${pos}-MwSt`, `UID ${company} (${_myUid(pos)})`];
+      b.regRisk=hasUID?null:pos;
+    }
+    return b;
+  }
+
+  // ── Meine Ausgangsrechnung (ich bin Verkäufer) ──
+  if (t === 'ic-exempt') {
+    const igCountry = vatIds[pos] ? pos : home;
+    const e = SAP_TAX_MAP[company]?.[igCountry]?.['ic-exempt'];
+    b.type='ig-lieferung'; b.title='Steuerfreie EU-Lieferung (ig. Lieferung)';
+    b.taxInfo='0 % — ig. Lieferung';
+    b.sapCode=e?.out||null; b.sapDesc=e?.desc||null;
+    b.sapNote=e?.out?null:`Kein SAP-Kennzeichen — ${company} hat keine ${_qcCountryName(pos)}-UID → Registrierung im Abgangsland`;
+    b.reqs=[`UID ${company} (${_myUid(igCountry)})`, `UID Kunde (${s.to})`, 'Hinweis auf Steuerfreiheit', 'Gelangensbestätigung / CMR'];
+    b.regRisk = vatIds[pos]||pos===home ? null : pos;
+  } else if (t === 'export') {
+    const expCountry = vatIds[pos] ? pos : home;
+    const e = SAP_TAX_MAP[company]?.[expCountry]?.['export'];
+    b.type='export'; b.title=`Ausfuhr nach ${_qcCountryName(s.to)} (Drittland)`;
+    b.taxInfo='0 % — Ausfuhr steuerfrei';
+    b.sapCode=e?.out||(company==='EPROHA'?'A0':'G0'); b.sapDesc=e?.desc||'Ausfuhr 0 %';
+    b.reqs=[`UID ${company} (${_myUid(expCountry)})`, 'Ausfuhrnachweise', 'Kein Steuerausweis', 'Zollanmeldung / EORI'];
+  } else if (t === 'rc') {
+    const e=SAP_TAX_MAP[company]?.[pos]?.['rc']||SAP_TAX_MAP[company]?.[home]?.['rc'];
+    b.type='rc'; b.title=`Reverse Charge — ${_qcCountryName(pos)}`;
+    b.taxInfo='0 % — Steuerschuldner ist der Käufer (RC)';
+    b.sapCode=e?.out||null; b.sapDesc=e?.desc||null; b.sapNote=s.rcBlockReason||null;
+    b.reqs=[`UID ${company}`, `UID Kunde (${s.to})`, '"Steuerschuldner ist der Leistungsempfänger"'];
+  } else {
+    const hasUID=!!vatIds[pos]||pos===home, rate=_qcRate(pos);
+    const e=SAP_TAX_MAP[company]?.[pos]?.['domestic']||SAP_TAX_MAP[company]?.[home]?.['domestic'];
+    const rcE=SAP_TAX_MAP[company]?.[pos]?.['rc'];
+    const effOut=e?.out??rcE?.out??null;
+    b.type='resting'; b.title=`Ruhende Lieferung — steuerpflichtig ${_qcCountryName(pos)} ${rate} %`;
+    b.taxInfo=`${rate} % ${pos}-MwSt`;
+    b.sapCode=hasUID?effOut:null; b.sapDesc=hasUID?(e?.out?e.desc:(rcE?.desc||e?.desc)):null;
+    b.sapNote=hasUID?null:`Kein SAP-Kennzeichen — ${company} hat keine ${pos}-UID`;
+    b.reqs=[`UID ${company} (${_myUid(pos)})`, `UID Kunde (${s.to})`, `Steuerbetrag ${rate} %`];
+    b.regRisk=hasUID?null:pos;
+  }
+  return b;
+}
+
+function buildQuickCheck4() {
+  const { company, transport, mePos } = qcState;
+  const co      = COMPANIES[company];
+  const vatIds  = co.vatIds;
+  const home    = co.home;
+  // Company sitzt an ihrer Heimat-UID an der gewählten Kettenposition (mePos).
+  const q4 = qcState.q4.slice();
+  q4[mePos - 1] = home;
+  const [s1, s2, s3, s4] = q4;
+  const dep = s1, dest = s4;
+
+  const ctx = Object.freeze({
+    mode: 4, s1, s2, s3, s4, dep, dest,
+    transport, mePosition: mePos, uidOverride: null,
+    vatIds:         Object.freeze({ ...vatIds }),
+    company, companyHome: home,
+    establishments: Object.freeze([...(co.establishments || [])]),
+    get parties() { return [s1, s2, s3, s4]; },
+    hasVatIn: (c) => !!vatIds[c],
+    vatIdIn:  (c) => vatIds[c] || null,
+    isNonEU:  (c) => !!getC(c)?.nonEU,
+    rateOf:   (c) => getC(c)?.std || 0,
+    nameOf:   (c) => cn(c),
+    flagOf:   (c) => flag(c),
+  });
+
+  const eng = VATEngine.run(ctx);
+  const supplies = eng.supplies || [];
+  const boxes = supplies.map(s => {
+    const role = s.iAmTheBuyer ? 'in' : s.iAmTheSeller ? 'out' : 'info';
+    return _qcBox4(s, role, company, vatIds, home);
+  });
+
+  const depIsThird  = ctx.isNonEU(dep);
+  const destIsThird = ctx.isNonEU(dest);
+  const triangle    = eng.trianglePossible && !depIsThird && !destIsThird; // nur Hinweis-Chip
+
+  const engineRisks = (eng.risks?.risks || [])
+    .filter(r => r.type === 'ic-acquisition-no-reg' || r.type === 'resting-buyer-no-uid')
+    .map(r => r.country);
+  const sapRisks = boxes.map(b => b.regRisk).filter(Boolean);
+  const regRisks = [...new Set([...engineRisks, ...sapRisks])];
+
+  return { mode4:true, mePos, boxes, parties:q4, movingIndex:eng.movingIndex,
+           triangle, regRisks, transport, company, home };
+}
+
 function renderQuickCheck() {
   const el = $('tab-quickcheck');
   if (!el) return;
@@ -12086,6 +12270,100 @@ function renderQuickCheck() {
     }).join('');
   })();
 
+  // ── 4-Parteien-Body ─────────────────────────────────────────────────────
+  const fourPBody = (() => {
+    if (mode !== '4p') return '';
+    const r4 = buildQuickCheck4();
+    const partyLabel = (i) =>
+      i === 0 ? 'Lieferant (A)'
+      : i === 1 ? (qcState.mePos === 2 ? `Ich · ${coLabel} (B)` : '1. ZH (B)')
+      : i === 2 ? (qcState.mePos === 3 ? `Ich · ${coLabel} (C)` : '2. ZH (C)')
+      : 'Kunde (D)';
+    // Länder-Felder: Me-Slot als Badge (Heimat-UID), übrige als Select
+    const partyFields = [0, 1, 2, 3].map(i => {
+      const isMe = i === qcState.mePos - 1;
+      if (isMe) {
+        return `<div class="qc-field">
+          <label class="qc-label">${partyLabel(i)}</label>
+          <div class="qc-me-badge">${FLAGS[r4.home] || ''} ${r4.home} · ${coLabel}</div>
+        </div>`;
+      }
+      const opts = QC_COUNTRIES.map(c =>
+        `<option value="${c.code}" ${c.code === qcState.q4[i] ? 'selected' : ''}>${FLAGS[c.code] || ''} ${c.name}</option>`).join('');
+      return `<div class="qc-field">
+        <label class="qc-label">${partyLabel(i)}</label>
+        <select class="qc-select" onchange="qcState.q4[${i}]=this.value;renderQuickCheck()">${opts}</select>
+      </div>`;
+    }).join('');
+    // Transport (engine-sichere Teilmenge: Lieferant / Ich / Kunde)
+    const t4Opts = [
+      { v:'supplier', l:'Lieferant' },
+      { v:'middle',   l:`Ich (${coLabel})` },
+      { v:'customer', l:'Kunde' },
+    ].map(o => `<label class="qc-radio-label">
+      <input type="radio" name="qc-transport" value="${o.v}" ${transport === o.v ? 'checked' : ''}
+             onchange="qcState.transport=this.value;renderQuickCheck()">${o.l}</label>`).join('');
+    // Registrierungs-Banner
+    const reg4 = r4.triangle ? '' : [...new Set(r4.regRisks)].map(c =>
+      `<div class="qc-reg-banner">
+        <div class="qc-reg-banner-title">🚨 Registrierungspflicht ${_qcCountryName(c)} (${_qcRate(c)} %)</div>
+        <div class="qc-reg-banner-body">${r4.company} hat keine ${c}-UID. Ohne Registrierung kann die betroffene Rechnung nicht korrekt ausgestellt werden.</div>
+      </div>`).join('');
+    // Rechnungsboxen (genau 2 sind meine, 1 ist Fremdlieferung)
+    const sideLabel = (role) => role === 'in' ? 'EINGANGSRECHNUNG' : role === 'out' ? 'AUSGANGSRECHNUNG' : 'FREMDE LIEFERUNG';
+    const boxesHtml = r4.boxes.map((b, i) =>
+      invoiceBox(sideLabel(b.role), `L${i + 1}: ${flag(b.from)} ${cn(b.from)} → ${flag(b.to)} ${cn(b.to)}`, b)).join('');
+    // Hinweise
+    const risks4 = [...new Set(r4.regRisks)];
+    const hints4 = (r4.triangle
+      ? [`✅ <strong>Dreiecksgeschäft</strong> nach Art. 141 MwStSystRL möglicherweise anwendbar (Hinweis — SAP-Überlagerung folgt in Ausbaustufe 2)`]
+      : risks4.length
+        ? risks4.map(c => `📋 Registrierung in <strong>${_qcCountryName(c)}</strong> beantragen oder Steuerberater konsultieren`)
+        : ['✅ Kein Registrierungsrisiko erkannt']
+    ).map(i => `<li>${i}</li>`).join('');
+
+    return `
+      <div class="qc-form">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span class="qc-label" style="margin:0;">Meine Position:</span>
+          <div class="qc-co-btns">
+            <button class="qc-co-btn ${qcState.mePos === 2 ? 'active' : ''}" onclick="qcState.mePos=2;renderQuickCheck()">U2 (B)</button>
+            <button class="qc-co-btn ${qcState.mePos === 3 ? 'active' : ''}" onclick="qcState.mePos=3;renderQuickCheck()">U3 (C)</button>
+          </div>
+          <span class="qc-label" style="margin:0 0 0 12px;">Gesellschaft:</span>
+          <div class="qc-co-btns">
+            <button class="qc-co-btn ${company === 'EPDE'   ? 'active' : ''}" onclick="qcState.company='EPDE';renderQuickCheck()">EPDE</button>
+            <button class="qc-co-btn ${company === 'EPROHA' ? 'active' : ''}" onclick="qcState.company='EPROHA';renderQuickCheck()">EPROHA</button>
+          </div>
+        </div>
+        <div class="qc-form-row">
+          ${partyFields}
+        </div>
+        <div class="qc-form-row">
+          <div class="qc-field">
+            <label class="qc-label">Transport</label>
+            <div class="qc-transport-row">${t4Opts}</div>
+          </div>
+          <button class="qc-check-btn" onclick="renderQuickCheck()">Prüfen</button>
+        </div>
+      </div>
+
+      <div class="qc-divider"></div>
+
+      ${reg4}
+
+      <div class="qc-moving-banner">📦 <strong>Bewegte Lieferung: L${r4.movingIndex + 1}</strong><span class="qc-moving-reason">${transport === 'supplier' ? 'Lieferant' : transport === 'customer' ? 'Kunde' : coLabel} organisiert Transport → L${r4.movingIndex + 1} bewegte Lieferung</span></div>
+
+      <div class="qc-grid qc-grid-3">
+        ${boxesHtml}
+      </div>
+
+      <div class="qc-hints-box">
+        <div class="qc-hints-hdr">ℹ️ Weitere Hinweise</div>
+        <ul class="qc-hints-list">${hints4}</ul>
+      </div>`;
+  })();
+
   el.innerHTML = `
     <div class="qc-wrap">
 
@@ -12096,7 +12374,7 @@ function renderQuickCheck() {
           <span class="qc-topbar-label">STRUKTUR</span>
           <div class="qc-topbar-btns">
             <button class="qc-topbar-btn ${mode === '3p' ? 'active' : ''}" onclick="qcState.mode='3p';renderQuickCheck()">3</button>
-            <button class="qc-topbar-btn qc-btn-soon ${mode === '4p' ? 'active' : ''}" onclick="renderQcComingSoon('4p')">4</button>
+            <button class="qc-topbar-btn ${mode === '4p' ? 'active' : ''}" onclick="qcState.mode='4p';renderQuickCheck()">4</button>
             <button class="qc-topbar-btn qc-btn-soon ${mode === 'lohn' ? 'active' : ''}" style="font-size:0.72rem;" onclick="renderQcComingSoon('lohn')">🔧 Lohnveredelung</button>
           </div>
           <span class="qc-topbar-phase">Phase 1</span>
@@ -12105,13 +12383,13 @@ function renderQuickCheck() {
       </div>
 
       <div id="qc-result-area">
-      ${mode !== '3p' ? `
+      ${mode === 'lohn' ? `
         <div class="qc-coming-soon">
           <span class="qc-coming-soon-icon">🚧</span>
           <div class="qc-coming-soon-title">${comingSoonLabels[mode]} — Coming Soon</div>
           <div class="qc-coming-soon-text">Dieser Modus wird nach Abnahme des 3-Parteien-Modus implementiert.</div>
         </div>
-      ` : `
+      ` : mode === '4p' ? fourPBody : `
       <div class="qc-form">
         <div class="qc-form-row">
           <div class="qc-field">

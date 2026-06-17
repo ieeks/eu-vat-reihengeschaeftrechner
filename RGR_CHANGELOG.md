@@ -2,6 +2,22 @@
 
 ---
 
+## v4.3 · 17.06.2026 — QuickCheck 4-Parteien-Modus (Normalkette)
+
+Erste Ausbaustufe des 4P-QuickChecks (Entscheidung: Normalkette zuerst, Dreieck nur als Hinweis-Chip).
+
+### Feature · 4-Parteien-QuickCheck
+- Neuer Modus über den „4"-Button (vorher Coming-Soon). 4 Parteien A→B→C→D = **3 Lieferungen** L1/L2/L3; davon sind genau **2 meine Rechnungen** (Eingang/Ausgang), die dritte eine **Fremdlieferung** (Kontext, kein SAP).
+- **mePosition-Umschalter U2 (B) / U3 (C):** Company sitzt mit Heimat-UID an der gewählten Kettenposition (als Badge dargestellt), die übrigen 3 Länder frei wählbar.
+- Engine-getrieben über `VATEngine.run({mode:4, mePosition, s1–s4})`; Rollen-Zuordnung der Boxen aus `supply.iAmTheBuyer/iAmTheSeller`. SAP-Kennzeichen pro Strecke wie im 3P-Fix aus Lieferort/Abgangsland (VE/VH IG-Erwerb, AF/DH IG-Lieferung, IC IT-RC, Inland, Ausfuhr).
+- Transport-Teilmenge Lieferant/Ich/Kunde (engine-sicher für U2 und U3); bewegte Lieferung + Registrierungsrisiken aus der Engine. Dreieck (EuG T-646/24, first3/last3) bewusst nur als Hinweis — AF-Überlagerung folgt in Ausbaustufe 2.
+- Neue Funktionen `buildQuickCheck4()` + `_qcBox4()`; 3P-Pfad unangetastet. CSS: `.qc-grid-3`, `.qc-me-badge`.
+
+### Tests · QC4-01…04
+- `runOutputTests` deckt 4P ab: U2 Lieferant (VH/IC), U2 Kunde (alles ruhend in dep → Reg-Risiko), U2 middle EPROHA (VD/DH), U3 Lieferant (Fremd-L1 + IT-RC). 26 Output-Tests gesamt.
+
+---
+
 ## v4.3 · 17.06.2026 — QuickCheck 3P: Dreieck vs. IT-Inlands-RC (AF statt IC)
 
 ### Fix · Dreieck gewinnt über die Engine-Basisklassifikation `rc`

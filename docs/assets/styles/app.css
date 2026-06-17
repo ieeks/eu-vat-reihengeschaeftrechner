@@ -2905,6 +2905,19 @@ header {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+.qc-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.qc-me-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--teal, #0e7490);
+  border-radius: var(--r-md, 8px);
+  background: color-mix(in srgb, var(--teal, #0e7490) 12%, transparent);
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
 .qc-invoice-box {
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -3016,7 +3029,7 @@ header {
 /* Responsive: stack on mobile */
 @media (max-width: 600px) {
   .qc-form-row { grid-template-columns: 1fr; }
-  .qc-grid     { grid-template-columns: 1fr; }
+  .qc-grid, .qc-grid-3 { grid-template-columns: 1fr; }
 }
 
 /* ── Quick Check: Full-width mode ────────────────────────────────────── */
