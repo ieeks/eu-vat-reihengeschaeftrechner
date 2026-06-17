@@ -27,6 +27,14 @@ Stand: 20.05.2026
 - [x] **vat-knowledge NL-Länderdatei** — `nl/wet_ob_nl_reihengeschaeft.md` (Art. 5/12/37a/37c Wet OB, RC-Sonderfall trotz Direktregistrierung, EPDE NL-UID); Index in `CLAUDE-vat-knowledge.md` + `CLAUDE.md` (16 → 17 Dateien) aktualisiert (Session 27)
 - [x] **Mode 2 Drop-Shipment für EU-Kunden** — neuer `analyze2()`-Branch: EPROHA(AT) = erster Lieferant → EU-Kunde (z.B. DE) → abweichender Warenempfänger (z.B. IT) = Reihengeschäft/Dreiecksgeschäft (AF/Reverse Charge), Drittland-Empfänger = Ausfuhr (A0); `renderContextToggles()` zeigt Drop-Shipment nun für jeden EU-Kunden (Session 28)
 - [x] **Warenfluss-Diagramme vereinheitlicht** — Transport-Veranlasser in 4P-Dreieck + 3P + Normalfall; 4P-SVG `max-width` 1100px, 3P 715px; 3P-Labels auf Chip-Stil (Box + Rahmen) wie 4P umgestellt (Session 28)
+- [x] **K2 — `_applyQuickFix()` UID-Override gesetzeskonform** — toter lit.-a-Zweig entfernt; `uidOverride === dep` → Ausgangslieferung (Abs. 2), sonst Eingangslieferung (Grundregel Abs. 1); UID-Labels korrigiert; Tests + vat-knowledge angeglichen (Code-Review 06/2026)
+- [x] **Code-Review Sofort-Gruppe** — K1 (QuickCheck Transport/UID an Engine + QC-Tests), H1 (`dep`→`from` in buildDeliveryBox), H2 (Share-Link-Länderkette restore), H3 (`getTransportLetter()`), H5 (TRANSLATIONS zur Renderzeit), M5 (`natLaw('vat')`-Key) (Code-Review 06/2026)
+- [x] **QuickCheck 3P gehärtet** — 3 Bugs gefixt (Ausfuhr folgt bewegter Lieferung, kein Dreieck bei Drittland, SAP aus Abgangsland) + QC-Smoke-Tests QC-01…12 (Typ/SAP/Dreieck). 20 Output-Tests.
+- [x] **QuickCheck 4-Parteien-Modus (Normalkette)** — 4 Selects, mePosition U2/U3, 3 Boxen L1/L2/L3 (2 eigene + 1 Fremdlieferung), engine-getrieben. `buildQuickCheck4()`/`_qcBox4()`. Tests QC4-01…04.
+- [ ] **QuickCheck 4P · Ausbaustufe 2** — 4P-Dreieck (EuG T-646/24, first3/last3) mit AF/DH-Überlagerung (analog 3P-Fix), Transport „2. ZH" (middle2), Diagramm.
+- [ ] **QuickCheck Lohnveredelung** — Coming Soon: Sonderlogik aus `analyzeLohn()` ableiten.
+- [x] **QuickCheck 3P · Dreieck vs. RC (L2)** — gelöst: `triangle` gewinnt über `l2IsRC` → Dreieck-L2 = AF (statt IC). IC/VI bleiben dem IT-Inlandsfall dep=dest vorbehalten. Tests QC-01/05/13/14.
+- [ ] **Scope B (Backlog, niedrig):** bewusst gewählte dep-UID auch ohne `vatIds`-Eintrag wirken lassen (`LIT-C-02`). Berührt Registrierungs-Risiko-Logik; in der echten UI nicht erzeugbar → vorerst zurückgestellt.
 
 ---
 

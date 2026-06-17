@@ -2,6 +2,89 @@
 
 ---
 
+## v4.3 · 17.06.2026 — QuickCheck 4-Parteien-Modus (Normalkette)
+
+Erste Ausbaustufe des 4P-QuickChecks (Entscheidung: Normalkette zuerst, Dreieck nur als Hinweis-Chip).
+
+### Feature · 4-Parteien-QuickCheck
+- Neuer Modus über den „4"-Button (vorher Coming-Soon). 4 Parteien A→B→C→D = **3 Lieferungen** L1/L2/L3; davon sind genau **2 meine Rechnungen** (Eingang/Ausgang), die dritte eine **Fremdlieferung** (Kontext, kein SAP).
+- **mePosition-Umschalter U2 (B) / U3 (C):** Company sitzt mit Heimat-UID an der gewählten Kettenposition (als Badge dargestellt), die übrigen 3 Länder frei wählbar.
+- Engine-getrieben über `VATEngine.run({mode:4, mePosition, s1–s4})`; Rollen-Zuordnung der Boxen aus `supply.iAmTheBuyer/iAmTheSeller`. SAP-Kennzeichen pro Strecke wie im 3P-Fix aus Lieferort/Abgangsland (VE/VH IG-Erwerb, AF/DH IG-Lieferung, IC IT-RC, Inland, Ausfuhr).
+- Transport-Teilmenge Lieferant/Ich/Kunde (engine-sicher für U2 und U3); bewegte Lieferung + Registrierungsrisiken aus der Engine. Dreieck (EuG T-646/24, first3/last3) bewusst nur als Hinweis — AF-Überlagerung folgt in Ausbaustufe 2.
+- Neue Funktionen `buildQuickCheck4()` + `_qcBox4()`; 3P-Pfad unangetastet. CSS: `.qc-grid-3`, `.qc-me-badge`.
+
+### Tests · QC4-01…04
+- `runOutputTests` deckt 4P ab: U2 Lieferant (VH/IC), U2 Kunde (alles ruhend in dep → Reg-Risiko), U2 middle EPROHA (VD/DH), U3 Lieferant (Fremd-L1 + IT-RC). 26 Output-Tests gesamt.
+
+---
+
+## v4.3 · 17.06.2026 — QuickCheck 3P: Dreieck vs. IT-Inlands-RC (AF statt IC)
+
+### Fix · Dreieck gewinnt über die Engine-Basisklassifikation `rc`
+- Im echten ig. Dreiecksgeschäft (DE→EPROHA→IT, 3 EU-Länder) zeigte der QuickCheck auf der ruhenden L2 fälschlich **IC** (italienisches Inlands-Reverse-Charge, Art. 17 DPR 633), weil die L2-Logik `if (l2IsRC)` **vor** `else if (triangle)` prüfte. **Fix:** Reihenfolge umgedreht — bei `triangle=true` ist die ruhende L2 die Dreieckslieferung → **AF** (IG-Lieferung/Dreieck, Steuerschuldumkehr § 25b UStG). L1 bleibt **VE** (IG-Erwerb, Eingangsrechnung).
+- Saubere Trennung der zwei Sachverhalte: **IC** bleibt dem reinen IT-Inlandsfall `dep=dest` (IT→EPROHA→IT) vorbehalten (Ausgangs-RC = IC, Eingang = VI nur wenn IT-UID vorhanden — bei EPROHA korrekt ohne MWSKZ).
+- EPDE-Dreieck nutzt mangels eigenem `dreiecks`-Kennzeichen den ic-exempt-Fallback (DE → **DH**).
+
+### Tests · QC-01/05 erweitert, QC-13/14 neu
+- QC-01 lockt jetzt L2=**AF** (Dreieck, nicht IC), QC-05 L2=**DH** (EPDE-Dreieck). QC-13 (IT→EPROHA→IT, L2=IC, L1 ohne MWSKZ) und QC-14 (IT→EPDE→IT, L1=VI/L2=IC) grenzen den IT-Inlandsfall ab. 22 Output-Tests gesamt.
+
+---
+
+## v4.3 · 17.06.2026 — QuickCheck 3P gehärtet (Bugfixes + Tests)
+
+Beim Härten des 3-Parteien-QuickChecks aufgedeckte und behobene Fehler (QC ruft die
+Engine direkt, ohne das Drittland-Routing der Hauptapp):
+
+### Fix · Ausfuhr-Zuordnung folgt der bewegten Lieferung
+- Bei EU→CH/GB ordnete der QuickCheck die Ausfuhr **immer L2** zu — auch wenn der Lieferant transportiert (bewegte L1). **Fix:** Ausfuhr liegt auf der bewegten Lieferung (Lieferant transportiert → L1 = Ausfuhr, Vorlieferant ist Exporteur; sonst → L2 = Ausfuhr). Die ruhende Drittland-Lieferung wird als „lokale Lieferung (lokales Recht)" mit Registrierungs-Hinweis dargestellt. Spiegelt `buildCHExportResult` (Exporteur = `movingL1 ? Vorlieferant : Zwischenhändler`).
+
+### Fix · Kein Dreiecksgeschäft bei Drittland-Beteiligung
+- `DE→CH`/`DE→GB` lieferte `triangle=true`. Art. 141 MwStSystRL verlangt 3 EU-Mitgliedstaaten. **Fix:** `triangle = eng.trianglePossible && !depIsThird && !destIsThird`.
+
+### Fix · SAP-Kennzeichen aus dem Abgangsland statt der Heimat
+- IG-Lieferung/Ausfuhr nutzten das Heimat-Kennzeichen, obwohl die bewegte Lieferung im Abgangsland beginnt. **Fix:** SAP-Lookup über das Abgangsland (Registrierung vorausgesetzt). Beispiele: EPROHA IG-Lieferung ab DE → **DH** (statt AF); EPROHA Ausfuhr ab DE → **D0** (statt A0).
+
+### Tests · QuickCheck-Smoke-Tests erweitert (QC-01…12)
+- `runOutputTests` deckt jetzt movingL1, Dreieck, L1/L2-Typ und SAP-Codes ab: EU→EU (IG-Erwerb VE/VH, IG-Lieferung DH/AF, ruhend VD/V2), Drittland-Ausfuhr (D0/G0, kein Dreieck), CH-Inland (IB/B5), Einfuhr (Import). 20 Output-Tests gesamt.
+
+---
+
+## v4.3 · 17.06.2026 — Code-Review Sofort-Gruppe (K1, H1, H2, H3, H5, M5)
+
+### Fix · K1 — QuickCheck übergab Engine Buchstaben statt kanonischer Transport-Werte
+- `buildQuickCheck()` mappte `transport` auf `'A'/'B'/'C'` und übergab den Buchstaben an `VATEngine.run()`; die Engine vergleicht aber gegen Wörter → **jeder** QuickCheck fiel auf `movingIndex 0`. „Kunde holt ab" zeigte fälschlich L1, die Dreieckssperre Art. 141 lit. e griff nie. Zusätzlich wurde `uidOverride` als UID-String statt Länderkürzel übergeben (immer ignoriert).
+- **Fix:** `transport` (bereits kanonisch) direkt durchreichen, `uidOverride: _triUid.country`. Neue Smoke-Tests `QC-01..04` (movingL1/Dreieck je Transport-Variante) in `runOutputTests` → 12 Output-Tests.
+
+### Fix · H1 — `dep` undefinierte Variable in `buildDeliveryBox()`
+- `const pos = … (isMoving ? dep : dest)` griff das implizite Window-Global des `<select id="dep">` → falsche SAP-Badges bei CH/GB-Pfaden. **Fix:** `from` (Abgangsland der jeweiligen Strecke) statt `dep`.
+
+### Fix · H2 — Share-Link-Länderkette wurde geschrieben, nie wiederhergestellt
+- `shareLink()` serialisierte `countries=…`, aber weder `handleURLParams()` noch `init()` schrieben sie zurück (cp-*-Selects existieren erst nach `renderAll()`/`renderPickers()`). **Fix:** Länderkette nach `renderAll()` anwenden (URL > localStorage, Validierung gegen `EU_MAP`), dann `onCC()`. Behebt zugleich die latent gleiche Lücke beim localStorage-Restore.
+
+### Fix · H3 — `['A','B','C','D'].indexOf(selectedTransport)` immer −1
+- `selectedTransport` ist immer ein Wort → Begründungstext zeigte „Transporteur: undefined". **Fix:** `getTransportLetter()` (beide Vorkommen).
+
+### Fix · H5 — Firmen-abhängige TRANSLATIONS beim Parsen eingefroren
+- `header.sub`/`dreiecks.title`/`eug.subtitle` evaluierten `currentCompany` mit Startwert `EPDE` → EPROHA-Banner zeigte dauerhaft „§ 25b" statt „Art. 25 UStG AT" (Regel 2). **Fix:** Keys als Funktionen, `T()` löst funktionswertige Einträge zur Renderzeit auf.
+
+### Fix · M5 — `natLaw('vat')` — Key existierte nicht
+- Output zeigte „Vorsteuerabzug gem. vat." **Fix:** `'vat'`-Key ergänzt (§ 12 UStG AT / § 15 UStG / Art. 167 ff. MwStSystRL), Aufruf mit Lieferland-Override (`natLaw('vat', sup)`); Dev-Mode-Warnung bei unbekanntem Key.
+
+---
+
+## v4.3 · 17.06.2026 — Code-Review K2
+
+### Fix · `_applyQuickFix()` UID-Override: Abgangsland-UID-Logik korrigiert (Art. 36a)
+
+- **Bug (K2, CODE_REVIEW_2026-06):** Im Override-Zweig von `_applyQuickFix()` war der `lit. a`-Pfad durch einen widersprüchlichen Guard (`uidOverride === dep && !hasDepVat`, bei gleichzeitig erzwungenem `vatIds[uidOverride]`) **toter Code**. Jeder manuelle UID-Override landete im else-Zweig mit `movingIndex = chainIndex` — d. h. **jede** mitgeteilte UID verschob die Bewegung fälschlich auf die Ausgangslieferung. Da der UID-Block (`renderUidOverrideBlock`) beim Render automatisch `opts[0]` als Override setzt, feuerte der Bug bei transportierenden Zwischenhändlern ohne Abgangsland-UID **ohne jeden Klick** (z. B. `IT→EPDE(DE)→DE`, `FR→EPDE(DE)→IT`) → vorgetäuschte Registrierungspflicht im Abgangsland.
+- **Fix (Engine, gesetzeskonform):** Override-Zweig folgt jetzt Art. 36a Abs. 1/2: `uidOverride === dep` → Ausnahme Abs. 2 → `chainIndex` (Ausgangslieferung); jede andere gehaltene UID → Grundregel Abs. 1 → `chainIndex - 1` (Eingangslieferung). Automatik-Pfad unverändert (war bereits korrekt).
+- **UI:** UID-Auswahl-Labels von „lit. a / lit. b" auf die tatsächliche Wirkung umgestellt (`… (Abgangsland) — Ausgangslieferung bewegt` / `… — Eingangslieferung bewegt`); dep-UID bleibt sinnvolle Vorwahl.
+- **Tests:** `LF-02c`, `DG-02`, `LF-04c` (→ L1 bewegend), `C037m-ALTB` (→ L2 bewegend), `LF-02d` (Code liefert jetzt rechtlich korrektes L2, Limitation entfernt) angepasst. Alle 45 Lehrfall-Tests + 8 Output-Tests grün.
+- **Doku:** `art36a_mwstrl.md`, `moving_supply_logic.md`, `reference-cases.md` (A2, B2/Alt B, E2-Matrix) an die korrekte Auslegung angeglichen.
+- **Bewusst offen (knownLimitation):** `LIT-C-02` — bewusst gewählte dep-UID greift nur bei vorhandener `vatIds`-Registrierung; in der echten UI nicht erzeugbar (Scope B nicht umgesetzt).
+
+---
+
 ## v4.3 · 26.05.2026 — Session 28
 
 ### Fix · Vergleich-Tab „lädt nicht" außerhalb 3P-grenzüberschreitend

@@ -17,7 +17,7 @@ Die gravierendsten Probleme sitzen an den **Nahtstellen zwischen UI und Engine**
 ## 🔴 Kritisch (fachlich falsche Ergebnisse)
 
 ### K1 — QuickCheck übergibt der Engine Buchstaben statt kanonischer Transport-Werte
-`app.js:11680-11697` — **verifiziert**
+`app.js:11680-11697` — **verifiziert** · ✅ **BEHOBEN (17.06.2026)** — `transport` direkt durchgereicht, `uidOverride: _triUid.country`; Smoke-Tests `QC-01..04` ergänzt.
 
 `buildQuickCheck()` mappt `transport` via `{ supplier:'A', middle:'B', customer:'C' }` und übergibt den **Buchstaben** an `VATEngine.run()`. Die Engine vergleicht aber nur gegen Wörter (`transport === 'supplier'` etc., `app.js:812-841`) → jeder QuickCheck fällt in den Default `movingIndex: 0`:
 
@@ -28,7 +28,9 @@ Die gravierendsten Probleme sitzen an den **Nahtstellen zwischen UI und Engine**
 **Fix:** `transport: transport` direkt durchreichen (qcState ist bereits kanonisch) und `uidOverride: _triUid.country` übergeben. QC-Smoke-Test für `movingL1` je Transport-Variante ergänzen.
 
 ### K2 — `_applyQuickFix()`: lit.-a-Zweig unerreichbar, alle Overrides liefern dasselbe Ergebnis
-`app.js:860-892` — **verifiziert** · ⚠️ **Never-Touch-Zone (VATEngine)**
+`app.js:860-892` — **verifiziert** · ✅ **BEHOBEN (17.06.2026, Branch `claude/code-review-k2-feedback-vxnhj6`)**
+
+> **Resolution:** Override-Zweig auf Art. 36a Abs. 1/2 umgestellt (`uidOverride === dep` ⇒ `chainIndex`, sonst ⇒ `chainIndex - 1`), UID-Labels korrigiert, Auto-Vorwahl bevorzugt dep-UID. Verifiziert gegen `vat-knowledge/` (Widerspruch zwischen `LF-02c`/A2 und `LIT-C-01/02`/F2 aufgelöst zugunsten der Gesetzeslage). Tests `LF-02c`/`DG-02`/`LF-04c`/`C037m-ALTB`/`LF-02d` angepasst; 45 Lehrfall- + 8 Output-Tests grün. Doku (`art36a_mwstrl.md`, `moving_supply_logic.md`, `reference-cases.md`) angeglichen. Scope B (Guard-Lockerung für nicht gehaltene dep-UID, `LIT-C-02`) bewusst nicht umgesetzt — in der echten UI nicht erzeugbar.
 
 Der Guard (Z. 860) verlangt `vatIds[uidOverride] !== undefined`; die Bedingung `overrideIsDepUid` (Z. 863) verlangt gleichzeitig `uidOverride === dep && !hasDepVat` — Widerspruch, da `hasDepVat = !!vatIds[dep]`. Folge: Der lit.-a-Zweig ist **toter Code**, und **jeder** manuelle UID-Override landet im else-Zweig mit `movingIndex = chainIndex` (Ausgangslieferung bewegt) — unabhängig davon, welche UID gewählt wurde.
 
@@ -48,21 +50,21 @@ Es existiert **keine** `escapeHtml`-Funktion; sämtliches HTML wird per Template
 ## 🟠 Hoch
 
 ### H1 — Undefinierte Variable `dep` in `buildDeliveryBox()`
-`app.js:3310` — **verifiziert**
+`app.js:3310` — **verifiziert** · ✅ **BEHOBEN (17.06.2026)** — Fallback auf `from` (Abgangsland der Strecke).
 
 `const pos = placeOfSupply || (isMoving ? dep : dest) || dest;` — `dep` ist weder Parameter noch Closure-Binding. Es greift das **implizite Window-Global des `<select id="dep">`** (docs/index.html) → `pos` wird ein HTMLSelectElement statt eines Ländercodes. Bei Aufrufen ohne `placeOfSupply` für bewegte Lieferungen (CH/GB-Pfade, `app.js:2979, 3001`) liefert die SAP-Badge-Berechnung falsche/keine Ergebnisse.
 
 **Fix:** `dep` als expliziten Parameter aufnehmen oder Fallback auf `from` umstellen (bei bewegter Lieferung ist `from` das Abgangsland).
 
 ### H2 — Share-Link-Roundtrip defekt: `countries` wird geschrieben, nie geparst
-`app.js:9876-9884` vs. `app.js:11566-11584`
+`app.js:9876-9884` vs. `app.js:11566-11584` · ✅ **BEHOBEN (17.06.2026)** — Länderkette nach `renderAll()` angewandt (URL > localStorage, `EU_MAP`-Validierung, dann `onCC()`); behebt auch den latenten localStorage-Restore.
 
 `shareLink()` serialisiert `countries=DE,AT,IT`, `handleURLParams()` liest nur `co/mode/transport/mePos/uid/theme`. Ein geteilter Link reproduziert die Länderkette beim Empfänger **nicht** — das Kernfeature des Links.
 
 **Fix:** In `handleURLParams()` den Parameter splitten, gegen `EU`-Codes validieren und in die `cp-*`-Selects schreiben (analog `saved.countries` in `init`, `app.js:12093-12098`).
 
 ### H3 — `['A','B','C','D'].indexOf(selectedTransport)` liefert immer -1
-`app.js:11302, 11322-11334` (analog `app.js:10900` im toten Code)
+`app.js:11302, 11322-11334` (analog `app.js:10900` im toten Code) · ✅ **BEHOBEN (17.06.2026)** — `getTransportLetter()` (beide Vorkommen).
 
 `selectedTransport` wird via `setState()` immer als Wort gespeichert. `renderExpertLegal()` rendert dadurch `Transporteur: undefined — <Abgangsland>` und zeigt immer den Zwischenhändler-Begründungstext. Genau der Fall, vor dem CLAUDE.md warnt („keine ad-hoc Transport-Normalisierung").
 
@@ -76,7 +78,7 @@ Es existiert **keine** `escapeHtml`-Funktion; sämtliches HTML wird per Template
 **Fix:** `dtype` aus `triangleResult.allVariants`/`primary` der Engine durchreichen statt Bedingungen zu duplizieren.
 
 ### H5 — Company-abhängige TRANSLATIONS werden beim Laden eingefroren
-`app.js:574, 602, 608`
+`app.js:574, 602, 608` · ✅ **BEHOBEN (17.06.2026)** — Keys als Funktionen, `T()` löst zur Renderzeit auf.
 
 `'dreiecks.title'` u. a. enthalten `currentCompany === 'EPROHA' ? … : …`, werden aber beim Parsen mit dem Startwert `EPDE` evaluiert. Für EPROHA zeigt der Dreiecks-Banner dauerhaft **„§ 25b UStG" statt „Art. 25 UStG AT"** — Verstoß gegen kritische Regel 2 („AT: Art. nicht §").
 
@@ -119,7 +121,7 @@ Es existiert **keine** `escapeHtml`-Funktion; sämtliches HTML wird per Template
 `app.js:2541-2570, 2744-2747` — Registrierungs-Banner sagt fix „EPDE…" auch bei EPROHA; U3/U4-Hinweise sprechen unconditional von „IVA"/„inversione contabile", auch wenn `land !== 'IT'`. **Fix:** `COMPANIES[currentCompany].name` verwenden; IT-Hinweise an `land==='IT'` koppeln.
 
 ### M5 — `natLaw('vat')` — Key existiert nicht
-`app.js:4002` (Map: 1813-1848) — Output zeigt „Vorsteuerabzug gem. vat." (Key-Selbst-Fallback). **Fix:** Key ergänzen; Fallback im Dev-Mode loggen.
+`app.js:4002` (Map: 1813-1848) — Output zeigt „Vorsteuerabzug gem. vat." (Key-Selbst-Fallback). **Fix:** Key ergänzen; Fallback im Dev-Mode loggen. · ✅ **BEHOBEN (17.06.2026)** — `'vat'`-Key (§ 12/§ 15/Art. 167 ff.), Aufruf mit Lieferland-Override, Dev-Mode-`console.warn` bei unbekanntem Key.
 
 ### M6 — Intrastat-Schwellen in Fremdwährung als „EUR" formatiert
 `app.js:404-446` — CZ/DK/HU/PL/SE-Rohwerte (CZK/HUF/…) werden als `~EUR 12 Mio.` ausgegeben (Faktor bis ~390 bei HUF). **Fix:** EUR-Äquivalente in Tabelle aufnehmen oder Originalwährung anzeigen.

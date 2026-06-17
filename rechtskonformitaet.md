@@ -15,7 +15,7 @@ Quellen:
 |---|---|---|
 | Quick-Fix Standardregel: Zwischenhändler transportiert, gibt keine dep-UID | L1 bewegte Lieferung (Lieferung AN den Zwischenhändler) | Art. 36a Abs. 1 RL 2006/112/EG / § 3 Abs. 15 Z1 lit. c UStG |
 | Quick-Fix Ausnahme: dep-UID mitgeteilt | L2 bewegte Lieferung (Lieferung DURCH den Zwischenhändler) | Art. 36a Abs. 2 RL 2006/112/EG |
-| Quick-Fix: Ansässigkeits-/Ziel-/Sonstige-UID (nicht dep) | L2 bewegte Lieferung — Standardregel bleibt | Art. 36a Abs. 1 RL 2006/112/EG |
+| Quick-Fix: Ansässigkeits-/Ziel-/Sonstige-UID (nicht dep) | L1 bewegte Lieferung — Grundregel bleibt (Eingangslieferung) | Art. 36a Abs. 1 RL 2006/112/EG |
 | Erster Lieferer / letzter Abnehmer können nicht Zwischenhändler sein | korrekt — Art. 36a gilt nur für mittlere Partei | Art. 36a Abs. 3 RL 2006/112/EG |
 | Ruhende Lieferung vor Transport → Lieferort = Abgangsland | korrekt | Art. 31/36 RL 2006/112/EG |
 | Ruhende Lieferung nach Transport → Lieferort = Bestimmungsland | korrekt | Art. 31/36 RL 2006/112/EG |

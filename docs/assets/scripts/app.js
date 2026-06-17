@@ -571,7 +571,7 @@ function _v32_updateStepUI() {
 var TRANSLATIONS = {
   de: {
     'header.title': 'EU <span>MwSt</span> Reihengeschäft',
-    'header.sub': currentCompany === 'EPROHA' ? 'B2B · Innergemeinschaftlich · inkl. Dreiecksgeschäft Art. 25 UStG AT' : 'B2B · Innergemeinschaftlich · inkl. Dreiecksgeschäft § 25b UStG',
+    'header.sub': () => currentCompany === 'EPROHA' ? 'B2B · Innergemeinschaftlich · inkl. Dreiecksgeschäft Art. 25 UStG AT' : 'B2B · Innergemeinschaftlich · inkl. Dreiecksgeschäft § 25b UStG',
     'card.buchungskreis': 'Buchungskreis','card.vatids': 'Meine USt-IDs','card.modus': 'Modus',
     'card.parteien': 'Beteiligte Parteien','card.warenfluss': 'Warenfluss',
     'card.transport': 'Transportorganisation','card.ergebnis': 'Ergebnis',
@@ -599,13 +599,13 @@ var TRANSLATIONS = {
     'inv.net': 'Nettobetrag ohne MwSt (0%)',
     'inv.triangle.hint': '„Innergemeinschaftliches Dreiecksgeschäft gemäß Art. 42 MwStSystRL"',
     'inv.triangle.rc': '„Steuerschuldner ist der Leistungsempfänger"',
-    'dreiecks.title': currentCompany === 'EPROHA' ? 'Dreiecksgeschäft – Art. 25 UStG AT / Art. 141 MwStSystRL' : 'Dreiecksgeschäft – § 25b UStG / Art. 141 MwStSystRL',
+    'dreiecks.title': () => currentCompany === 'EPROHA' ? 'Dreiecksgeschäft – Art. 25 UStG AT / Art. 141 MwStSystRL' : 'Dreiecksgeschäft – § 25b UStG / Art. 141 MwStSystRL',
     'dreiecks.subtitle': 'Vereinfachungsregelung anwendbar',
     'dreiecks.opportunity.title': 'Dreiecksgeschäft möglich – USt-ID wählen',
     'dreiecks.opportunity.sub': 'Art. 141 MwStSystRL · Keine Registrierung nötig',
     'dreiecks.apply': 'Analyse mit gewählter USt-ID →',
     'eug.title': '4-Parteien Dreiecksgeschäft – EuG T-646/24 vom 03.12.2025',
-    'eug.subtitle': currentCompany === 'EPROHA' ? 'Art. 25 UStG AT / Art. 141 MwStSystRL anwendbar' : '§ 25b UStG / Art. 141 MwStSystRL anwendbar',
+    'eug.subtitle': () => currentCompany === 'EPROHA' ? 'Art. 25 UStG AT / Art. 141 MwStSystRL anwendbar' : '§ 25b UStG / Art. 141 MwStSystRL anwendbar',
     'noneu': 'Drittland','vatid.gegenüber': 'USt-ID gegenüber Lieferant',
     'vatid.ausweisen': 'USt-ID auf Rechnung ausweisen','goods.direct': 'direkt',
     'invoice.items': 'Pflichtangaben auf dieser Rechnung',
@@ -659,7 +659,10 @@ var TRANSLATIONS = {
 
 function T(key) {
   if (!TRANSLATIONS || !TRANSLATIONS[currentLang]) return key;
-  return TRANSLATIONS[currentLang][key] || (TRANSLATIONS['de'] && TRANSLATIONS['de'][key]) || key;
+  const v = TRANSLATIONS[currentLang][key] || (TRANSLATIONS['de'] && TRANSLATIONS['de'][key]);
+  // Firmen-/zustandsabhängige Einträge sind Funktionen → zur Renderzeit auflösen
+  // (sonst würde currentCompany beim Parsen eingefroren, vgl. H5/Regel 2 AT „Art." statt „§").
+  return (typeof v === 'function' ? v() : v) || key;
 }
 
 function _v32_setLang(btn) {
@@ -857,36 +860,38 @@ const VATEngine = (() => {
     const intermediaryResidentInDep = companyHome === dep;
 
     // ── Manuelle UID-Übersteurung (wenn User eine UID explizit gewählt hat) ──
+    // Art. 36a Abs. 2 MwStSystRL / § 3 Abs. 6a S. 4 UStG: NUR die dem Vorlieferanten
+    // mitgeteilte Abgangsland-UID (dep) verschiebt die Warenbewegung auf die
+    // Ausgangslieferung (chainIndex). Jede andere mitgeteilte UID (Ansässigkeits-/
+    // dest-/Dritt-UID) lässt es bei der Grundregel Abs. 1 → Eingangslieferung
+    // bewegt (chainIndex-1).
     if (uidOverride && vatIds[uidOverride] !== undefined) {
-      // lit. a: dep-UID mitgeteilt, aber WEDER ansässig NOCH registriert in dep.
-      // Hat der Zwischenhändler eine echte dep-Registrierung → lit. b (nicht lit. a).
-      const overrideIsDepUid = uidOverride === dep && !intermediaryResidentInDep && !hasDepVat;
-      if (overrideIsDepUid) {
-        // Gewählte UID = dep-Land, nicht ansässig dort → lit. a
-        const movingIndex = Math.max(0, chainIndex - 1);
+      if (uidOverride === dep) {
+        // Abgangsland-UID mitgeteilt → Ausnahme Abs. 2 → Ausgangslieferung bewegt
+        const movingIndex = chainIndex;
         return {
           movingIndex,
-          rationale: `Quick Fix (Art. 36a Abs. 2 lit. a): ${label} teilt Vorlieferant ${ctx.nameOf(dep)}-UID (${vatIds[dep]}) mit — nicht ansässig in ${ctx.nameOf(dep)} → L${movingIndex+1} bewegte Lieferung. <em style="color:var(--teal)">[Manuelle Wahl]</em>`,
-          legalBasis: 'Art. 36a Abs. 2 lit. a MwStSystRL / § 3 Abs. 6a S. 4 Nr. 1 UStG / BMF 25.04.2019',
+          rationale: `Quick Fix (Art. 36a Abs. 2): ${label} teilt dem Vorlieferanten die Abgangsland-UID ${ctx.nameOf(dep)} (${vatIds[dep]}) mit → L${movingIndex+1} bewegte Lieferung. <em style="color:var(--teal)">[Manuelle Wahl]</em>`,
+          legalBasis: 'Art. 36a Abs. 2 MwStSystRL / § 3 Abs. 6a S. 4 Nr. 2 UStG / BMF 25.04.2019',
           quickFixApplied: true, quickFixVariant: 'departure-id',
           vatIdUsed: vatIds[dep], vatIdCountry: dep,
           manualOverride: true,
-          euroTyreNote: 'EuGH C-430/09 Euro Tyre: Zeitpunkt des Verfügungsmachtsübergangs entscheidend.',
-          kreuzmayerNote: 'EuGH C-628/16 Kreuzmayr: Falsche UID-Angaben entziehen dem Vorlieferanten den Vertrauensschutz.',
+          euroTyreNote: 'EuGH C-430/09 Euro Tyre: Abgangsland-UID des Zwischenhändlers → Transport gehört zur Ausgangslieferung.',
+          kreuzmayerNote: 'EuGH C-628/16 Kreuzmayr: Sorgfalt bei UID-Kommunikation erforderlich.',
         };
       } else {
-        // Gewählte UID ≠ dep-Land, oder Ansässigkeits-UID → lit. b
-        const movingIndex = chainIndex;
+        // Nicht-Abgangsland-UID (Ansässigkeits-/dest-/Dritt-UID) → Grundregel Abs. 1
+        // → Eingangslieferung bewegt, keine Registrierungspflicht im Abgangsland.
+        const movingIndex = Math.max(0, chainIndex - 1);
         const uidLabel = `${ctx.nameOf(uidOverride)}-UID (${vatIds[uidOverride]}${uidOverride === companyHome ? ', Ansässigkeit' : ''})`;
         return {
           movingIndex,
-          rationale: `Quick Fix (Art. 36a Abs. 2 lit. b): ${label} teilt Vorlieferant ${uidLabel} mit → L${movingIndex+1} bewegte Lieferung. <em style="color:var(--teal)">[Manuelle Wahl]</em>`,
-          legalBasis: 'Art. 36a Abs. 2 lit. b MwStSystRL / § 3 Abs. 6a S. 4 Nr. 2 UStG / BMF 25.04.2019',
-          quickFixApplied: true, quickFixVariant: 'dest-or-other-id',
+          rationale: `Grundregel (Art. 36a Abs. 1): ${label} teilt ${uidLabel} mit — keine Abgangsland-UID (${ctx.nameOf(dep)}) → L${movingIndex+1} bewegte Lieferung. <em style="color:var(--teal)">[Manuelle Wahl]</em>`,
+          legalBasis: 'Art. 36a Abs. 1 MwStSystRL / § 3 Abs. 6a S. 4 UStG / BMF 25.04.2019',
+          quickFixApplied: false, quickFixVariant: 'lit-c',
           vatIdUsed: vatIds[uidOverride], vatIdCountry: uidOverride,
           manualOverride: true,
-          euroTyreNote: 'EuGH C-430/09 Euro Tyre: Ansässigkeits-UID des Zwischenhändlers → Transport gehört zur Ausgangslieferung.',
-          kreuzmayerNote: 'EuGH C-628/16 Kreuzmayr: Sorgfalt bei UID-Kommunikation erforderlich.',
+          euroTyreNote: 'EuGH C-430/09 Euro Tyre: Ohne Abgangsland-UID greift die Grundregel – Transport gehört zur Eingangslieferung.',
         };
       }
     }
@@ -1811,6 +1816,10 @@ function natLaw(key, countryOverride) {
                : isDE ? '„Steuerfreie innergemeinschaftliche Lieferung"'
                : '„Steuerfreie innergemeinschaftliche Lieferung" (Art. 138 MwStSystRL)';
   const laws = {
+    // Vorsteuerabzug (Inlands-Eingangsrechnung)
+    'vat':         isAT ? '§ 12 UStG AT / Art. 167 ff. MwStSystRL'
+                 : isDE ? '§ 15 UStG / Art. 167 ff. MwStSystRL'
+                 : `Art. 167 ff. MwStSystRL (${cn(country)})`,
     // IG-Lieferung steuerfrei
     'ig.exempt':   igExemptText,
     // Ausfuhr steuerfrei
@@ -1845,6 +1854,10 @@ function natLaw(key, countryOverride) {
     'ch.place':        'Art. 7 Abs. 1 Bst. b MWSTG (SR 641.20)',
     'ch.threshold':    'Art. 10 Abs. 2 Bst. a MWSTG: CHF 100\'000/Jahr',
   };
+  if (laws[key] === undefined && typeof document !== 'undefined'
+      && document.documentElement?.getAttribute('data-dev') === 'true') {
+    console.warn('[natLaw] unbekannter Key:', key);
+  }
   return laws[key] || key;
 }
 
@@ -3306,8 +3319,8 @@ function buildDeliveryBox(num, from, to, isMoving, tax, myCode, dest, iAmBuyer, 
           const iAmBuyerHere = to === myHome;
           if (!iAmSeller && !iAmBuyerHere) return '';
           const role = iAmSeller ? 'seller' : 'buyer';
-          // Lieferort bestimmen
-          const pos = placeOfSupply || (isMoving ? dep : dest) || dest;
+          // Lieferort bestimmen — bei bewegter Lieferung = Abgangsland (= from dieser Strecke)
+          const pos = placeOfSupply || (isMoving ? from : dest) || dest;
           // Treatment aus badgeClass ableiten — Käufer auf IG-Lieferung → ic-acquisition
           const isExportDelivery = tax.badgeClass === 'badge-export';
           const isIGDelivery = !isExportDelivery && (
@@ -3999,7 +4012,7 @@ function analyzeLohn() {
         </div>
       </div>
       <div class="hints" style="margin-top:10px;">
-        ${rH({type:'info',icon:'📋',text:`${cn(sup)}-Eingangsrechnung: ${supConRate}% MwSt ausgewiesen. Vorsteuerabzug gem. ${natLaw('vat')}.`})}
+        ${rH({type:'info',icon:'📋',text:`${cn(sup)}-Eingangsrechnung: ${supConRate}% MwSt ausgewiesen. Vorsteuerabzug gem. ${natLaw('vat', sup)}.`})}
       </div>
     </div>`;
 
@@ -7635,17 +7648,18 @@ const SMOKE_TESTS = [
 
   {
     id: 'LF-04c',
-    name: 'IT→AT(ich)→DE→HU, Transport=ich, AT-UID (Ansässigkeit) → lit. b → L2 bewegend',
+    name: 'IT→AT(ich)→DE→HU, Transport=ich, AT-UID (Ansässigkeit) → Grundregel Abs. 1 → L1 bewegend',
     source: 'reihengeschaeft.at 4-Parteien Beispiel (Dok 10)',
     company: 'EPROHA',
-    // Lehrfall Dok 10: U2 tritt mit Ansässigkeits-UID auf → lit. b → L2 bewegend
-    // EPROHA hat keine IT-UID (dep), aber AT-UID (Ansässigkeit) → uidOverride:'AT' → lit. b
+    // dep=IT, EPROHA hält keine IT-UID. Mitgeteilt wird AT-UID (Ansässigkeit) = NICHT
+    // die Abgangsland-UID → Art. 36a Abs. 2 greift nicht → Grundregel Abs. 1:
+    // Eingangslieferung bewegt → movingIndex=0 (L1).
     ctx: { s1:'IT', s2:'AT', s3:'DE', s4:'HU', dep:'IT', dest:'HU', transport:'middle', uidOverride:'AT', mode:4 },
     expect: {
-      movingIndex: 1,           // lit. b: AT-UID (Ansässigkeit, nicht dep IT) → L2 bewegend
+      movingIndex: 0,           // Grundregel Abs. 1: AT-UID ≠ Abgangsland-UID (IT) → L1 bewegend
       igLieferung: true,
     },
-    knownLimitation: 'Lehrfall Dok 10 beschreibt IT-UID-Szenario (anderen Erwerber). Tool kann AT-UID wählen → ebenfalls lit. b → L2 bewegend. Steuerrechtlich äquivalent.'
+    knownLimitation: 'Lehrfall Dok 10 beschreibt das IT-UID-Szenario (dep-UID → L2 bewegend). EPROHA hält keine IT-UID; mit AT-UID greift die Grundregel → L1 bewegend (steuerrechtlich korrekt für die AT-UID-Wahl).'
   },
 
   {
@@ -7703,47 +7717,37 @@ const SMOKE_TESTS = [
 
   {
     id: 'LF-02d',
-    name: 'DE→AT(ich)→IT, Transport=ich, DE-UID → L2 bewegend, Reg. in DE',
+    name: 'DE→AT(ich)→IT, Transport=ich, DE-UID (Abgangsland) → Abs. 2 → L2 bewegend',
     source: 'reihengeschaeft.at Beispiel 2d',
     company: 'EPROHA',
-    // Besonderheit: U2 tritt mit DE-UID auf → lit. b → L2 bewegend, kein Dreiecksgeschäft
-    // Im Tool: Transport=middle + EPROHA hat DE-UID → Quick Fix lit. b greift
-    // da EPROHA DE-UID hat und dep=DE (Ansässigkeits-UID ≠ dep → Quick Fix lit. a/c)
-    // EPROHA ist ansässig in AT, hat aber DE-UID → dep=DE, home=AT
-    // Quick Fix lit. c: middle transportiert + hat dep-UID (DE) aber nicht ansässig in dep → L1 bewegend
-    // ABER Beispiel 2d sagt: DE-UID verwendet → L2 bewegend (lit. b)
-    // → Konflikt: Tool kann UID-Wahl nicht manuell steuern
-    // → Dieser Test dokumentiert die bekannte Limitation
+    // dep=DE, home=AT. EPROHA hält die DE-UID (Abgangsland) und nutzt sie automatisch
+    // (kein Override): Art. 36a Abs. 2 → Ausgangslieferung bewegt → movingIndex=1 (L2).
+    // Entspricht dem Lehrfall 2d (DE-UID → L2 bewegend).
     ctx: { s1:'DE', s2:'AT', s4:'IT', dep:'DE', dest:'IT', transport:'middle', mode:3 },
     expect: {
-      // Tool wählt automatisch Quick Fix lit. c (EPROHA hat DE-UID, nicht ansässig in DE)
-      // → movingIndex=0 (L1 bewegend) — abweichend vom Lehrfall (movingIndex=1)
-      // Lehrfall erwartet movingIndex=1, Tool liefert movingIndex=0
-      // BEKANNTE LIMITATION: manuelle UID-Wahl nicht implementiert
-      movingIndex: 0,           // Tool-Ergebnis (Quick Fix lit. c)
-      // movingIndex sollte laut Lehrfall 1 sein (lit. b mit DE-UID)
-      trianglePossible: true,   // bei movingIndex=0: Dreiecksgeschäft möglich
+      movingIndex: 1,           // Abs. 2: Abgangsland-UID (DE) genutzt → L2 bewegend
+      lieferortL1: 'DE',        // ruhend VOR Bewegung → DE
+      lieferortL2: 'DE',        // bewegte Lieferung startet in DE (Abgang)
+      trianglePossible: true,   // DE, AT, IT verschieden → Dreiecksgeschäft (kein movingIndex-Erfordernis)
       igLieferung: true,
-    },
-    knownLimitation: 'Manuelle UID-Wahl (DE-UID vs AT-UID) nicht implementiert → Tool wählt automatisch lit. c statt lit. b'
+    }
   },
 
   {
     id: 'LF-02c',
-    name: 'DE→AT(ich)→IT, Transport=ich, AT-UID (Ansässigkeit) → lit. b, Dreiecksgeschäft',
+    name: 'DE→AT(ich)→IT, Transport=ich, AT-UID (Ansässigkeit) → Grundregel Abs. 1, L1 bewegend',
     source: 'reihengeschaeft.at Beispiel 2c (Hauptfall)',
     company: 'EPROHA',
-    // EPROHA hat AT-UID (Ansässigkeit) und DE-UID → uidOverride: 'AT' → lit. b → L2 bewegend
-    // Dreiecksgeschäft DE-AT-IT möglich wenn L1 bewegend... aber lit. b → L2 bewegend
-    // Lehrfall: AT-UID mitgeteilt → L1 bewegend (Ansässigkeits-UID im dep-Land = lit. b → outgoing)
-    // ACHTUNG: dep=DE, home=AT, AT-UID ist NICHT dep-UID → lit. b → movingIndex=1 (L2 bewegend)
+    // dep=DE, home=AT. EPROHA teilt AT-UID mit = NICHT die Abgangsland-UID (DE).
+    // Art. 36a Abs. 2 greift nur bei mitgeteilter dep-UID → hier Grundregel Abs. 1:
+    // Eingangslieferung bewegt → movingIndex=0 (L1). Dreiecksgeschäft DE-AT-IT möglich.
     ctx: { s1:'DE', s2:'AT', s4:'IT', dep:'DE', dest:'IT', transport:'middle', uidOverride:'AT', mode:3 },
     expect: {
-      movingIndex: 1,           // lit. b: AT-UID (nicht dep-Land) → L2 bewegend
-      lieferortL1: 'DE',        // ruhend VOR Bewegung → DE
-      lieferortL2: 'DE',        // bewegte Lieferung startet in DE
-      trianglePossible: true,   // DE, AT, IT verschieden → Dreiecksgeschäft (L2 moving, dep=DE, B=AT, dest=IT)
-      igLieferung: true,        // L2 IG-Lieferung 0%
+      movingIndex: 0,           // Grundregel Abs. 1: AT-UID ≠ Abgangsland-UID → L1 bewegend
+      lieferortL1: 'DE',        // bewegte Lieferung startet in DE (Abgang)
+      lieferortL2: 'IT',        // ruhend NACH Bewegung → dest = IT
+      trianglePossible: true,   // DE, AT, IT verschieden → Dreiecksgeschäft
+      igLieferung: true,        // L1 IG-Lieferung 0%
     }
   },
 
@@ -7867,14 +7871,15 @@ const SMOKE_TESTS = [
     expect: { movingIndex:0, trianglePossible:true },
   },
 
-  // DG-02: movingIndex=1 (ich transportiere, AT-UID) → Dreiecksgeschäft MUSS true sein (war der LF-02c-Bug)
+  // DG-02: AT-UID ≠ Abgangsland-UID (DE) → Grundregel Abs. 1 → movingIndex=0 (L1 bewegend)
+  // Dreiecksgeschäft DE-AT-IT bleibt möglich (Art. 141: kein movingIndex-Erfordernis, Fix v2.6)
   {
     id: 'DG-02',
-    name: 'DE→AT(ich)→IT, Transport=ich, AT-UID (movingIndex=1) → Dreiecksgeschäft true',
-    source: 'Art. 141 MwStSystRL: kein movingIndex-Erfordernis (Fix v2.6)',
+    name: 'DE→AT(ich)→IT, Transport=ich, AT-UID (Grundregel, movingIndex=0) → Dreiecksgeschäft true',
+    source: 'Art. 36a Abs. 1 + Art. 141 MwStSystRL',
     company: 'EPROHA',
     ctx: { s1:'DE', s2:'AT', s4:'IT', dep:'DE', dest:'IT', transport:'middle', uidOverride:'AT', mode:3 },
-    expect: { movingIndex:1, trianglePossible:true },
+    expect: { movingIndex:0, trianglePossible:true },
   },
 
   // DG-03: Kunde transportiert → Dreiecksgeschäft false (Art. 141 lit. e: nur B oder C transportiert)
@@ -8135,16 +8140,18 @@ const SMOKE_TESTS = [
 
   {
     id: 'C037m-ALTB',
-    name: 'IT→EPROHA→DE(HU-UID)→HU, Transport=U3(middle2), HU-UID — lit. b, L3 bewegend',
-    source: 'reihengeschaeft.at C037m Alternative B: U3 tritt mit HU-UID auf → L3 bewegend → Registrierung HU für U3.',
+    name: 'IT→EPROHA→DE(HU-UID)→HU, Transport=U3(middle2), HU-UID → Grundregel Abs. 1 → L2 bewegend',
+    source: 'reihengeschaeft.at C037m Alternative B: U3 tritt mit HU-UID (dest, ≠ Abgangsland IT) auf.',
     company: 'EPROHA',
+    // U3 transportiert (chainIndex=2) und teilt HU-UID mit = NICHT die Abgangsland-UID (IT)
+    // → Art. 36a Abs. 2 greift nicht → Grundregel Abs. 1 → Eingangslieferung zu U3 = L2 bewegend.
     ctx: { s1:'IT', s2:'AT', s3:'DE', s4:'HU', dep:'IT', dest:'HU',
            transport:'middle2', uidOverride:'HU', mode:4, mePosition:2,
            vatIds:{AT:'ATU36513402', DE:'DE248554278', CH:'CHE-113.857.016 MWST', HU:'HU12345678'} },
-    knownLimitation: 'Registrierungspflicht HU trifft U3 (DE), nicht EPROHA (U2). Tool prüft nur Pflichten der aktiven Entity. movingIndex=2 und kein Dreiecksgeschäft sind korrekt.',
+    knownLimitation: 'Registrierungspflicht HU trifft U3 (DE), nicht EPROHA (U2). Tool prüft nur Pflichten der aktiven Entity. movingIndex=1 (Grundregel Abs. 1) und kein Dreiecksgeschäft (U3 hat dest-UID HU) sind korrekt.',
     expect: {
-      movingIndex: 2,           // lit. b (HU-UID) → L3 bewegend
-      trianglePossible: false,
+      movingIndex: 1,           // Grundregel Abs. 1: HU-UID ≠ Abgangsland-UID (IT) → L2 bewegend
+      trianglePossible: false,  // U3 hält HU-UID = dest → Art. 141 lit. a blockiert
     }
   },
 
@@ -9092,6 +9099,98 @@ function runOutputTests() {
   selectedTransport = savedTransport;
   window.lvDirect  = savedLvDirect;
   MY_VAT_IDS = COMPANIES[savedCompany].vatIds;
+
+  // ── QuickCheck-Smoke-Tests (K1: Transport-/UID-Durchreichung an Engine) ──
+  // buildQuickCheck() liest qcState; vorher sichern, nachher restaurieren.
+  const savedQc = { ...qcState };
+  // Felder: movingL1, triangle, l1Type/l1Sap, l2Type/l2Sap (optional). SAP-Codes/Typen
+  // gegen die Engine + reference-cases.md verifiziert (Code-Review 06/2026).
+  const QC_TESTS = [
+    // ── EU→EU: bewegte Lieferung + Dreieck je Transport ──
+    { id:'QC-01', name:'DE→EPROHA→IT Dreieck: L1 IG-Erwerb VE (Eingang), L2 IG-Lief./Dreieck AF (Ausgang) — nicht IC', company:'EPROHA', dep:'DE', dest:'IT', transport:'supplier', movingL1:true, triangle:true, l1Type:'ig-erwerb', l1Sap:'VE', l2Type:'ig-lieferung', l2Sap:'AF' },
+    { id:'QC-02', name:'DE→EPROHA→IT, Kunde holt ab → L2 bewegend (IG-Lief. ab DE = DH), kein Dreieck', company:'EPROHA', dep:'DE', dest:'IT', transport:'customer', movingL1:false, triangle:false, l1Type:'resting', l1Sap:'VD', l2Type:'ig-lieferung', l2Sap:'DH' },
+    { id:'QC-03', name:'DE→EPROHA→IT, ich (Heimat-UID) → Grundregel → L1 bewegend, Dreieck', company:'EPROHA', dep:'DE', dest:'IT', transport:'middle', movingL1:true, triangle:true },
+    { id:'QC-04', name:'IT→EPDE→DE, Kunde holt ab → L2 bewegend', company:'EPDE', dep:'IT', dest:'DE', transport:'customer', movingL1:false, triangle:false },
+    { id:'QC-05', name:'FR→EPDE→IT Dreieck: L1 IG-Erwerb DE = VH, L2 IG-Lief. DE = DH (EPDE ohne eigenen Dreieckscode → ic-exempt)', company:'EPDE', dep:'FR', dest:'IT', transport:'supplier', movingL1:true, triangle:true, l1Type:'ig-erwerb', l1Sap:'VH', l2Type:'ig-lieferung', l2Sap:'DH' },
+    { id:'QC-06', name:'AT→EPROHA→DE, Kunde holt ab → L2 IG-Lief. ab AT = AF; L1 ruhend V2', company:'EPROHA', dep:'AT', dest:'DE', transport:'customer', movingL1:false, triangle:false, l1Type:'resting', l1Sap:'V2', l2Type:'ig-lieferung', l2Sap:'AF' },
+    // ── Drittland: kein Dreieck (Bug #2), Ausfuhr folgt bewegter Lieferung (Bug #1), SAP aus Abgangsland (Bug #3) ──
+    { id:'QC-07', name:'DE→EPDE→CH, Lieferant → L1 Ausfuhr (Vorlief.), L2 ruhend CH, kein Dreieck', company:'EPDE', dep:'DE', dest:'CH', transport:'supplier', movingL1:true, triangle:false, l1Type:'export', l2Type:'resting' },
+    { id:'QC-08', name:'DE→EPROHA→CH, Kunde holt ab → L2 Ausfuhr ab DE = D0', company:'EPROHA', dep:'DE', dest:'CH', transport:'customer', movingL1:false, triangle:false, l2Type:'export', l2Sap:'D0' },
+    { id:'QC-09', name:'DE→EPDE→CH, Kunde holt ab → L2 Ausfuhr = G0', company:'EPDE', dep:'DE', dest:'CH', transport:'customer', movingL1:false, triangle:false, l2Type:'export', l2Sap:'G0' },
+    { id:'QC-10', name:'DE→EPDE→GB, Kunde holt ab → L2 Ausfuhr = G0, kein Dreieck', company:'EPDE', dep:'DE', dest:'GB', transport:'customer', movingL1:false, triangle:false, l2Type:'export', l2Sap:'G0' },
+    { id:'QC-11', name:'CH→EPROHA→CH, CH-Inland: beide Lieferungen CH-MWST 8,1 %', company:'EPROHA', dep:'CH', dest:'CH', transport:'supplier', l1Type:'ch-inland', l1Sap:'IB', l2Type:'ch-inland', l2Sap:'B5' },
+    { id:'QC-12', name:'CH→EPDE→DE, Einfuhr: L1 Import (EUSt), L2 ruhend DE = DS', company:'EPDE', dep:'CH', dest:'DE', transport:'supplier', movingL1:true, triangle:false, l1Type:'import', l2Type:'resting', l2Sap:'DS' },
+    // ── IT-Inland (dep=dest): kein Dreieck, IT-Reverse-Charge IC auf der Ausgangsrechnung ──
+    { id:'QC-13', name:'IT→EPROHA→IT IT-Inland: kein Dreieck, L2 IT-RC = IC (Ausgang); L1 ohne MWSKZ (EPROHA ohne IT-UID)', company:'EPROHA', dep:'IT', dest:'IT', transport:'supplier', triangle:false, l2Type:'rc', l2Sap:'IC' },
+    { id:'QC-14', name:'IT→EPDE→IT IT-Inland: L1 IT-RC Eingang = VI, L2 IT-RC Ausgang = IC (EPDE mit IT-UID)', company:'EPDE', dep:'IT', dest:'IT', transport:'supplier', triangle:false, l1Type:'rc', l1Sap:'VI', l2Type:'rc', l2Sap:'IC' },
+  ];
+  QC_TESTS.forEach(t => {
+    const errs = [];
+    try {
+      qcState.company = t.company; qcState.dep = t.dep; qcState.dest = t.dest; qcState.transport = t.transport; qcState.mode = '3p';
+      const r = buildQuickCheck();
+      if (t.movingL1 !== undefined && r.movingL1 !== t.movingL1) errs.push(`movingL1: erwartet ${t.movingL1}, erhalten ${r.movingL1}`);
+      if (t.triangle !== undefined && r.triangle !== t.triangle) errs.push(`triangle: erwartet ${t.triangle}, erhalten ${r.triangle}`);
+      if (t.l1Type !== undefined && r.l1?.type !== t.l1Type) errs.push(`L1.type: erwartet ${t.l1Type}, erhalten ${r.l1?.type}`);
+      if (t.l1Sap  !== undefined && r.l1?.sapCode !== t.l1Sap) errs.push(`L1.sapCode: erwartet ${t.l1Sap}, erhalten ${r.l1?.sapCode}`);
+      if (t.l2Type !== undefined && r.l2?.type !== t.l2Type) errs.push(`L2.type: erwartet ${t.l2Type}, erhalten ${r.l2?.type}`);
+      if (t.l2Sap  !== undefined && r.l2?.sapCode !== t.l2Sap) errs.push(`L2.sapCode: erwartet ${t.l2Sap}, erhalten ${r.l2?.sapCode}`);
+    } catch(e) { errs.push(`Exception: ${e.message}`); }
+    const ok = errs.length === 0;
+    if (ok) passed++; else failed++;
+    const card = document.createElement('div');
+    card.style.cssText = `background:#0c1222; border:1px solid ${ok ? '#1e3a2e' : '#3d1515'}; border-radius:8px; padding:12px 16px;`;
+    card.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><span>${ok ? '✅' : '❌'}</span>`
+      + `<div><span style="color:#64748b; font-size:0.7rem; font-family:var(--mono);">${t.id}</span>`
+      + `<span style="margin-left:8px; color:#e2e8f0; font-size:0.82rem; font-weight:600;">${t.name}</span></div></div>`
+      + (errs.length ? `<div style="margin-top:8px; padding-top:8px; border-top:1px solid #1e293b;">${errs.map(e=>`<div style="font-size:0.72rem; color:#f87171; padding:2px 0;">↳ ${e}</div>`).join('')}</div>` : '');
+    resultsEl.appendChild(card);
+  });
+
+  // ── QuickCheck 4-Parteien-Tests (Normalkette: 3 Lieferungen, 2 eigene Rechnungen) ──
+  // Felder: company, q4[4], mePos, transport, movingIndex, triangle, boxes[{role,type,sap?}].
+  // Werte gegen Engine verifiziert (Code-Review 06/2026). Box-Reihenfolge = L1,L2,L3.
+  const QC4_TESTS = [
+    { id:'QC4-01', name:'EPDE FR→DE→NL→IT, U2, Lieferant: L1 IG-Erwerb VH (Eingang), L2 IT-RC IC (Ausgang), L3 ruhend andere Parteien',
+      company:'EPDE', q4:['FR','DE','NL','IT'], mePos:2, transport:'supplier', movingIndex:0, triangle:true,
+      boxes:[{role:'in',type:'ig-erwerb',sap:'VH'},{role:'out',type:'rc',sap:'IC'},{role:'info',type:'resting-info'}] },
+    { id:'QC4-02', name:'EPDE FR→DE→NL→IT, U2, Kunde holt ab: bewegte L3 andere Parteien, L1/L2 ruhend in FR → Reg. FR',
+      company:'EPDE', q4:['FR','DE','NL','IT'], mePos:2, transport:'customer', movingIndex:2, triangle:false,
+      boxes:[{role:'in',type:'domestic'},{role:'out',type:'resting'},{role:'info',type:'moving-info'}], regRisk:'FR' },
+    { id:'QC4-03', name:'EPROHA DE→AT→NL→IT, U2, ich transportiere: L1 Eingang VD, L2 IG-Lieferung DH ab DE, L3 ruhend andere Parteien',
+      company:'EPROHA', q4:['DE','AT','NL','IT'], mePos:2, transport:'middle', movingIndex:1, triangle:true,
+      boxes:[{role:'in',type:'domestic',sap:'VD'},{role:'out',type:'ig-lieferung',sap:'DH'},{role:'info',type:'resting-info'}] },
+    { id:'QC4-04', name:'EPDE FR→PL→DE→IT, U3 (ich=C), Lieferant: L1 bewegt andere Parteien, L2 Eingang, L3 IT-RC IC (Ausgang)',
+      company:'EPDE', q4:['FR','PL','DE','IT'], mePos:3, transport:'supplier', movingIndex:0, triangle:true,
+      boxes:[{role:'info',type:'moving-info'},{role:'in',type:'domestic'},{role:'out',type:'rc',sap:'IC'}] },
+  ];
+  QC4_TESTS.forEach(t => {
+    const errs = [];
+    try {
+      qcState.company = t.company; qcState.q4 = t.q4.slice(); qcState.mePos = t.mePos; qcState.transport = t.transport; qcState.mode = '4p';
+      const r = buildQuickCheck4();
+      if (t.movingIndex !== undefined && r.movingIndex !== t.movingIndex) errs.push(`movingIndex: erwartet ${t.movingIndex}, erhalten ${r.movingIndex}`);
+      if (t.triangle   !== undefined && r.triangle !== t.triangle) errs.push(`triangle: erwartet ${t.triangle}, erhalten ${r.triangle}`);
+      if (t.regRisk    !== undefined && !r.regRisks.includes(t.regRisk)) errs.push(`regRisks fehlt ${t.regRisk}: ${r.regRisks.join(',')||'-'}`);
+      (t.boxes || []).forEach((exp, i) => {
+        const b = r.boxes[i];
+        if (!b) { errs.push(`Box L${i+1} fehlt`); return; }
+        if (exp.role && b.role !== exp.role) errs.push(`L${i+1}.role: erwartet ${exp.role}, erhalten ${b.role}`);
+        if (exp.type && b.type !== exp.type) errs.push(`L${i+1}.type: erwartet ${exp.type}, erhalten ${b.type}`);
+        if (exp.sap  && b.sapCode !== exp.sap) errs.push(`L${i+1}.sap: erwartet ${exp.sap}, erhalten ${b.sapCode}`);
+      });
+    } catch(e) { errs.push(`Exception: ${e.message}`); }
+    const ok = errs.length === 0;
+    if (ok) passed++; else failed++;
+    const card = document.createElement('div');
+    card.style.cssText = `background:#0c1222; border:1px solid ${ok ? '#1e3a2e' : '#3d1515'}; border-radius:8px; padding:12px 16px;`;
+    card.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><span>${ok ? '✅' : '❌'}</span>`
+      + `<div><span style="color:#64748b; font-size:0.7rem; font-family:var(--mono);">${t.id}</span>`
+      + `<span style="margin-left:8px; color:#e2e8f0; font-size:0.82rem; font-weight:600;">${t.name}</span></div></div>`
+      + (errs.length ? `<div style="margin-top:8px; padding-top:8px; border-top:1px solid #1e293b;">${errs.map(e=>`<div style="font-size:0.72rem; color:#f87171; padding:2px 0;">↳ ${e}</div>`).join('')}</div>` : '');
+    resultsEl.appendChild(card);
+  });
+  qcState = savedQc;
 
   summaryEl.style.display = 'block';
   summaryEl.style.background = failed === 0 ? '#052e16' : '#2d1515';
@@ -10177,7 +10276,7 @@ function renderTransport() {
 }
 
 
-// ── UID Override block (Art. 36a lit. a/b) ────────────────────────────
+// ── UID Override block (Art. 36a Abs. 1/2: Abgangsland-UID vs. übrige UID) ──
 function setUidOverride(country) {
   setState({ uidOverride: country });
   saveState();
@@ -10202,11 +10301,14 @@ function renderUidOverrideBlock() {
   }
 
   // Collect available UIDs
+  // Art. 36a Abs. 2: nur die Abgangsland-UID (dep) verschiebt die Bewegung auf die
+  // Ausgangslieferung; jede andere mitgeteilte UID lässt es bei der Grundregel
+  // (Abs. 1) → Eingangslieferung bewegt. dep-UID wird zuerst gelistet = sinnvolle Vorwahl.
   const opts = [];
-  if (MY_VAT_IDS[dep]) opts.push({ country: dep, uid: MY_VAT_IDS[dep], label: `${flag(dep)} ${cn(dep)}-UID — lit. a` });
-  if (MY_VAT_IDS[home] && home !== dep) opts.push({ country: home, uid: MY_VAT_IDS[home], label: `${flag(home)} ${cn(home)}-UID (Ansässigkeit) — lit. b` });
+  if (MY_VAT_IDS[dep]) opts.push({ country: dep, uid: MY_VAT_IDS[dep], label: `${flag(dep)} ${cn(dep)}-UID (Abgangsland) — Ausgangslieferung bewegt` });
+  if (MY_VAT_IDS[home] && home !== dep) opts.push({ country: home, uid: MY_VAT_IDS[home], label: `${flag(home)} ${cn(home)}-UID (Ansässigkeit) — Eingangslieferung bewegt` });
   Object.entries(MY_VAT_IDS).forEach(([c, uid]) => {
-    if (c !== dep && c !== home && c !== dest) opts.push({ country: c, uid, label: `${flag(c)} ${cn(c)}-UID — lit. b` });
+    if (c !== dep && c !== home && c !== dest) opts.push({ country: c, uid, label: `${flag(c)} ${cn(c)}-UID — Eingangslieferung bewegt` });
   });
 
   if (!opts.length) { $('uidOverrideSection').style.display = 'none'; return; }
@@ -10897,7 +10999,7 @@ function renderFlowDiagram() {
   const countries = getSelectedCountries();
   const n = countries.length;
   const meIdx = mePosition - 1;
-  const transIdx = ['A','B','C','D'].indexOf(selectedTransport);
+  const transIdx = ['A','B','C','D'].indexOf(getTransportLetter());
   const dep = countries[0], dest = countries[n-1];
 
   // Determine moving supply index from engine
@@ -11299,7 +11401,7 @@ function renderExpertLegal() {
   let supplies = [];
   try { const _ctx=buildCtx(); const _eng=VATEngine.run(_ctx); supplies = classifySuppliesNorm(_ctx, _eng.movingIndex); } catch(e) {}
   const countries = getSelectedCountries();
-  const transIdx = ['A','B','C','D'].indexOf(selectedTransport);
+  const transIdx = ['A','B','C','D'].indexOf(getTransportLetter());
 
   let h = `<div class="legal-block fade">
     <div class="legal-hdr">⚖️ Rechtsgrundlagen pro Lieferung</div>
@@ -11581,6 +11683,8 @@ function handleURLParams() {
     uidOverride: p.get('uid') || selectedUidOverride,
   });
   if (p.get('theme')) document.documentElement.setAttribute('data-theme', p.get('theme'));
+  // Hinweis: Die Länderkette (?countries=…) wird erst in init() NACH renderAll()
+  // angewandt — die cp-*-Selects existieren vorher noch nicht (H2).
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -11588,7 +11692,8 @@ function handleURLParams() {
 //  Eigener State, völlig unabhängig vom Haupt-Formular.
 // ═══════════════════════════════════════════════════════════════════════
 
-let qcState = { company: 'EPDE', dep: 'DE', dest: 'PL', transport: 'supplier', mode: '3p' };
+let qcState = { company: 'EPDE', dep: 'DE', dest: 'PL', transport: 'supplier', mode: '3p',
+                q4: ['FR', 'DE', 'NL', 'IT'], mePos: 2 };
 
 // Länder alphabetisch sortiert (EU-27 + CH + GB)
 const QC_COUNTRIES = EU.slice().sort((a, b) => a.name.localeCompare(b.name, 'de'));
@@ -11677,11 +11782,13 @@ function buildQuickCheck() {
   }
 
   // ── Engine-Kontext aufbauen ───────────────────────────────────────────
-  const transportMap = { supplier: 'A', middle: 'B', customer: 'C' };
+  // qcState.transport ist bereits kanonisch (supplier/middle/customer) — direkt
+  // durchreichen (die Engine vergleicht gegen Wörter, nicht Buchstaben). uidOverride
+  // erwartet ein Länderkürzel (Key in vatIds), kein UID-String → _triUid.country.
   const ctx = Object.freeze({
     mode: 3, s1: dep, s2: home, s3: dest, s4: dest, dep, dest,
-    transport: transportMap[transport],
-    uidOverride: _triUid.uid,
+    transport: transport,
+    uidOverride: _triUid.country,
     vatIds:         Object.freeze({ ...vatIds }),
     company, companyHome: home,
     establishments: Object.freeze([...(co.establishments || [])]),
@@ -11703,16 +11810,19 @@ function buildQuickCheck() {
   const l2IsRC   = _engS[1]?.vatTreatment === 'rc';
   const l2RCNote = _engS[1]?.rcBlockReason || null;
 
-  // ── Dreieck-Ergebnis (vor L1/L2, da Logik davon abhängt) ─────────────
-  const triangle           = eng.trianglePossible;
-  const triangleUidCountry = triangle ? _triUid.country : null;
-  const triangleUid        = triangle ? _triUid.uid : null;
-
   // ── Step 1: Bewegte Lieferung (aus Engine) ────────────────────────────
   const movingL1    = eng.movingIndex === 0;
   const art36aHint  = transport === 'middle' && !!vatIds[dep];
   const depIsThird  = ctx.isNonEU(dep);
   const destIsThird = ctx.isNonEU(dest);
+
+  // ── Dreieck-Ergebnis (vor L1/L2, da Logik davon abhängt) ─────────────
+  // Art. 141 MwStSystRL verlangt 3 EU-Mitgliedstaaten → bei Drittland (Ein-/Ausfuhr)
+  // niemals Dreiecksgeschäft. Die Hauptapp fängt das über das Drittland-Routing ab;
+  // der QuickCheck ruft die Engine direkt und muss hier selbst guarden.
+  const triangle           = eng.trianglePossible && !depIsThird && !destIsThird;
+  const triangleUidCountry = triangle ? _triUid.country : null;
+  const triangleUid        = triangle ? _triUid.uid : null;
 
   // ── Step 2+3: L1 (Eingangsrechnung — Lieferant → Company) ────────────
   const l1 = {};
@@ -11740,6 +11850,16 @@ function buildQuickCheck() {
     l1.sapNote  = 'EUSt-Bescheid dient als Vorsteuerbeleg';
     l1.reqs     = ['Zollanmeldung', 'EUSt-Bescheid als Vorsteuerbeleg', 'EORI-Nummer'];
     l1.regRisk  = null;
+  } else if (destIsThird && movingL1) {
+    // Bewegte L1 = Ausfuhr ins Drittland → Vorlieferant ist Exporteur (vgl. buildCHExportResult)
+    l1.type    = 'export';
+    l1.title   = `Ausfuhr nach ${_qcCountryName(dest)} (bewegte Lieferung)`;
+    l1.taxInfo = '0 % — steuerfreie Ausfuhr, Vorlieferant ist Exporteur';
+    l1.sapCode = null;   // Eingangsseite: 0%-Ausfuhrrechnung des Vorlieferanten, kein eigenes Out-Kennzeichen
+    l1.sapDesc = null;
+    l1.sapNote = `Vorlieferant (${_qcCountryName(dep)}) exportiert → Ausgangsvermerk als Beleg anfordern`;
+    l1.reqs    = [`UID Lieferant (${dep})`, 'Ausfuhrnachweis / Ausgangsvermerk', 'Kein Steuerausweis'];
+    l1.regRisk = null;
   } else if (movingL1) {
     // ig. Erwerb — Erwerb findet im Empfangsland (dest) statt; EPDE gibt dem Lieferanten dest-UID
     const hasDestUID  = !!vatIds[dest] || dest === home;
@@ -11804,46 +11924,50 @@ function buildQuickCheck() {
       'Kein EU-Recht anwendbar',
     ];
     l2.regRisk = hasUID ? null : 'CH';
-  } else if (destIsThird) {
-    const isCH = dest === 'CH';
-    const sapEntry = isCH
-      ? (SAP_TAX_MAP[company]?.['CH']?.['export'] || SAP_TAX_MAP[company]?.[home]?.['export'])
-      : SAP_TAX_MAP[company]?.[home]?.['export'];
+  } else if (destIsThird && !movingL1) {
+    // Bewegte L2 = Ausfuhr durch den Zwischenhändler. SAP-Kennzeichen aus dem
+    // Abgangsland (dort beginnt die Ausfuhr), nicht aus der Heimat (Bug #3).
+    const expCountry = vatIds[dep] ? dep : home;
+    const sapEntry = SAP_TAX_MAP[company]?.[expCountry]?.['export'];
     l2.type    = 'export';
     l2.title   = `Ausfuhr nach ${_qcCountryName(dest)} (Drittland)`;
     l2.taxInfo = '0 % — Ausfuhr steuerfrei';
     l2.sapCode = sapEntry?.out || (company === 'EPROHA' ? 'A0' : 'G0');
     l2.sapDesc = sapEntry?.desc || 'Ausfuhr 0 %';
-    l2.reqs    = [`UID ${company} (${_myUid(home)})`, 'Ausfuhrnachweise', 'Kein Steuerausweis', 'Zollanmeldung / EORI'];
+    l2.reqs    = [`UID ${company} (${_myUid(expCountry)})`, 'Ausfuhrnachweise', 'Kein Steuerausweis', 'Zollanmeldung / EORI'];
     l2.regRisk = null;
+  } else if (destIsThird && movingL1) {
+    // Ware bereits ins Drittland exportiert (Vorlieferant war Exporteur) → ruhende
+    // Lieferung im Drittland, lokales Recht maßgeblich, kein EU-Recht.
+    l2.type    = 'resting';
+    l2.title   = `Lokale Lieferung in ${_qcCountryName(dest)} (Drittland)`;
+    l2.taxInfo = `Lokales Recht ${_qcCountryName(dest)} — kein EU-Recht anwendbar`;
+    l2.sapCode = null;
+    l2.sapNote = `Ware bereits in ${_qcCountryName(dest)}: lokale Registrierung/Steuer prüfen`;
+    l2.reqs    = [`Lieferung nach lokalem ${_qcCountryName(dest)}-Recht`];
+    l2.regRisk = dest;
   } else if (!movingL1) {
-    // bewegte L2 → ig. Lieferung durch Company
-    const sapEntry = SAP_TAX_MAP[company]?.[home]?.['ic-exempt'];
+    // bewegte L2 → ig. Lieferung durch Company. SAP-Kennzeichen aus dem Abgangsland
+    // (dort beginnt die bewegte Lieferung), nicht aus der Heimat (Bug #3).
+    const igCountry = vatIds[dep] ? dep : home;
+    const sapEntry = SAP_TAX_MAP[company]?.[igCountry]?.['ic-exempt'];
     l2.type    = 'ig-lieferung';
     l2.title   = 'Steuerfreie EU-Lieferung (ig. Lieferung)';
     l2.taxInfo = '0 % — ig. Lieferung';
     l2.sapCode = sapEntry?.out || null;
     l2.sapDesc = sapEntry?.desc || null;
-    l2.reqs    = [`UID ${company} (${_myUid(home)})`, `UID Kunde (${dest})`, 'Hinweis auf Steuerfreiheit', 'Gelangensbestätigung / CMR'];
-    l2.regRisk = null;
+    l2.sapNote = sapEntry?.out ? null : `Kein SAP-Kennzeichen — ${company} hat keine ${_qcCountryName(dep)}-UID → Registrierung im Abgangsland erforderlich`;
+    l2.reqs    = [`UID ${company} (${_myUid(igCountry)})`, `UID Kunde (${dest})`, 'Hinweis auf Steuerfreiheit', 'Gelangensbestätigung / CMR'];
+    l2.regRisk = vatIds[dep] || dep === home ? null : dep;
   } else {
     // ruhende L2 → L1 ist die bewegte Lieferung → ruhende L2 immer im Empfangsland (dest)
-    if (l2IsRC) {
-      l2.type    = 'rc';
-      l2.title   = `Reverse Charge — ${_qcCountryName(dest)}`;
-      l2.taxInfo = '0 % — Steuerschuldner ist der Käufer (RC)';
-      l2.sapCode = SAP_TAX_MAP[company]?.[dest]?.['rc']?.out
-        || SAP_TAX_MAP[company]?.[home]?.['rc']?.out || null;
-      l2.reqs    = [
-        `UID ${company}`,
-        `UID Kunde (${dest})`,
-        '"Steuerschuldner ist der Leistungsempfänger"',
-      ];
-      l2.sapNote = l2RCNote;
-      l2.regRisk = null;
-    } else if (triangle) {
-      // Dreiecksgeschäft: ruhende L2 wird zur steuerfreien ig. Lieferung (§ 25b UStG)
-      const sapEntry = SAP_TAX_MAP[company]?.[triangleUidCountry]?.['ic-exempt']
+    // Reihenfolge: Dreieck gewinnt über die Engine-Basisklassifikation `rc`. Im echten
+    // ig. Dreieck (3 EU-Länder) ist die ruhende L2 die Dreieckslieferung (AF), NICHT das
+    // IT-Inlands-Reverse-Charge (IC). IC bleibt dem Inlandsfall dep=dest vorbehalten.
+    if (triangle) {
+      // Dreiecksgeschäft: ruhende L2 wird zur steuerfreien ig. Lieferung (§ 25b UStG) → AF
+      const sapEntry = SAP_TAX_MAP[company]?.[triangleUidCountry]?.['dreiecks']
+        || SAP_TAX_MAP[company]?.[triangleUidCountry]?.['ic-exempt']
         || SAP_TAX_MAP[company]?.[home]?.['ic-exempt'];
       l2.type      = 'ig-lieferung';
       l2.title     = 'Steuerfreie EU-Lieferung — Dreiecksgeschäft (ig. Lieferung)';
@@ -11860,6 +11984,19 @@ function buildQuickCheck() {
       ];
       l2.regRisk   = null;
       l2.isDreieck = true;
+    } else if (l2IsRC) {
+      l2.type    = 'rc';
+      l2.title   = `Reverse Charge — ${_qcCountryName(dest)}`;
+      l2.taxInfo = '0 % — Steuerschuldner ist der Käufer (RC)';
+      l2.sapCode = SAP_TAX_MAP[company]?.[dest]?.['rc']?.out
+        || SAP_TAX_MAP[company]?.[home]?.['rc']?.out || null;
+      l2.reqs    = [
+        `UID ${company}`,
+        `UID Kunde (${dest})`,
+        '"Steuerschuldner ist der Leistungsempfänger"',
+      ];
+      l2.sapNote = l2RCNote;
+      l2.regRisk = null;
     } else {
       const taxCountry = dest;
       const rate       = _qcRate(taxCountry);
@@ -11891,6 +12028,156 @@ function buildQuickCheck() {
   const regRisks = [...new Set([...engineRisks, ...sapRisks])];
 
   return { movingL1, l1, l2, triangle, triangleUidCountry, triangleUid, regRisks, art36aHint, dep, dest, company, home };
+}
+
+// ── QuickCheck 4-Parteien ─────────────────────────────────────────────────
+// Normalkette (keine Dreieck-AF-Überlagerung, Dreieck nur als Hinweis-Chip).
+// 4 Parteien → 3 Lieferungen L1(A→B)/L2(B→C)/L3(C→D). Die Engine markiert pro
+// Strecke iAmTheBuyer/iAmTheSeller → genau 2 davon sind meine Rechnungen
+// (Eingang/Ausgang), die dritte ist eine Fremdlieferung (nur Kontext).
+function _qcBox4(s, role, company, vatIds, home) {
+  const _myUid  = (c) => vatIds[c] || c;
+  const fromN   = _qcCountryName(s.from);
+  const toN     = _qcCountryName(s.to);
+  const pos     = s.placeOfSupply;
+  const t       = s.vatTreatment;
+  const b = { from:s.from, to:s.to, isMoving:s.isMoving, role,
+              type:'', title:'', taxInfo:'', sapCode:null, sapDesc:null, sapNote:null, reqs:[], regRisk:null };
+
+  // ── Lieferung anderer Parteien (Teil deines Reihengeschäfts, aber nicht deine
+  // Rechnung). Volle Klassifikation zeigen — nur kein eigenes SAP-Kennzeichen.
+  // Für die bewegte Strecke ist s.vatTreatment verlässlich (ic-exempt/export,
+  // unabhängig von "mir"); ruhende Fremdstrecken nur über Lieferort/Satz beschreiben.
+  if (role === 'info') {
+    b.title = `Lieferung ${fromN} → ${toN} (andere Parteien)`;
+    if (s.isMoving) {
+      b.type = 'moving-info';
+      b.taxInfo = t === 'export'
+        ? `bewegte Lieferung — Ausfuhr ins Drittland, steuerfrei (Lieferort ${_qcCountryName(pos)})`
+        : t === 'ic-exempt'
+          ? `bewegte Lieferung — steuerfreie ig. Lieferung (Lieferort ${_qcCountryName(pos)})`
+          : `bewegte Lieferung (Lieferort ${_qcCountryName(pos)})`;
+      b.reqs = ['Diese Strecke trägt die Warenbewegung der Kette'];
+    } else {
+      b.type = 'resting-info';
+      b.taxInfo = `ruhende Lieferung — steuerbar ${_qcRate(pos)} % ${_qcCountryName(pos)}`;
+      b.reqs = [`ruhende Lieferung, Lieferort ${_qcCountryName(pos)}`];
+    }
+    b.sapNote = 'Nicht deine Rechnung — keine eigene SAP-Buchung bei dir';
+    return b;
+  }
+
+  // ── Meine Eingangsrechnung (ich bin Käufer) ──
+  if (role === 'in') {
+    if (t === 'ic-exempt') {
+      // bewegter Einkauf = IG-Erwerb über Heimat-UID (VE/VH)
+      const e = SAP_TAX_MAP[company]?.[home]?.['ic-acquisition'];
+      b.type='ig-erwerb'; b.title='Innergem. Erwerb (IG-Erwerb)';
+      b.taxInfo='0 % — IG-Erwerb (Erwerbsteuer, netto 0)';
+      b.sapCode=e?.in||null; b.sapDesc=e?.desc||null;
+      b.reqs=[`UID ${company} (${_myUid(home)})`, `UID Lieferant (${s.from})`, 'Erwerbsbesteuerung + Vorsteuerabzug'];
+    } else if (t === 'rc') {
+      const e = SAP_TAX_MAP[company]?.[pos]?.['rc'] || SAP_TAX_MAP[company]?.[home]?.['rc'];
+      b.type='rc'; b.title=`Reverse Charge — ${_qcCountryName(pos)}`;
+      b.taxInfo='0 % — Steuerschuldner bist du (RC)';
+      b.sapCode=e?.in||null; b.sapDesc=e?.desc||null; b.sapNote=s.rcBlockReason||null;
+      b.reqs=[`UID ${company}`, `UID Lieferant (${s.from})`, '"Steuerschuldner ist der Leistungsempfänger"'];
+    } else {
+      const hasUID=!!vatIds[pos]||pos===home, rate=_qcRate(pos);
+      const e=SAP_TAX_MAP[company]?.[pos]?.['domestic']||SAP_TAX_MAP[company]?.[home]?.['domestic'];
+      b.type='domestic'; b.title=`Inländischer Einkauf — ${_qcCountryName(pos)} ${rate} %`;
+      b.taxInfo=`${rate} % ${pos}-MwSt (Vorsteuer)`;
+      b.sapCode=hasUID?(e?.in||null):null; b.sapDesc=hasUID?(e?.desc||null):null;
+      b.sapNote=hasUID?null:`Kein SAP-Kennzeichen — ${company} hat keine ${pos}-UID`;
+      b.reqs=[`Eingangsrechnung ${rate} % ${pos}-MwSt`, `UID ${company} (${_myUid(pos)})`];
+      b.regRisk=hasUID?null:pos;
+    }
+    return b;
+  }
+
+  // ── Meine Ausgangsrechnung (ich bin Verkäufer) ──
+  if (t === 'ic-exempt') {
+    const igCountry = vatIds[pos] ? pos : home;
+    const e = SAP_TAX_MAP[company]?.[igCountry]?.['ic-exempt'];
+    b.type='ig-lieferung'; b.title='Steuerfreie EU-Lieferung (ig. Lieferung)';
+    b.taxInfo='0 % — ig. Lieferung';
+    b.sapCode=e?.out||null; b.sapDesc=e?.desc||null;
+    b.sapNote=e?.out?null:`Kein SAP-Kennzeichen — ${company} hat keine ${_qcCountryName(pos)}-UID → Registrierung im Abgangsland`;
+    b.reqs=[`UID ${company} (${_myUid(igCountry)})`, `UID Kunde (${s.to})`, 'Hinweis auf Steuerfreiheit', 'Gelangensbestätigung / CMR'];
+    b.regRisk = vatIds[pos]||pos===home ? null : pos;
+  } else if (t === 'export') {
+    const expCountry = vatIds[pos] ? pos : home;
+    const e = SAP_TAX_MAP[company]?.[expCountry]?.['export'];
+    b.type='export'; b.title=`Ausfuhr nach ${_qcCountryName(s.to)} (Drittland)`;
+    b.taxInfo='0 % — Ausfuhr steuerfrei';
+    b.sapCode=e?.out||(company==='EPROHA'?'A0':'G0'); b.sapDesc=e?.desc||'Ausfuhr 0 %';
+    b.reqs=[`UID ${company} (${_myUid(expCountry)})`, 'Ausfuhrnachweise', 'Kein Steuerausweis', 'Zollanmeldung / EORI'];
+  } else if (t === 'rc') {
+    const e=SAP_TAX_MAP[company]?.[pos]?.['rc']||SAP_TAX_MAP[company]?.[home]?.['rc'];
+    b.type='rc'; b.title=`Reverse Charge — ${_qcCountryName(pos)}`;
+    b.taxInfo='0 % — Steuerschuldner ist der Käufer (RC)';
+    b.sapCode=e?.out||null; b.sapDesc=e?.desc||null; b.sapNote=s.rcBlockReason||null;
+    b.reqs=[`UID ${company}`, `UID Kunde (${s.to})`, '"Steuerschuldner ist der Leistungsempfänger"'];
+  } else {
+    const hasUID=!!vatIds[pos]||pos===home, rate=_qcRate(pos);
+    const e=SAP_TAX_MAP[company]?.[pos]?.['domestic']||SAP_TAX_MAP[company]?.[home]?.['domestic'];
+    const rcE=SAP_TAX_MAP[company]?.[pos]?.['rc'];
+    const effOut=e?.out??rcE?.out??null;
+    b.type='resting'; b.title=`Ruhende Lieferung — steuerpflichtig ${_qcCountryName(pos)} ${rate} %`;
+    b.taxInfo=`${rate} % ${pos}-MwSt`;
+    b.sapCode=hasUID?effOut:null; b.sapDesc=hasUID?(e?.out?e.desc:(rcE?.desc||e?.desc)):null;
+    b.sapNote=hasUID?null:`Kein SAP-Kennzeichen — ${company} hat keine ${pos}-UID`;
+    b.reqs=[`UID ${company} (${_myUid(pos)})`, `UID Kunde (${s.to})`, `Steuerbetrag ${rate} %`];
+    b.regRisk=hasUID?null:pos;
+  }
+  return b;
+}
+
+function buildQuickCheck4() {
+  const { company, transport, mePos } = qcState;
+  const co      = COMPANIES[company];
+  const vatIds  = co.vatIds;
+  const home    = co.home;
+  // Company sitzt an ihrer Heimat-UID an der gewählten Kettenposition (mePos).
+  const q4 = qcState.q4.slice();
+  q4[mePos - 1] = home;
+  const [s1, s2, s3, s4] = q4;
+  const dep = s1, dest = s4;
+
+  const ctx = Object.freeze({
+    mode: 4, s1, s2, s3, s4, dep, dest,
+    transport, mePosition: mePos, uidOverride: null,
+    vatIds:         Object.freeze({ ...vatIds }),
+    company, companyHome: home,
+    establishments: Object.freeze([...(co.establishments || [])]),
+    get parties() { return [s1, s2, s3, s4]; },
+    hasVatIn: (c) => !!vatIds[c],
+    vatIdIn:  (c) => vatIds[c] || null,
+    isNonEU:  (c) => !!getC(c)?.nonEU,
+    rateOf:   (c) => getC(c)?.std || 0,
+    nameOf:   (c) => cn(c),
+    flagOf:   (c) => flag(c),
+  });
+
+  const eng = VATEngine.run(ctx);
+  const supplies = eng.supplies || [];
+  const boxes = supplies.map(s => {
+    const role = s.iAmTheBuyer ? 'in' : s.iAmTheSeller ? 'out' : 'info';
+    return _qcBox4(s, role, company, vatIds, home);
+  });
+
+  const depIsThird  = ctx.isNonEU(dep);
+  const destIsThird = ctx.isNonEU(dest);
+  const triangle    = eng.trianglePossible && !depIsThird && !destIsThird; // nur Hinweis-Chip
+
+  const engineRisks = (eng.risks?.risks || [])
+    .filter(r => r.type === 'ic-acquisition-no-reg' || r.type === 'resting-buyer-no-uid')
+    .map(r => r.country);
+  const sapRisks = boxes.map(b => b.regRisk).filter(Boolean);
+  const regRisks = [...new Set([...engineRisks, ...sapRisks])];
+
+  return { mode4:true, mePos, boxes, parties:q4, movingIndex:eng.movingIndex,
+           triangle, regRisks, transport, company, home };
 }
 
 function renderQuickCheck() {
@@ -11946,6 +12233,8 @@ function renderQuickCheck() {
     const typeIcon = data.type === 'ig-erwerb' || data.type === 'ig-lieferung' ? '🟢'
       : data.type === 'import' ? '📦'
       : data.type === 'export' ? '✈️'
+      : data.type === 'moving-info' ? '🚚'
+      : data.type === 'resting-info' ? '⚪'
       : '🔶';
     return `
       <div class="qc-invoice-box">
@@ -11994,6 +12283,100 @@ function renderQuickCheck() {
     }).join('');
   })();
 
+  // ── 4-Parteien-Body ─────────────────────────────────────────────────────
+  const fourPBody = (() => {
+    if (mode !== '4p') return '';
+    const r4 = buildQuickCheck4();
+    const partyLabel = (i) =>
+      i === 0 ? 'Lieferant (A)'
+      : i === 1 ? (qcState.mePos === 2 ? `Ich · ${coLabel} (B)` : '1. ZH (B)')
+      : i === 2 ? (qcState.mePos === 3 ? `Ich · ${coLabel} (C)` : '2. ZH (C)')
+      : 'Kunde (D)';
+    // Länder-Felder: Me-Slot als Badge (Heimat-UID), übrige als Select
+    const partyFields = [0, 1, 2, 3].map(i => {
+      const isMe = i === qcState.mePos - 1;
+      if (isMe) {
+        return `<div class="qc-field">
+          <label class="qc-label">${partyLabel(i)}</label>
+          <div class="qc-me-badge">${FLAGS[r4.home] || ''} ${r4.home} · ${coLabel}</div>
+        </div>`;
+      }
+      const opts = QC_COUNTRIES.map(c =>
+        `<option value="${c.code}" ${c.code === qcState.q4[i] ? 'selected' : ''}>${FLAGS[c.code] || ''} ${c.name}</option>`).join('');
+      return `<div class="qc-field">
+        <label class="qc-label">${partyLabel(i)}</label>
+        <select class="qc-select" onchange="qcState.q4[${i}]=this.value;renderQuickCheck()">${opts}</select>
+      </div>`;
+    }).join('');
+    // Transport (engine-sichere Teilmenge: Lieferant / Ich / Kunde)
+    const t4Opts = [
+      { v:'supplier', l:'Lieferant' },
+      { v:'middle',   l:`Ich (${coLabel})` },
+      { v:'customer', l:'Kunde' },
+    ].map(o => `<label class="qc-radio-label">
+      <input type="radio" name="qc-transport" value="${o.v}" ${transport === o.v ? 'checked' : ''}
+             onchange="qcState.transport=this.value;renderQuickCheck()">${o.l}</label>`).join('');
+    // Registrierungs-Banner
+    const reg4 = r4.triangle ? '' : [...new Set(r4.regRisks)].map(c =>
+      `<div class="qc-reg-banner">
+        <div class="qc-reg-banner-title">🚨 Registrierungspflicht ${_qcCountryName(c)} (${_qcRate(c)} %)</div>
+        <div class="qc-reg-banner-body">${r4.company} hat keine ${c}-UID. Ohne Registrierung kann die betroffene Rechnung nicht korrekt ausgestellt werden.</div>
+      </div>`).join('');
+    // Rechnungsboxen (genau 2 sind meine, 1 ist Fremdlieferung)
+    const sideLabel = (role) => role === 'in' ? 'EINGANGSRECHNUNG' : role === 'out' ? 'AUSGANGSRECHNUNG' : 'LIEFERUNG · ANDERE PARTEIEN';
+    const boxesHtml = r4.boxes.map((b, i) =>
+      invoiceBox(sideLabel(b.role), `L${i + 1}: ${flag(b.from)} ${cn(b.from)} → ${flag(b.to)} ${cn(b.to)}`, b)).join('');
+    // Hinweise
+    const risks4 = [...new Set(r4.regRisks)];
+    const hints4 = (r4.triangle
+      ? [`✅ <strong>Dreiecksgeschäft</strong> nach Art. 141 MwStSystRL möglicherweise anwendbar (Hinweis — SAP-Überlagerung folgt in Ausbaustufe 2)`]
+      : risks4.length
+        ? risks4.map(c => `📋 Registrierung in <strong>${_qcCountryName(c)}</strong> beantragen oder Steuerberater konsultieren`)
+        : ['✅ Kein Registrierungsrisiko erkannt']
+    ).map(i => `<li>${i}</li>`).join('');
+
+    return `
+      <div class="qc-form">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span class="qc-label" style="margin:0;">Meine Position:</span>
+          <div class="qc-co-btns">
+            <button class="qc-co-btn ${qcState.mePos === 2 ? 'active' : ''}" onclick="qcState.mePos=2;renderQuickCheck()">U2 (B)</button>
+            <button class="qc-co-btn ${qcState.mePos === 3 ? 'active' : ''}" onclick="qcState.mePos=3;renderQuickCheck()">U3 (C)</button>
+          </div>
+          <span class="qc-label" style="margin:0 0 0 12px;">Gesellschaft:</span>
+          <div class="qc-co-btns">
+            <button class="qc-co-btn ${company === 'EPDE'   ? 'active' : ''}" onclick="qcState.company='EPDE';renderQuickCheck()">EPDE</button>
+            <button class="qc-co-btn ${company === 'EPROHA' ? 'active' : ''}" onclick="qcState.company='EPROHA';renderQuickCheck()">EPROHA</button>
+          </div>
+        </div>
+        <div class="qc-form-row">
+          ${partyFields}
+        </div>
+        <div class="qc-form-row">
+          <div class="qc-field">
+            <label class="qc-label">Transport</label>
+            <div class="qc-transport-row">${t4Opts}</div>
+          </div>
+          <button class="qc-check-btn" onclick="renderQuickCheck()">Prüfen</button>
+        </div>
+      </div>
+
+      <div class="qc-divider"></div>
+
+      ${reg4}
+
+      <div class="qc-moving-banner">📦 <strong>Bewegte Lieferung: L${r4.movingIndex + 1}</strong><span class="qc-moving-reason">${transport === 'supplier' ? 'Lieferant' : transport === 'customer' ? 'Kunde' : coLabel} organisiert Transport → L${r4.movingIndex + 1} bewegte Lieferung</span></div>
+
+      <div class="qc-grid qc-grid-3">
+        ${boxesHtml}
+      </div>
+
+      <div class="qc-hints-box">
+        <div class="qc-hints-hdr">ℹ️ Weitere Hinweise</div>
+        <ul class="qc-hints-list">${hints4}</ul>
+      </div>`;
+  })();
+
   el.innerHTML = `
     <div class="qc-wrap">
 
@@ -12004,7 +12387,7 @@ function renderQuickCheck() {
           <span class="qc-topbar-label">STRUKTUR</span>
           <div class="qc-topbar-btns">
             <button class="qc-topbar-btn ${mode === '3p' ? 'active' : ''}" onclick="qcState.mode='3p';renderQuickCheck()">3</button>
-            <button class="qc-topbar-btn qc-btn-soon ${mode === '4p' ? 'active' : ''}" onclick="renderQcComingSoon('4p')">4</button>
+            <button class="qc-topbar-btn ${mode === '4p' ? 'active' : ''}" onclick="qcState.mode='4p';renderQuickCheck()">4</button>
             <button class="qc-topbar-btn qc-btn-soon ${mode === 'lohn' ? 'active' : ''}" style="font-size:0.72rem;" onclick="renderQcComingSoon('lohn')">🔧 Lohnveredelung</button>
           </div>
           <span class="qc-topbar-phase">Phase 1</span>
@@ -12013,13 +12396,13 @@ function renderQuickCheck() {
       </div>
 
       <div id="qc-result-area">
-      ${mode !== '3p' ? `
+      ${mode === 'lohn' ? `
         <div class="qc-coming-soon">
           <span class="qc-coming-soon-icon">🚧</span>
           <div class="qc-coming-soon-title">${comingSoonLabels[mode]} — Coming Soon</div>
           <div class="qc-coming-soon-text">Dieser Modus wird nach Abnahme des 3-Parteien-Modus implementiert.</div>
         </div>
-      ` : `
+      ` : mode === '4p' ? fourPBody : `
       <div class="qc-form">
         <div class="qc-form-row">
           <div class="qc-field">
@@ -12089,14 +12472,6 @@ document.addEventListener('DOMContentLoaded', function init() {
   // URL params override saved state
   handleURLParams();
 
-  // Restore country pickers from saved state (must happen before renderAll)
-  if (saved && saved.countries) {
-    saved.countries.forEach((c, i) => {
-      const el = $(`cp-${i}`);
-      if (el) el.value = c;
-    });
-  }
-
   // Party buttons sync — use explicit IDs, not index (btn2 may be hidden)
   const modeToId = { 2:'partyBtn2', 3:'partyBtn3', 4:'partyBtn4', 5:'partyBtn5' };
   document.querySelectorAll('#partyTopRow .party-btn, #partyBtn5').forEach(b => b.classList.remove('active'));
@@ -12109,6 +12484,22 @@ document.addEventListener('DOMContentLoaded', function init() {
 
   $('versionBadge').textContent = `v${TOOL_VERSION}`;
   renderAll();
+
+  // Länderkette wiederherstellen — jetzt existieren die cp-*-Selects (von renderPickers).
+  // Priorität: URL (?countries=…, Share-Link H2) vor localStorage. Validierung gegen EU_MAP.
+  const urlCountries = (new URLSearchParams(location.search).get('countries') || '')
+    .split(',').map(c => c.trim().toUpperCase()).filter(c => EU_MAP[c]);
+  const restoreCountries = urlCountries.length ? urlCountries
+    : ((saved && Array.isArray(saved.countries)) ? saved.countries : []);
+  if (restoreCountries.length) {
+    let changed = false;
+    restoreCountries.forEach((c, i) => {
+      const el = $(`cp-${i}`);
+      if (el && EU_MAP[c] && el.value !== c) { el.value = c; changed = true; }
+    });
+    if (changed) onCC();   // Country-Change-Kaskade: Chain/Transport/UID/Result neu rendern
+  }
+
   showChangelogBanner();
   renderBMFBanner();
   initKeyboardNavigation();

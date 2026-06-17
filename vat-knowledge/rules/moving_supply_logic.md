@@ -13,10 +13,13 @@
 ### Manuelle Logik (uidOverride gesetzt)
 ```
 uidOverride && vatIds[uidOverride] !== undefined
-  → overrideIsDepUid = (uidOverride === dep && !resident && !hasDepVat)
-    → true:  lit. a → movingIndex = chainIndex - 1
-    → false: lit. b → movingIndex = chainIndex
+  → uidOverride === dep  → Ausnahme Abs. 2 → movingIndex = chainIndex
+                            (Abgangsland-UID → Ausgangslieferung bewegend)
+  → sonst                → Grundregel Abs. 1 → movingIndex = chainIndex - 1
+                            (Nicht-Abgangsland-UID → Eingangslieferung bewegend)
 ```
+> Maßgeblich ist NUR, ob die mitgeteilte UID die Abgangsland-UID (dep) ist.
+> Die Ansässigkeits-UID (sofern ≠ dep) führt zur Grundregel (Eingangslieferung).
 
 ### Automatische Logik (kein Override)
 ```
@@ -53,6 +56,7 @@ Jedes Ergebnis enthält exakt:
 
 ## transport='middle2' — 4-Parteien Sonderfall
 2. Zwischenhändler (C/U3) transportiert → `chainIndex=2`.
-lit. c Standard: keine dep-UID → L2 bewegend (`chainIndex-1=1`).
-lit. a: dep-UID mitgeteilt → movingIndex = chainIndex-1 = L2
-(nicht L3 — _applyQuickFix setzt movingIndex = chainIndex-1).
+- Grundregel (keine/Nicht-Abgangsland-UID): L2 bewegend (`movingIndex = chainIndex-1 = 1`).
+  Beispiel `C037m-ALTB` (HU-UID = dest, ≠ dep IT) → L2 bewegend.
+- Ausnahme Abs. 2 (Abgangsland-UID mitgeteilt): L3 bewegend (`movingIndex = chainIndex = 2`).
+  Beispiel `C037m-ALTA` (IT-UID = dep) → L3 bewegend.
