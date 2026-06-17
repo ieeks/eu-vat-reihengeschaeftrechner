@@ -28,7 +28,9 @@ Die gravierendsten Probleme sitzen an den **Nahtstellen zwischen UI und Engine**
 **Fix:** `transport: transport` direkt durchreichen (qcState ist bereits kanonisch) und `uidOverride: _triUid.country` übergeben. QC-Smoke-Test für `movingL1` je Transport-Variante ergänzen.
 
 ### K2 — `_applyQuickFix()`: lit.-a-Zweig unerreichbar, alle Overrides liefern dasselbe Ergebnis
-`app.js:860-892` — **verifiziert** · ⚠️ **Never-Touch-Zone (VATEngine)**
+`app.js:860-892` — **verifiziert** · ✅ **BEHOBEN (17.06.2026, Branch `claude/code-review-k2-feedback-vxnhj6`)**
+
+> **Resolution:** Override-Zweig auf Art. 36a Abs. 1/2 umgestellt (`uidOverride === dep` ⇒ `chainIndex`, sonst ⇒ `chainIndex - 1`), UID-Labels korrigiert, Auto-Vorwahl bevorzugt dep-UID. Verifiziert gegen `vat-knowledge/` (Widerspruch zwischen `LF-02c`/A2 und `LIT-C-01/02`/F2 aufgelöst zugunsten der Gesetzeslage). Tests `LF-02c`/`DG-02`/`LF-04c`/`C037m-ALTB`/`LF-02d` angepasst; 45 Lehrfall- + 8 Output-Tests grün. Doku (`art36a_mwstrl.md`, `moving_supply_logic.md`, `reference-cases.md`) angeglichen. Scope B (Guard-Lockerung für nicht gehaltene dep-UID, `LIT-C-02`) bewusst nicht umgesetzt — in der echten UI nicht erzeugbar.
 
 Der Guard (Z. 860) verlangt `vatIds[uidOverride] !== undefined`; die Bedingung `overrideIsDepUid` (Z. 863) verlangt gleichzeitig `uidOverride === dep && !hasDepVat` — Widerspruch, da `hasDepVat = !!vatIds[dep]`. Folge: Der lit.-a-Zweig ist **toter Code**, und **jeder** manuelle UID-Override landet im else-Zweig mit `movingIndex = chainIndex` (Ausgangslieferung bewegt) — unabhängig davon, welche UID gewählt wurde.
 

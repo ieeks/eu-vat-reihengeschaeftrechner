@@ -857,36 +857,38 @@ const VATEngine = (() => {
     const intermediaryResidentInDep = companyHome === dep;
 
     // ── Manuelle UID-Übersteurung (wenn User eine UID explizit gewählt hat) ──
+    // Art. 36a Abs. 2 MwStSystRL / § 3 Abs. 6a S. 4 UStG: NUR die dem Vorlieferanten
+    // mitgeteilte Abgangsland-UID (dep) verschiebt die Warenbewegung auf die
+    // Ausgangslieferung (chainIndex). Jede andere mitgeteilte UID (Ansässigkeits-/
+    // dest-/Dritt-UID) lässt es bei der Grundregel Abs. 1 → Eingangslieferung
+    // bewegt (chainIndex-1).
     if (uidOverride && vatIds[uidOverride] !== undefined) {
-      // lit. a: dep-UID mitgeteilt, aber WEDER ansässig NOCH registriert in dep.
-      // Hat der Zwischenhändler eine echte dep-Registrierung → lit. b (nicht lit. a).
-      const overrideIsDepUid = uidOverride === dep && !intermediaryResidentInDep && !hasDepVat;
-      if (overrideIsDepUid) {
-        // Gewählte UID = dep-Land, nicht ansässig dort → lit. a
-        const movingIndex = Math.max(0, chainIndex - 1);
+      if (uidOverride === dep) {
+        // Abgangsland-UID mitgeteilt → Ausnahme Abs. 2 → Ausgangslieferung bewegt
+        const movingIndex = chainIndex;
         return {
           movingIndex,
-          rationale: `Quick Fix (Art. 36a Abs. 2 lit. a): ${label} teilt Vorlieferant ${ctx.nameOf(dep)}-UID (${vatIds[dep]}) mit — nicht ansässig in ${ctx.nameOf(dep)} → L${movingIndex+1} bewegte Lieferung. <em style="color:var(--teal)">[Manuelle Wahl]</em>`,
-          legalBasis: 'Art. 36a Abs. 2 lit. a MwStSystRL / § 3 Abs. 6a S. 4 Nr. 1 UStG / BMF 25.04.2019',
+          rationale: `Quick Fix (Art. 36a Abs. 2): ${label} teilt dem Vorlieferanten die Abgangsland-UID ${ctx.nameOf(dep)} (${vatIds[dep]}) mit → L${movingIndex+1} bewegte Lieferung. <em style="color:var(--teal)">[Manuelle Wahl]</em>`,
+          legalBasis: 'Art. 36a Abs. 2 MwStSystRL / § 3 Abs. 6a S. 4 Nr. 2 UStG / BMF 25.04.2019',
           quickFixApplied: true, quickFixVariant: 'departure-id',
           vatIdUsed: vatIds[dep], vatIdCountry: dep,
           manualOverride: true,
-          euroTyreNote: 'EuGH C-430/09 Euro Tyre: Zeitpunkt des Verfügungsmachtsübergangs entscheidend.',
-          kreuzmayerNote: 'EuGH C-628/16 Kreuzmayr: Falsche UID-Angaben entziehen dem Vorlieferanten den Vertrauensschutz.',
+          euroTyreNote: 'EuGH C-430/09 Euro Tyre: Abgangsland-UID des Zwischenhändlers → Transport gehört zur Ausgangslieferung.',
+          kreuzmayerNote: 'EuGH C-628/16 Kreuzmayr: Sorgfalt bei UID-Kommunikation erforderlich.',
         };
       } else {
-        // Gewählte UID ≠ dep-Land, oder Ansässigkeits-UID → lit. b
-        const movingIndex = chainIndex;
+        // Nicht-Abgangsland-UID (Ansässigkeits-/dest-/Dritt-UID) → Grundregel Abs. 1
+        // → Eingangslieferung bewegt, keine Registrierungspflicht im Abgangsland.
+        const movingIndex = Math.max(0, chainIndex - 1);
         const uidLabel = `${ctx.nameOf(uidOverride)}-UID (${vatIds[uidOverride]}${uidOverride === companyHome ? ', Ansässigkeit' : ''})`;
         return {
           movingIndex,
-          rationale: `Quick Fix (Art. 36a Abs. 2 lit. b): ${label} teilt Vorlieferant ${uidLabel} mit → L${movingIndex+1} bewegte Lieferung. <em style="color:var(--teal)">[Manuelle Wahl]</em>`,
-          legalBasis: 'Art. 36a Abs. 2 lit. b MwStSystRL / § 3 Abs. 6a S. 4 Nr. 2 UStG / BMF 25.04.2019',
-          quickFixApplied: true, quickFixVariant: 'dest-or-other-id',
+          rationale: `Grundregel (Art. 36a Abs. 1): ${label} teilt ${uidLabel} mit — keine Abgangsland-UID (${ctx.nameOf(dep)}) → L${movingIndex+1} bewegte Lieferung. <em style="color:var(--teal)">[Manuelle Wahl]</em>`,
+          legalBasis: 'Art. 36a Abs. 1 MwStSystRL / § 3 Abs. 6a S. 4 UStG / BMF 25.04.2019',
+          quickFixApplied: false, quickFixVariant: 'lit-c',
           vatIdUsed: vatIds[uidOverride], vatIdCountry: uidOverride,
           manualOverride: true,
-          euroTyreNote: 'EuGH C-430/09 Euro Tyre: Ansässigkeits-UID des Zwischenhändlers → Transport gehört zur Ausgangslieferung.',
-          kreuzmayerNote: 'EuGH C-628/16 Kreuzmayr: Sorgfalt bei UID-Kommunikation erforderlich.',
+          euroTyreNote: 'EuGH C-430/09 Euro Tyre: Ohne Abgangsland-UID greift die Grundregel – Transport gehört zur Eingangslieferung.',
         };
       }
     }
@@ -7635,17 +7637,18 @@ const SMOKE_TESTS = [
 
   {
     id: 'LF-04c',
-    name: 'IT→AT(ich)→DE→HU, Transport=ich, AT-UID (Ansässigkeit) → lit. b → L2 bewegend',
+    name: 'IT→AT(ich)→DE→HU, Transport=ich, AT-UID (Ansässigkeit) → Grundregel Abs. 1 → L1 bewegend',
     source: 'reihengeschaeft.at 4-Parteien Beispiel (Dok 10)',
     company: 'EPROHA',
-    // Lehrfall Dok 10: U2 tritt mit Ansässigkeits-UID auf → lit. b → L2 bewegend
-    // EPROHA hat keine IT-UID (dep), aber AT-UID (Ansässigkeit) → uidOverride:'AT' → lit. b
+    // dep=IT, EPROHA hält keine IT-UID. Mitgeteilt wird AT-UID (Ansässigkeit) = NICHT
+    // die Abgangsland-UID → Art. 36a Abs. 2 greift nicht → Grundregel Abs. 1:
+    // Eingangslieferung bewegt → movingIndex=0 (L1).
     ctx: { s1:'IT', s2:'AT', s3:'DE', s4:'HU', dep:'IT', dest:'HU', transport:'middle', uidOverride:'AT', mode:4 },
     expect: {
-      movingIndex: 1,           // lit. b: AT-UID (Ansässigkeit, nicht dep IT) → L2 bewegend
+      movingIndex: 0,           // Grundregel Abs. 1: AT-UID ≠ Abgangsland-UID (IT) → L1 bewegend
       igLieferung: true,
     },
-    knownLimitation: 'Lehrfall Dok 10 beschreibt IT-UID-Szenario (anderen Erwerber). Tool kann AT-UID wählen → ebenfalls lit. b → L2 bewegend. Steuerrechtlich äquivalent.'
+    knownLimitation: 'Lehrfall Dok 10 beschreibt das IT-UID-Szenario (dep-UID → L2 bewegend). EPROHA hält keine IT-UID; mit AT-UID greift die Grundregel → L1 bewegend (steuerrechtlich korrekt für die AT-UID-Wahl).'
   },
 
   {
@@ -7703,47 +7706,37 @@ const SMOKE_TESTS = [
 
   {
     id: 'LF-02d',
-    name: 'DE→AT(ich)→IT, Transport=ich, DE-UID → L2 bewegend, Reg. in DE',
+    name: 'DE→AT(ich)→IT, Transport=ich, DE-UID (Abgangsland) → Abs. 2 → L2 bewegend',
     source: 'reihengeschaeft.at Beispiel 2d',
     company: 'EPROHA',
-    // Besonderheit: U2 tritt mit DE-UID auf → lit. b → L2 bewegend, kein Dreiecksgeschäft
-    // Im Tool: Transport=middle + EPROHA hat DE-UID → Quick Fix lit. b greift
-    // da EPROHA DE-UID hat und dep=DE (Ansässigkeits-UID ≠ dep → Quick Fix lit. a/c)
-    // EPROHA ist ansässig in AT, hat aber DE-UID → dep=DE, home=AT
-    // Quick Fix lit. c: middle transportiert + hat dep-UID (DE) aber nicht ansässig in dep → L1 bewegend
-    // ABER Beispiel 2d sagt: DE-UID verwendet → L2 bewegend (lit. b)
-    // → Konflikt: Tool kann UID-Wahl nicht manuell steuern
-    // → Dieser Test dokumentiert die bekannte Limitation
+    // dep=DE, home=AT. EPROHA hält die DE-UID (Abgangsland) und nutzt sie automatisch
+    // (kein Override): Art. 36a Abs. 2 → Ausgangslieferung bewegt → movingIndex=1 (L2).
+    // Entspricht dem Lehrfall 2d (DE-UID → L2 bewegend).
     ctx: { s1:'DE', s2:'AT', s4:'IT', dep:'DE', dest:'IT', transport:'middle', mode:3 },
     expect: {
-      // Tool wählt automatisch Quick Fix lit. c (EPROHA hat DE-UID, nicht ansässig in DE)
-      // → movingIndex=0 (L1 bewegend) — abweichend vom Lehrfall (movingIndex=1)
-      // Lehrfall erwartet movingIndex=1, Tool liefert movingIndex=0
-      // BEKANNTE LIMITATION: manuelle UID-Wahl nicht implementiert
-      movingIndex: 0,           // Tool-Ergebnis (Quick Fix lit. c)
-      // movingIndex sollte laut Lehrfall 1 sein (lit. b mit DE-UID)
-      trianglePossible: true,   // bei movingIndex=0: Dreiecksgeschäft möglich
+      movingIndex: 1,           // Abs. 2: Abgangsland-UID (DE) genutzt → L2 bewegend
+      lieferortL1: 'DE',        // ruhend VOR Bewegung → DE
+      lieferortL2: 'DE',        // bewegte Lieferung startet in DE (Abgang)
+      trianglePossible: true,   // DE, AT, IT verschieden → Dreiecksgeschäft (kein movingIndex-Erfordernis)
       igLieferung: true,
-    },
-    knownLimitation: 'Manuelle UID-Wahl (DE-UID vs AT-UID) nicht implementiert → Tool wählt automatisch lit. c statt lit. b'
+    }
   },
 
   {
     id: 'LF-02c',
-    name: 'DE→AT(ich)→IT, Transport=ich, AT-UID (Ansässigkeit) → lit. b, Dreiecksgeschäft',
+    name: 'DE→AT(ich)→IT, Transport=ich, AT-UID (Ansässigkeit) → Grundregel Abs. 1, L1 bewegend',
     source: 'reihengeschaeft.at Beispiel 2c (Hauptfall)',
     company: 'EPROHA',
-    // EPROHA hat AT-UID (Ansässigkeit) und DE-UID → uidOverride: 'AT' → lit. b → L2 bewegend
-    // Dreiecksgeschäft DE-AT-IT möglich wenn L1 bewegend... aber lit. b → L2 bewegend
-    // Lehrfall: AT-UID mitgeteilt → L1 bewegend (Ansässigkeits-UID im dep-Land = lit. b → outgoing)
-    // ACHTUNG: dep=DE, home=AT, AT-UID ist NICHT dep-UID → lit. b → movingIndex=1 (L2 bewegend)
+    // dep=DE, home=AT. EPROHA teilt AT-UID mit = NICHT die Abgangsland-UID (DE).
+    // Art. 36a Abs. 2 greift nur bei mitgeteilter dep-UID → hier Grundregel Abs. 1:
+    // Eingangslieferung bewegt → movingIndex=0 (L1). Dreiecksgeschäft DE-AT-IT möglich.
     ctx: { s1:'DE', s2:'AT', s4:'IT', dep:'DE', dest:'IT', transport:'middle', uidOverride:'AT', mode:3 },
     expect: {
-      movingIndex: 1,           // lit. b: AT-UID (nicht dep-Land) → L2 bewegend
-      lieferortL1: 'DE',        // ruhend VOR Bewegung → DE
-      lieferortL2: 'DE',        // bewegte Lieferung startet in DE
-      trianglePossible: true,   // DE, AT, IT verschieden → Dreiecksgeschäft (L2 moving, dep=DE, B=AT, dest=IT)
-      igLieferung: true,        // L2 IG-Lieferung 0%
+      movingIndex: 0,           // Grundregel Abs. 1: AT-UID ≠ Abgangsland-UID → L1 bewegend
+      lieferortL1: 'DE',        // bewegte Lieferung startet in DE (Abgang)
+      lieferortL2: 'IT',        // ruhend NACH Bewegung → dest = IT
+      trianglePossible: true,   // DE, AT, IT verschieden → Dreiecksgeschäft
+      igLieferung: true,        // L1 IG-Lieferung 0%
     }
   },
 
@@ -7867,14 +7860,15 @@ const SMOKE_TESTS = [
     expect: { movingIndex:0, trianglePossible:true },
   },
 
-  // DG-02: movingIndex=1 (ich transportiere, AT-UID) → Dreiecksgeschäft MUSS true sein (war der LF-02c-Bug)
+  // DG-02: AT-UID ≠ Abgangsland-UID (DE) → Grundregel Abs. 1 → movingIndex=0 (L1 bewegend)
+  // Dreiecksgeschäft DE-AT-IT bleibt möglich (Art. 141: kein movingIndex-Erfordernis, Fix v2.6)
   {
     id: 'DG-02',
-    name: 'DE→AT(ich)→IT, Transport=ich, AT-UID (movingIndex=1) → Dreiecksgeschäft true',
-    source: 'Art. 141 MwStSystRL: kein movingIndex-Erfordernis (Fix v2.6)',
+    name: 'DE→AT(ich)→IT, Transport=ich, AT-UID (Grundregel, movingIndex=0) → Dreiecksgeschäft true',
+    source: 'Art. 36a Abs. 1 + Art. 141 MwStSystRL',
     company: 'EPROHA',
     ctx: { s1:'DE', s2:'AT', s4:'IT', dep:'DE', dest:'IT', transport:'middle', uidOverride:'AT', mode:3 },
-    expect: { movingIndex:1, trianglePossible:true },
+    expect: { movingIndex:0, trianglePossible:true },
   },
 
   // DG-03: Kunde transportiert → Dreiecksgeschäft false (Art. 141 lit. e: nur B oder C transportiert)
@@ -8135,16 +8129,18 @@ const SMOKE_TESTS = [
 
   {
     id: 'C037m-ALTB',
-    name: 'IT→EPROHA→DE(HU-UID)→HU, Transport=U3(middle2), HU-UID — lit. b, L3 bewegend',
-    source: 'reihengeschaeft.at C037m Alternative B: U3 tritt mit HU-UID auf → L3 bewegend → Registrierung HU für U3.',
+    name: 'IT→EPROHA→DE(HU-UID)→HU, Transport=U3(middle2), HU-UID → Grundregel Abs. 1 → L2 bewegend',
+    source: 'reihengeschaeft.at C037m Alternative B: U3 tritt mit HU-UID (dest, ≠ Abgangsland IT) auf.',
     company: 'EPROHA',
+    // U3 transportiert (chainIndex=2) und teilt HU-UID mit = NICHT die Abgangsland-UID (IT)
+    // → Art. 36a Abs. 2 greift nicht → Grundregel Abs. 1 → Eingangslieferung zu U3 = L2 bewegend.
     ctx: { s1:'IT', s2:'AT', s3:'DE', s4:'HU', dep:'IT', dest:'HU',
            transport:'middle2', uidOverride:'HU', mode:4, mePosition:2,
            vatIds:{AT:'ATU36513402', DE:'DE248554278', CH:'CHE-113.857.016 MWST', HU:'HU12345678'} },
-    knownLimitation: 'Registrierungspflicht HU trifft U3 (DE), nicht EPROHA (U2). Tool prüft nur Pflichten der aktiven Entity. movingIndex=2 und kein Dreiecksgeschäft sind korrekt.',
+    knownLimitation: 'Registrierungspflicht HU trifft U3 (DE), nicht EPROHA (U2). Tool prüft nur Pflichten der aktiven Entity. movingIndex=1 (Grundregel Abs. 1) und kein Dreiecksgeschäft (U3 hat dest-UID HU) sind korrekt.',
     expect: {
-      movingIndex: 2,           // lit. b (HU-UID) → L3 bewegend
-      trianglePossible: false,
+      movingIndex: 1,           // Grundregel Abs. 1: HU-UID ≠ Abgangsland-UID (IT) → L2 bewegend
+      trianglePossible: false,  // U3 hält HU-UID = dest → Art. 141 lit. a blockiert
     }
   },
 
@@ -10177,7 +10173,7 @@ function renderTransport() {
 }
 
 
-// ── UID Override block (Art. 36a lit. a/b) ────────────────────────────
+// ── UID Override block (Art. 36a Abs. 1/2: Abgangsland-UID vs. übrige UID) ──
 function setUidOverride(country) {
   setState({ uidOverride: country });
   saveState();
@@ -10202,11 +10198,14 @@ function renderUidOverrideBlock() {
   }
 
   // Collect available UIDs
+  // Art. 36a Abs. 2: nur die Abgangsland-UID (dep) verschiebt die Bewegung auf die
+  // Ausgangslieferung; jede andere mitgeteilte UID lässt es bei der Grundregel
+  // (Abs. 1) → Eingangslieferung bewegt. dep-UID wird zuerst gelistet = sinnvolle Vorwahl.
   const opts = [];
-  if (MY_VAT_IDS[dep]) opts.push({ country: dep, uid: MY_VAT_IDS[dep], label: `${flag(dep)} ${cn(dep)}-UID — lit. a` });
-  if (MY_VAT_IDS[home] && home !== dep) opts.push({ country: home, uid: MY_VAT_IDS[home], label: `${flag(home)} ${cn(home)}-UID (Ansässigkeit) — lit. b` });
+  if (MY_VAT_IDS[dep]) opts.push({ country: dep, uid: MY_VAT_IDS[dep], label: `${flag(dep)} ${cn(dep)}-UID (Abgangsland) — Ausgangslieferung bewegt` });
+  if (MY_VAT_IDS[home] && home !== dep) opts.push({ country: home, uid: MY_VAT_IDS[home], label: `${flag(home)} ${cn(home)}-UID (Ansässigkeit) — Eingangslieferung bewegt` });
   Object.entries(MY_VAT_IDS).forEach(([c, uid]) => {
-    if (c !== dep && c !== home && c !== dest) opts.push({ country: c, uid, label: `${flag(c)} ${cn(c)}-UID — lit. b` });
+    if (c !== dep && c !== home && c !== dest) opts.push({ country: c, uid, label: `${flag(c)} ${cn(c)}-UID — Eingangslieferung bewegt` });
   });
 
   if (!opts.length) { $('uidOverrideSection').style.display = 'none'; return; }

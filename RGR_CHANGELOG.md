@@ -2,6 +2,19 @@
 
 ---
 
+## v4.3 · 17.06.2026 — Code-Review K2
+
+### Fix · `_applyQuickFix()` UID-Override: Abgangsland-UID-Logik korrigiert (Art. 36a)
+
+- **Bug (K2, CODE_REVIEW_2026-06):** Im Override-Zweig von `_applyQuickFix()` war der `lit. a`-Pfad durch einen widersprüchlichen Guard (`uidOverride === dep && !hasDepVat`, bei gleichzeitig erzwungenem `vatIds[uidOverride]`) **toter Code**. Jeder manuelle UID-Override landete im else-Zweig mit `movingIndex = chainIndex` — d. h. **jede** mitgeteilte UID verschob die Bewegung fälschlich auf die Ausgangslieferung. Da der UID-Block (`renderUidOverrideBlock`) beim Render automatisch `opts[0]` als Override setzt, feuerte der Bug bei transportierenden Zwischenhändlern ohne Abgangsland-UID **ohne jeden Klick** (z. B. `IT→EPDE(DE)→DE`, `FR→EPDE(DE)→IT`) → vorgetäuschte Registrierungspflicht im Abgangsland.
+- **Fix (Engine, gesetzeskonform):** Override-Zweig folgt jetzt Art. 36a Abs. 1/2: `uidOverride === dep` → Ausnahme Abs. 2 → `chainIndex` (Ausgangslieferung); jede andere gehaltene UID → Grundregel Abs. 1 → `chainIndex - 1` (Eingangslieferung). Automatik-Pfad unverändert (war bereits korrekt).
+- **UI:** UID-Auswahl-Labels von „lit. a / lit. b" auf die tatsächliche Wirkung umgestellt (`… (Abgangsland) — Ausgangslieferung bewegt` / `… — Eingangslieferung bewegt`); dep-UID bleibt sinnvolle Vorwahl.
+- **Tests:** `LF-02c`, `DG-02`, `LF-04c` (→ L1 bewegend), `C037m-ALTB` (→ L2 bewegend), `LF-02d` (Code liefert jetzt rechtlich korrektes L2, Limitation entfernt) angepasst. Alle 45 Lehrfall-Tests + 8 Output-Tests grün.
+- **Doku:** `art36a_mwstrl.md`, `moving_supply_logic.md`, `reference-cases.md` (A2, B2/Alt B, E2-Matrix) an die korrekte Auslegung angeglichen.
+- **Bewusst offen (knownLimitation):** `LIT-C-02` — bewusst gewählte dep-UID greift nur bei vorhandener `vatIds`-Registrierung; in der echten UI nicht erzeugbar (Scope B nicht umgesetzt).
+
+---
+
 ## v4.3 · 26.05.2026 — Session 28
 
 ### Fix · Vergleich-Tab „lädt nicht" außerhalb 3P-grenzüberschreitend

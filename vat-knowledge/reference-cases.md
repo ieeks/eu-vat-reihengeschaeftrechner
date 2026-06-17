@@ -63,30 +63,35 @@
 
 ---
 
-### A2 · DE → AT → IT · Transport: B (EPROHA), mit AT-UID (lit. b)
+### A2 · DE → AT → IT · Transport: B (EPROHA), mit AT-UID (Grundregel Abs. 1)
 
 **Testfall:** LF-02c, DG-02 · **Quelle:** reihengeschaeft.at Beispiel 2c
 
 ```
 🇩🇪 DE ──L1──▶ 🇦🇹 AT/EPROHA ──L2──▶ 🇮🇹 IT
                   B holt ab
-                  AT-UID mitgeteilt → lit. b
+                  AT-UID mitgeteilt (≠ Abgangsland DE) → Grundregel Abs. 1
 ```
 
-**Transportzuordnung:** B transportiert, uidOverride='AT' (Ansässigkeits-UID ≠ dep DE)
-→ Quick Fix lit. b → **L2 ist bewegend** (movingIndex=1)
+**Transportzuordnung:** B transportiert, uidOverride='AT' (Ansässigkeits-UID ≠ dep DE).
+Da NICHT die Abgangsland-UID (DE) mitgeteilt wird, greift Art. 36a Abs. 2 nicht →
+**Grundregel Abs. 1 → L1 ist bewegend** (movingIndex=0).
 
 | Lieferung | Ort | Behandlung | EPROHA-Eingang (Käufer) | EPROHA-Ausgang (Verkäufer) |
 |---|---|---|---|---|
-| L1 · DE→AT | 🇩🇪 DE (ruhend) | Inlandslieferung DE 19% | DE-Domestic · **SAP VD** | — |
-| L2 · AT→IT | 🇩🇪 DE (Abgang) | IG-Lieferung 0% aus DE | — | IG-Lieferung DE · **SAP DH** |
+| L1 · DE→IT | 🇩🇪 DE (Abgang) | IG-Lieferung 0% aus DE | IG-Erwerb (Dreieck) · **SAP VE** ¹ | — |
+| L2 · AT→IT | 🇮🇹 IT (ruhend) | Dreiecksgeschäft 0% ¹ | — | Dreiecksgeschäft · **SAP AF** ¹ |
 
-**Dreiecksgeschäft:** ✅ möglich (auch bei movingIndex=1 — Fix v2.6, Art. 141 kein movingIndex-Erfordernis)
+¹ Dreiecksgeschäft DE-AT-IT: EPROHA tritt mit AT-UID auf, meldet ZM aus AT,
+  IT-Kunde schuldet die Erwerbsteuer. Keine IT-Registrierung für EPROHA.
 
-**ZM:** EPROHA meldet L2 aus DE (DE-UID)
+**Dreiecksgeschäft:** ✅ möglich (DE, AT, IT verschieden; EPROHA ohne IT-UID).
 
-**Hinweis:** Lieferort L1 = DE (ruhend vor Bewegung). EPROHA kauft in DE zum Netto-Preis
-(19% DE-MwSt als Vorsteuer VD), liefert IG ab DE. AT-MwSt fällt auf L1 nicht an.
+**ZM:** EPROHA meldet L2 aus AT (AT-UID, Empfänger IT-UID des Kunden).
+
+**Hinweis:** Würde EPROHA die **DE-UID** (= Abgangsland-UID) mitteilen, kippt es nach
+Art. 36a Abs. 2 auf L2 bewegend (vgl. LF-02d): L1 ruhend in DE (19 % als Vorsteuer),
+L2 IG-Lieferung ab DE. Maßgeblich ist also die mitgeteilte UID.
 
 ---
 
@@ -220,8 +225,8 @@ Aber: L2 in DE erfordert DE-UVA-Meldung (Ausgangssteuer DS).
 - Dreiecksgeschäft AT-DE-HU: EPROHA sendet ZM aus AT, U3(DE) führt HU-Erwerbsteuer ab
 
 **Varianten (C037m):**
-- **Alt A** (U3 mit IT-UID → lit. b): movingIndex=2 (L3 bewegend), kein Dreiecksgeschäft
-- **Alt B** (U3 mit HU-UID → lit. b): movingIndex=2 (L3 bewegend), kein Dreiecksgeschäft
+- **Alt A** (U3 mit IT-UID = Abgangsland → Abs. 2): movingIndex=2 (L3 bewegend), kein Dreiecksgeschäft
+- **Alt B** (U3 mit HU-UID = dest, ≠ Abgangsland IT → Grundregel Abs. 1): movingIndex=1 (L2 bewegend), kein Dreiecksgeschäft (U3 hält dest-UID HU)
 
 ---
 
@@ -363,16 +368,20 @@ Ergebnis: Engine setzt `_depEqDest=true` → kein movingIndex, keine IG-Lieferun
 
 ---
 
-### E2 · Quick Fix lit. a vs. lit. b vs. lit. c — Entscheidungsmatrix
+### E2 · Abgangsland-UID vs. übrige UID — Entscheidungsmatrix
 
-| Bedingung | Variante | movingIndex | Dreiecksgeschäft |
+Maßgeblich ist allein die dem Vorlieferanten **mitgeteilte UID** (Art. 36a Abs. 1/2):
+
+| Bedingung | Rechtsfolge | movingIndex | Dreiecksgeschäft |
 |---|---|---|---|
-| B hat dep-UID, ist NICHT ansässig in dep, tritt mit dep-UID auf | **lit. a** | chainIndex−1 (L1) | möglich wenn sonst Voraussetzungen erfüllt |
-| B hat Ansässigkeits-UID oder andere UID, tritt damit auf | **lit. b** | chainIndex (L2) | möglich (auch bei movingIndex=1) |
-| B hat keine dep-UID, ist nicht ansässig in dep (Automatik) | **lit. c** | chainIndex−1 (L1) | möglich wenn sonst Voraussetzungen erfüllt |
+| B teilt **Abgangsland-UID (dep)** mit | Ausnahme Abs. 2 → Ausgangslieferung | chainIndex (L2) | möglich (kein movingIndex-Erfordernis) |
+| B teilt **Ansässigkeits-/dest-/Dritt-UID** mit (≠ dep) | Grundregel Abs. 1 → Eingangslieferung | chainIndex−1 (L1) | möglich wenn sonst Voraussetzungen erfüllt |
+| B teilt **keine** dep-UID mit, nicht ansässig (Automatik) | Grundregel Abs. 1 → Eingangslieferung | chainIndex−1 (L1) | möglich wenn sonst Voraussetzungen erfüllt |
 
-**Merkregel:** lit. a und lit. c → L1 moving (Lieferant effektiv als Transporteur bewertet).
-lit. b → L2 moving (Mittler trägt volle umsatzsteuerliche Verantwortung ab Abhol-Land).
+**Merkregel:** Nur die **Abgangsland-UID** verschiebt die Bewegung auf die
+Ausgangslieferung (L2). Jede andere mitgeteilte UID lässt es bei der Grundregel →
+Eingangslieferung (L1). Die Ansässigkeits-UID genügt für die Verschiebung **nicht**,
+solange sie ≠ Abgangsland ist.
 
 ---
 
