@@ -9151,18 +9151,18 @@ function runOutputTests() {
   // Felder: company, q4[4], mePos, transport, movingIndex, triangle, boxes[{role,type,sap?}].
   // Werte gegen Engine verifiziert (Code-Review 06/2026). Box-Reihenfolge = L1,L2,L3.
   const QC4_TESTS = [
-    { id:'QC4-01', name:'EPDE FR→DE→NL→IT, U2, Lieferant: L1 IG-Erwerb VH (Eingang), L2 IT-RC IC (Ausgang), L3 fremd',
+    { id:'QC4-01', name:'EPDE FR→DE→NL→IT, U2, Lieferant: L1 IG-Erwerb VH (Eingang), L2 IT-RC IC (Ausgang), L3 ruhend andere Parteien',
       company:'EPDE', q4:['FR','DE','NL','IT'], mePos:2, transport:'supplier', movingIndex:0, triangle:true,
-      boxes:[{role:'in',type:'ig-erwerb',sap:'VH'},{role:'out',type:'rc',sap:'IC'},{role:'info',type:'info'}] },
-    { id:'QC4-02', name:'EPDE FR→DE→NL→IT, U2, Kunde holt ab: bewegte L3 fremd, L1/L2 ruhend in FR → Reg. FR',
+      boxes:[{role:'in',type:'ig-erwerb',sap:'VH'},{role:'out',type:'rc',sap:'IC'},{role:'info',type:'resting-info'}] },
+    { id:'QC4-02', name:'EPDE FR→DE→NL→IT, U2, Kunde holt ab: bewegte L3 andere Parteien, L1/L2 ruhend in FR → Reg. FR',
       company:'EPDE', q4:['FR','DE','NL','IT'], mePos:2, transport:'customer', movingIndex:2, triangle:false,
-      boxes:[{role:'in',type:'domestic'},{role:'out',type:'resting'},{role:'info',type:'info'}], regRisk:'FR' },
-    { id:'QC4-03', name:'EPROHA DE→AT→NL→IT, U2, ich transportiere: L1 Eingang VD, L2 IG-Lieferung DH ab DE, L3 fremd',
+      boxes:[{role:'in',type:'domestic'},{role:'out',type:'resting'},{role:'info',type:'moving-info'}], regRisk:'FR' },
+    { id:'QC4-03', name:'EPROHA DE→AT→NL→IT, U2, ich transportiere: L1 Eingang VD, L2 IG-Lieferung DH ab DE, L3 ruhend andere Parteien',
       company:'EPROHA', q4:['DE','AT','NL','IT'], mePos:2, transport:'middle', movingIndex:1, triangle:true,
-      boxes:[{role:'in',type:'domestic',sap:'VD'},{role:'out',type:'ig-lieferung',sap:'DH'},{role:'info',type:'info'}] },
-    { id:'QC4-04', name:'EPDE FR→PL→DE→IT, U3 (ich=C), Lieferant: L1 fremd, L2 Eingang, L3 IT-RC IC (Ausgang)',
+      boxes:[{role:'in',type:'domestic',sap:'VD'},{role:'out',type:'ig-lieferung',sap:'DH'},{role:'info',type:'resting-info'}] },
+    { id:'QC4-04', name:'EPDE FR→PL→DE→IT, U3 (ich=C), Lieferant: L1 bewegt andere Parteien, L2 Eingang, L3 IT-RC IC (Ausgang)',
       company:'EPDE', q4:['FR','PL','DE','IT'], mePos:3, transport:'supplier', movingIndex:0, triangle:true,
-      boxes:[{role:'info',type:'info'},{role:'in',type:'domestic'},{role:'out',type:'rc',sap:'IC'}] },
+      boxes:[{role:'info',type:'moving-info'},{role:'in',type:'domestic'},{role:'out',type:'rc',sap:'IC'}] },
   ];
   QC4_TESTS.forEach(t => {
     const errs = [];
@@ -12044,15 +12044,26 @@ function _qcBox4(s, role, company, vatIds, home) {
   const b = { from:s.from, to:s.to, isMoving:s.isMoving, role,
               type:'', title:'', taxInfo:'', sapCode:null, sapDesc:null, sapNote:null, reqs:[], regRisk:null };
 
-  // ── Fremdlieferung (nicht meine Rechnung) ──
+  // ── Lieferung anderer Parteien (Teil deines Reihengeschäfts, aber nicht deine
+  // Rechnung). Volle Klassifikation zeigen — nur kein eigenes SAP-Kennzeichen.
+  // Für die bewegte Strecke ist s.vatTreatment verlässlich (ic-exempt/export,
+  // unabhängig von "mir"); ruhende Fremdstrecken nur über Lieferort/Satz beschreiben.
   if (role === 'info') {
-    b.type    = 'info';
-    b.title   = `Fremde Lieferung: ${fromN} → ${toN}`;
-    b.taxInfo = s.isMoving
-      ? 'bewegte Lieferung (Warenbewegung) — fremde Parteien'
-      : `ruhende Lieferung — lokale Besteuerung in ${_qcCountryName(pos)}`;
-    b.sapNote = 'Nicht deine Rechnung — keine eigene SAP-Buchung';
-    b.reqs    = [s.isMoving ? 'Warenbewegung auf dieser Strecke' : 'ruhende Lieferung im Lieferort-Land'];
+    b.title = `Lieferung ${fromN} → ${toN} (andere Parteien)`;
+    if (s.isMoving) {
+      b.type = 'moving-info';
+      b.taxInfo = t === 'export'
+        ? `bewegte Lieferung — Ausfuhr ins Drittland, steuerfrei (Lieferort ${_qcCountryName(pos)})`
+        : t === 'ic-exempt'
+          ? `bewegte Lieferung — steuerfreie ig. Lieferung (Lieferort ${_qcCountryName(pos)})`
+          : `bewegte Lieferung (Lieferort ${_qcCountryName(pos)})`;
+      b.reqs = ['Diese Strecke trägt die Warenbewegung der Kette'];
+    } else {
+      b.type = 'resting-info';
+      b.taxInfo = `ruhende Lieferung — steuerbar ${_qcRate(pos)} % ${_qcCountryName(pos)}`;
+      b.reqs = [`ruhende Lieferung, Lieferort ${_qcCountryName(pos)}`];
+    }
+    b.sapNote = 'Nicht deine Rechnung — keine eigene SAP-Buchung bei dir';
     return b;
   }
 
@@ -12222,6 +12233,8 @@ function renderQuickCheck() {
     const typeIcon = data.type === 'ig-erwerb' || data.type === 'ig-lieferung' ? '🟢'
       : data.type === 'import' ? '📦'
       : data.type === 'export' ? '✈️'
+      : data.type === 'moving-info' ? '🚚'
+      : data.type === 'resting-info' ? '⚪'
       : '🔶';
     return `
       <div class="qc-invoice-box">
@@ -12310,7 +12323,7 @@ function renderQuickCheck() {
         <div class="qc-reg-banner-body">${r4.company} hat keine ${c}-UID. Ohne Registrierung kann die betroffene Rechnung nicht korrekt ausgestellt werden.</div>
       </div>`).join('');
     // Rechnungsboxen (genau 2 sind meine, 1 ist Fremdlieferung)
-    const sideLabel = (role) => role === 'in' ? 'EINGANGSRECHNUNG' : role === 'out' ? 'AUSGANGSRECHNUNG' : 'FREMDE LIEFERUNG';
+    const sideLabel = (role) => role === 'in' ? 'EINGANGSRECHNUNG' : role === 'out' ? 'AUSGANGSRECHNUNG' : 'LIEFERUNG · ANDERE PARTEIEN';
     const boxesHtml = r4.boxes.map((b, i) =>
       invoiceBox(sideLabel(b.role), `L${i + 1}: ${flag(b.from)} ${cn(b.from)} → ${flag(b.to)} ${cn(b.to)}`, b)).join('');
     // Hinweise
