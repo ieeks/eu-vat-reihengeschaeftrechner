@@ -2,6 +2,25 @@
 
 ---
 
+## v4.3 · 17.06.2026 — QuickCheck 3P gehärtet (Bugfixes + Tests)
+
+Beim Härten des 3-Parteien-QuickChecks aufgedeckte und behobene Fehler (QC ruft die
+Engine direkt, ohne das Drittland-Routing der Hauptapp):
+
+### Fix · Ausfuhr-Zuordnung folgt der bewegten Lieferung
+- Bei EU→CH/GB ordnete der QuickCheck die Ausfuhr **immer L2** zu — auch wenn der Lieferant transportiert (bewegte L1). **Fix:** Ausfuhr liegt auf der bewegten Lieferung (Lieferant transportiert → L1 = Ausfuhr, Vorlieferant ist Exporteur; sonst → L2 = Ausfuhr). Die ruhende Drittland-Lieferung wird als „lokale Lieferung (lokales Recht)" mit Registrierungs-Hinweis dargestellt. Spiegelt `buildCHExportResult` (Exporteur = `movingL1 ? Vorlieferant : Zwischenhändler`).
+
+### Fix · Kein Dreiecksgeschäft bei Drittland-Beteiligung
+- `DE→CH`/`DE→GB` lieferte `triangle=true`. Art. 141 MwStSystRL verlangt 3 EU-Mitgliedstaaten. **Fix:** `triangle = eng.trianglePossible && !depIsThird && !destIsThird`.
+
+### Fix · SAP-Kennzeichen aus dem Abgangsland statt der Heimat
+- IG-Lieferung/Ausfuhr nutzten das Heimat-Kennzeichen, obwohl die bewegte Lieferung im Abgangsland beginnt. **Fix:** SAP-Lookup über das Abgangsland (Registrierung vorausgesetzt). Beispiele: EPROHA IG-Lieferung ab DE → **DH** (statt AF); EPROHA Ausfuhr ab DE → **D0** (statt A0).
+
+### Tests · QuickCheck-Smoke-Tests erweitert (QC-01…12)
+- `runOutputTests` deckt jetzt movingL1, Dreieck, L1/L2-Typ und SAP-Codes ab: EU→EU (IG-Erwerb VE/VH, IG-Lieferung DH/AF, ruhend VD/V2), Drittland-Ausfuhr (D0/G0, kein Dreieck), CH-Inland (IB/B5), Einfuhr (Import). 20 Output-Tests gesamt.
+
+---
+
 ## v4.3 · 17.06.2026 — Code-Review Sofort-Gruppe (K1, H1, H2, H3, H5, M5)
 
 ### Fix · K1 — QuickCheck übergab Engine Buchstaben statt kanonischer Transport-Werte

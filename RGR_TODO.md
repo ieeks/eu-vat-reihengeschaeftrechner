@@ -29,6 +29,10 @@ Stand: 20.05.2026
 - [x] **Warenfluss-Diagramme vereinheitlicht** — Transport-Veranlasser in 4P-Dreieck + 3P + Normalfall; 4P-SVG `max-width` 1100px, 3P 715px; 3P-Labels auf Chip-Stil (Box + Rahmen) wie 4P umgestellt (Session 28)
 - [x] **K2 — `_applyQuickFix()` UID-Override gesetzeskonform** — toter lit.-a-Zweig entfernt; `uidOverride === dep` → Ausgangslieferung (Abs. 2), sonst Eingangslieferung (Grundregel Abs. 1); UID-Labels korrigiert; Tests + vat-knowledge angeglichen (Code-Review 06/2026)
 - [x] **Code-Review Sofort-Gruppe** — K1 (QuickCheck Transport/UID an Engine + QC-Tests), H1 (`dep`→`from` in buildDeliveryBox), H2 (Share-Link-Länderkette restore), H3 (`getTransportLetter()`), H5 (TRANSLATIONS zur Renderzeit), M5 (`natLaw('vat')`-Key) (Code-Review 06/2026)
+- [x] **QuickCheck 3P gehärtet** — 3 Bugs gefixt (Ausfuhr folgt bewegter Lieferung, kein Dreieck bei Drittland, SAP aus Abgangsland) + QC-Smoke-Tests QC-01…12 (Typ/SAP/Dreieck). 20 Output-Tests.
+- [ ] **QuickCheck 4-Parteien-Modus** — Coming Soon: 4 Länder-Selects, mePosition (U2/U3), Transport inkl. 2. ZH, 3 Rechnungsboxen L1/L2/L3, 4P-Dreieck (first3/last3). Engine trägt 4P bereits.
+- [ ] **QuickCheck Lohnveredelung** — Coming Soon: Sonderlogik aus `analyzeLohn()` ableiten.
+- [ ] **QuickCheck 3P · Dreieck vs. RC (L2)** — bei möglichem Dreieck zeigt QC L2 als inversione/RC (IC) statt Dreieck-AF (Engine-Basisklassifikation; Hauptapp überlagert via buildDreiecks3Result). Prüfen, ob QC die Dreieck-Behandlung primär zeigen soll.
 - [ ] **Scope B (Backlog, niedrig):** bewusst gewählte dep-UID auch ohne `vatIds`-Eintrag wirken lassen (`LIT-C-02`). Berührt Registrierungs-Risiko-Logik; in der echten UI nicht erzeugbar → vorerst zurückgestellt.
 
 ---
