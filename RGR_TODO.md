@@ -28,6 +28,7 @@ Stand: 20.05.2026
 - [x] **Mode 2 Drop-Shipment für EU-Kunden** — neuer `analyze2()`-Branch: EPROHA(AT) = erster Lieferant → EU-Kunde (z.B. DE) → abweichender Warenempfänger (z.B. IT) = Reihengeschäft/Dreiecksgeschäft (AF/Reverse Charge), Drittland-Empfänger = Ausfuhr (A0); `renderContextToggles()` zeigt Drop-Shipment nun für jeden EU-Kunden (Session 28)
 - [x] **Warenfluss-Diagramme vereinheitlicht** — Transport-Veranlasser in 4P-Dreieck + 3P + Normalfall; 4P-SVG `max-width` 1100px, 3P 715px; 3P-Labels auf Chip-Stil (Box + Rahmen) wie 4P umgestellt (Session 28)
 - [x] **K2 — `_applyQuickFix()` UID-Override gesetzeskonform** — toter lit.-a-Zweig entfernt; `uidOverride === dep` → Ausgangslieferung (Abs. 2), sonst Eingangslieferung (Grundregel Abs. 1); UID-Labels korrigiert; Tests + vat-knowledge angeglichen (Code-Review 06/2026)
+- [x] **Code-Review Sofort-Gruppe** — K1 (QuickCheck Transport/UID an Engine + QC-Tests), H1 (`dep`→`from` in buildDeliveryBox), H2 (Share-Link-Länderkette restore), H3 (`getTransportLetter()`), H5 (TRANSLATIONS zur Renderzeit), M5 (`natLaw('vat')`-Key) (Code-Review 06/2026)
 - [ ] **Scope B (Backlog, niedrig):** bewusst gewählte dep-UID auch ohne `vatIds`-Eintrag wirken lassen (`LIT-C-02`). Berührt Registrierungs-Risiko-Logik; in der echten UI nicht erzeugbar → vorerst zurückgestellt.
 
 ---

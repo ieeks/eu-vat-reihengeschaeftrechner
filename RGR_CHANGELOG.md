@@ -2,6 +2,29 @@
 
 ---
 
+## v4.3 · 17.06.2026 — Code-Review Sofort-Gruppe (K1, H1, H2, H3, H5, M5)
+
+### Fix · K1 — QuickCheck übergab Engine Buchstaben statt kanonischer Transport-Werte
+- `buildQuickCheck()` mappte `transport` auf `'A'/'B'/'C'` und übergab den Buchstaben an `VATEngine.run()`; die Engine vergleicht aber gegen Wörter → **jeder** QuickCheck fiel auf `movingIndex 0`. „Kunde holt ab" zeigte fälschlich L1, die Dreieckssperre Art. 141 lit. e griff nie. Zusätzlich wurde `uidOverride` als UID-String statt Länderkürzel übergeben (immer ignoriert).
+- **Fix:** `transport` (bereits kanonisch) direkt durchreichen, `uidOverride: _triUid.country`. Neue Smoke-Tests `QC-01..04` (movingL1/Dreieck je Transport-Variante) in `runOutputTests` → 12 Output-Tests.
+
+### Fix · H1 — `dep` undefinierte Variable in `buildDeliveryBox()`
+- `const pos = … (isMoving ? dep : dest)` griff das implizite Window-Global des `<select id="dep">` → falsche SAP-Badges bei CH/GB-Pfaden. **Fix:** `from` (Abgangsland der jeweiligen Strecke) statt `dep`.
+
+### Fix · H2 — Share-Link-Länderkette wurde geschrieben, nie wiederhergestellt
+- `shareLink()` serialisierte `countries=…`, aber weder `handleURLParams()` noch `init()` schrieben sie zurück (cp-*-Selects existieren erst nach `renderAll()`/`renderPickers()`). **Fix:** Länderkette nach `renderAll()` anwenden (URL > localStorage, Validierung gegen `EU_MAP`), dann `onCC()`. Behebt zugleich die latent gleiche Lücke beim localStorage-Restore.
+
+### Fix · H3 — `['A','B','C','D'].indexOf(selectedTransport)` immer −1
+- `selectedTransport` ist immer ein Wort → Begründungstext zeigte „Transporteur: undefined". **Fix:** `getTransportLetter()` (beide Vorkommen).
+
+### Fix · H5 — Firmen-abhängige TRANSLATIONS beim Parsen eingefroren
+- `header.sub`/`dreiecks.title`/`eug.subtitle` evaluierten `currentCompany` mit Startwert `EPDE` → EPROHA-Banner zeigte dauerhaft „§ 25b" statt „Art. 25 UStG AT" (Regel 2). **Fix:** Keys als Funktionen, `T()` löst funktionswertige Einträge zur Renderzeit auf.
+
+### Fix · M5 — `natLaw('vat')` — Key existierte nicht
+- Output zeigte „Vorsteuerabzug gem. vat." **Fix:** `'vat'`-Key ergänzt (§ 12 UStG AT / § 15 UStG / Art. 167 ff. MwStSystRL), Aufruf mit Lieferland-Override (`natLaw('vat', sup)`); Dev-Mode-Warnung bei unbekanntem Key.
+
+---
+
 ## v4.3 · 17.06.2026 — Code-Review K2
 
 ### Fix · `_applyQuickFix()` UID-Override: Abgangsland-UID-Logik korrigiert (Art. 36a)
