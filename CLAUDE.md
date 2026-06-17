@@ -206,6 +206,24 @@ Quelle: `SAP_TAX_MAP` in app.js (2026_EPCA_Tax_Account_determination_S4P.xlsx)
 
 > **Merkhilfe:** AF = ig-Lieferung (EU, EPROHA-AT) · A0 = Ausfuhr Drittland (EPROHA-AT) · DH = ig-Lieferung (DE-UID) · G0 = Ausfuhr Drittland (EPDE-DE)
 
+### Pendant-Beziehung EPROHA ⇄ EPDE (Erwerb/Lieferung)
+
+Beide Mappings laufen strikt parallel — gleicher Vorgang, je Heimat-UID anderes Kennzeichen:
+
+| Vorgang | Beleg | EPROHA (AT-UID) | EPDE (DE-UID) |
+|---|---|---|---|
+| IG-**Erwerb** | Eingangsrechnung | **VE** | **VH** |
+| IG-**Lieferung** | Ausgangsrechnung | **AF** | **DH** |
+
+- **VE ⇄ VH** (Erwerb/Eingang) · **AF ⇄ DH** (Lieferung/Ausgang).
+- EPDE braucht **kein** eigenes `dreiecks`-Kennzeichen: **DH ist das EPDE-Pendant zu AF**. Im Dreieck greift der Fallback `ic-exempt[DE] = DH` korrekt.
+
+### Regel · Dreieck vs. IT-Inland (kein IT-Erwerbskennzeichen ohne Registrierung)
+
+- **Dreieck** (3 EU-Länder, `triangle=true`): IG-Erwerb läuft über die **Heimat-UID** (VE/VH); die ruhende L2 ist die **Dreieckslieferung → AF/DH**, NICHT das IT-Inlands-RC (IC). `triangle` gewinnt in `buildQuickCheck` über die Engine-Basisklassifikation `rc`.
+- **IT-Inland** (`dep=dest`, IT→…→IT): IT-Reverse-Charge → Ausgang **IC**, Eingang **VI** (nur wenn IT-UID vorhanden: EPDE ja → VI; EPROHA nein → kein MWSKZ, Vorsteuervergütung).
+- Ein **IT-Erwerbskennzeichen** (VE/VH-Äquivalent für IT) existiert bewusst **nicht** — es wäre erst bei tatsächlicher **IT-Registrierung** nötig (Nicht-Dreieck-Fallback). Im Dreieck spart Art. 141 genau diese Registrierung.
+
 ## Header
 ```
 Logo | EPDE/EPROHA | Expert-Toggle | BMF-Pill | [spacer] | Live | ⋯
