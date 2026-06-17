@@ -2,6 +2,18 @@
 
 ---
 
+## v4.3 · 17.06.2026 — QuickCheck 3P: Dreieck vs. IT-Inlands-RC (AF statt IC)
+
+### Fix · Dreieck gewinnt über die Engine-Basisklassifikation `rc`
+- Im echten ig. Dreiecksgeschäft (DE→EPROHA→IT, 3 EU-Länder) zeigte der QuickCheck auf der ruhenden L2 fälschlich **IC** (italienisches Inlands-Reverse-Charge, Art. 17 DPR 633), weil die L2-Logik `if (l2IsRC)` **vor** `else if (triangle)` prüfte. **Fix:** Reihenfolge umgedreht — bei `triangle=true` ist die ruhende L2 die Dreieckslieferung → **AF** (IG-Lieferung/Dreieck, Steuerschuldumkehr § 25b UStG). L1 bleibt **VE** (IG-Erwerb, Eingangsrechnung).
+- Saubere Trennung der zwei Sachverhalte: **IC** bleibt dem reinen IT-Inlandsfall `dep=dest` (IT→EPROHA→IT) vorbehalten (Ausgangs-RC = IC, Eingang = VI nur wenn IT-UID vorhanden — bei EPROHA korrekt ohne MWSKZ).
+- EPDE-Dreieck nutzt mangels eigenem `dreiecks`-Kennzeichen den ic-exempt-Fallback (DE → **DH**).
+
+### Tests · QC-01/05 erweitert, QC-13/14 neu
+- QC-01 lockt jetzt L2=**AF** (Dreieck, nicht IC), QC-05 L2=**DH** (EPDE-Dreieck). QC-13 (IT→EPROHA→IT, L2=IC, L1 ohne MWSKZ) und QC-14 (IT→EPDE→IT, L1=VI/L2=IC) grenzen den IT-Inlandsfall ab. 22 Output-Tests gesamt.
+
+---
+
 ## v4.3 · 17.06.2026 — QuickCheck 3P gehärtet (Bugfixes + Tests)
 
 Beim Härten des 3-Parteien-QuickChecks aufgedeckte und behobene Fehler (QC ruft die

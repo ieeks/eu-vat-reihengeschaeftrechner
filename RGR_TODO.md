@@ -32,7 +32,7 @@ Stand: 20.05.2026
 - [x] **QuickCheck 3P gehärtet** — 3 Bugs gefixt (Ausfuhr folgt bewegter Lieferung, kein Dreieck bei Drittland, SAP aus Abgangsland) + QC-Smoke-Tests QC-01…12 (Typ/SAP/Dreieck). 20 Output-Tests.
 - [ ] **QuickCheck 4-Parteien-Modus** — Coming Soon: 4 Länder-Selects, mePosition (U2/U3), Transport inkl. 2. ZH, 3 Rechnungsboxen L1/L2/L3, 4P-Dreieck (first3/last3). Engine trägt 4P bereits.
 - [ ] **QuickCheck Lohnveredelung** — Coming Soon: Sonderlogik aus `analyzeLohn()` ableiten.
-- [ ] **QuickCheck 3P · Dreieck vs. RC (L2)** — bei möglichem Dreieck zeigt QC L2 als inversione/RC (IC) statt Dreieck-AF (Engine-Basisklassifikation; Hauptapp überlagert via buildDreiecks3Result). Prüfen, ob QC die Dreieck-Behandlung primär zeigen soll.
+- [x] **QuickCheck 3P · Dreieck vs. RC (L2)** — gelöst: `triangle` gewinnt über `l2IsRC` → Dreieck-L2 = AF (statt IC). IC/VI bleiben dem IT-Inlandsfall dep=dest vorbehalten. Tests QC-01/05/13/14.
 - [ ] **Scope B (Backlog, niedrig):** bewusst gewählte dep-UID auch ohne `vatIds`-Eintrag wirken lassen (`LIT-C-02`). Berührt Registrierungs-Risiko-Logik; in der echten UI nicht erzeugbar → vorerst zurückgestellt.
 
 ---

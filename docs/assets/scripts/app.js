@@ -9107,11 +9107,11 @@ function runOutputTests() {
   // gegen die Engine + reference-cases.md verifiziert (Code-Review 06/2026).
   const QC_TESTS = [
     // ── EU→EU: bewegte Lieferung + Dreieck je Transport ──
-    { id:'QC-01', name:'DE→EPROHA→IT, Lieferant → L1 bewegend, Dreieck, IG-Erwerb VE', company:'EPROHA', dep:'DE', dest:'IT', transport:'supplier', movingL1:true, triangle:true, l1Type:'ig-erwerb', l1Sap:'VE' },
+    { id:'QC-01', name:'DE→EPROHA→IT Dreieck: L1 IG-Erwerb VE (Eingang), L2 IG-Lief./Dreieck AF (Ausgang) — nicht IC', company:'EPROHA', dep:'DE', dest:'IT', transport:'supplier', movingL1:true, triangle:true, l1Type:'ig-erwerb', l1Sap:'VE', l2Type:'ig-lieferung', l2Sap:'AF' },
     { id:'QC-02', name:'DE→EPROHA→IT, Kunde holt ab → L2 bewegend (IG-Lief. ab DE = DH), kein Dreieck', company:'EPROHA', dep:'DE', dest:'IT', transport:'customer', movingL1:false, triangle:false, l1Type:'resting', l1Sap:'VD', l2Type:'ig-lieferung', l2Sap:'DH' },
     { id:'QC-03', name:'DE→EPROHA→IT, ich (Heimat-UID) → Grundregel → L1 bewegend, Dreieck', company:'EPROHA', dep:'DE', dest:'IT', transport:'middle', movingL1:true, triangle:true },
     { id:'QC-04', name:'IT→EPDE→DE, Kunde holt ab → L2 bewegend', company:'EPDE', dep:'IT', dest:'DE', transport:'customer', movingL1:false, triangle:false },
-    { id:'QC-05', name:'FR→EPDE→IT, Lieferant → Dreieck, IG-Erwerb DE = VH', company:'EPDE', dep:'FR', dest:'IT', transport:'supplier', movingL1:true, triangle:true, l1Type:'ig-erwerb', l1Sap:'VH' },
+    { id:'QC-05', name:'FR→EPDE→IT Dreieck: L1 IG-Erwerb DE = VH, L2 IG-Lief. DE = DH (EPDE ohne eigenen Dreieckscode → ic-exempt)', company:'EPDE', dep:'FR', dest:'IT', transport:'supplier', movingL1:true, triangle:true, l1Type:'ig-erwerb', l1Sap:'VH', l2Type:'ig-lieferung', l2Sap:'DH' },
     { id:'QC-06', name:'AT→EPROHA→DE, Kunde holt ab → L2 IG-Lief. ab AT = AF; L1 ruhend V2', company:'EPROHA', dep:'AT', dest:'DE', transport:'customer', movingL1:false, triangle:false, l1Type:'resting', l1Sap:'V2', l2Type:'ig-lieferung', l2Sap:'AF' },
     // ── Drittland: kein Dreieck (Bug #2), Ausfuhr folgt bewegter Lieferung (Bug #1), SAP aus Abgangsland (Bug #3) ──
     { id:'QC-07', name:'DE→EPDE→CH, Lieferant → L1 Ausfuhr (Vorlief.), L2 ruhend CH, kein Dreieck', company:'EPDE', dep:'DE', dest:'CH', transport:'supplier', movingL1:true, triangle:false, l1Type:'export', l2Type:'resting' },
@@ -9120,6 +9120,9 @@ function runOutputTests() {
     { id:'QC-10', name:'DE→EPDE→GB, Kunde holt ab → L2 Ausfuhr = G0, kein Dreieck', company:'EPDE', dep:'DE', dest:'GB', transport:'customer', movingL1:false, triangle:false, l2Type:'export', l2Sap:'G0' },
     { id:'QC-11', name:'CH→EPROHA→CH, CH-Inland: beide Lieferungen CH-MWST 8,1 %', company:'EPROHA', dep:'CH', dest:'CH', transport:'supplier', l1Type:'ch-inland', l1Sap:'IB', l2Type:'ch-inland', l2Sap:'B5' },
     { id:'QC-12', name:'CH→EPDE→DE, Einfuhr: L1 Import (EUSt), L2 ruhend DE = DS', company:'EPDE', dep:'CH', dest:'DE', transport:'supplier', movingL1:true, triangle:false, l1Type:'import', l2Type:'resting', l2Sap:'DS' },
+    // ── IT-Inland (dep=dest): kein Dreieck, IT-Reverse-Charge IC auf der Ausgangsrechnung ──
+    { id:'QC-13', name:'IT→EPROHA→IT IT-Inland: kein Dreieck, L2 IT-RC = IC (Ausgang); L1 ohne MWSKZ (EPROHA ohne IT-UID)', company:'EPROHA', dep:'IT', dest:'IT', transport:'supplier', triangle:false, l2Type:'rc', l2Sap:'IC' },
+    { id:'QC-14', name:'IT→EPDE→IT IT-Inland: L1 IT-RC Eingang = VI, L2 IT-RC Ausgang = IC (EPDE mit IT-UID)', company:'EPDE', dep:'IT', dest:'IT', transport:'supplier', triangle:false, l1Type:'rc', l1Sap:'VI', l2Type:'rc', l2Sap:'IC' },
   ];
   QC_TESTS.forEach(t => {
     const errs = [];
@@ -11913,22 +11916,13 @@ function buildQuickCheck() {
     l2.regRisk = vatIds[dep] || dep === home ? null : dep;
   } else {
     // ruhende L2 → L1 ist die bewegte Lieferung → ruhende L2 immer im Empfangsland (dest)
-    if (l2IsRC) {
-      l2.type    = 'rc';
-      l2.title   = `Reverse Charge — ${_qcCountryName(dest)}`;
-      l2.taxInfo = '0 % — Steuerschuldner ist der Käufer (RC)';
-      l2.sapCode = SAP_TAX_MAP[company]?.[dest]?.['rc']?.out
-        || SAP_TAX_MAP[company]?.[home]?.['rc']?.out || null;
-      l2.reqs    = [
-        `UID ${company}`,
-        `UID Kunde (${dest})`,
-        '"Steuerschuldner ist der Leistungsempfänger"',
-      ];
-      l2.sapNote = l2RCNote;
-      l2.regRisk = null;
-    } else if (triangle) {
-      // Dreiecksgeschäft: ruhende L2 wird zur steuerfreien ig. Lieferung (§ 25b UStG)
-      const sapEntry = SAP_TAX_MAP[company]?.[triangleUidCountry]?.['ic-exempt']
+    // Reihenfolge: Dreieck gewinnt über die Engine-Basisklassifikation `rc`. Im echten
+    // ig. Dreieck (3 EU-Länder) ist die ruhende L2 die Dreieckslieferung (AF), NICHT das
+    // IT-Inlands-Reverse-Charge (IC). IC bleibt dem Inlandsfall dep=dest vorbehalten.
+    if (triangle) {
+      // Dreiecksgeschäft: ruhende L2 wird zur steuerfreien ig. Lieferung (§ 25b UStG) → AF
+      const sapEntry = SAP_TAX_MAP[company]?.[triangleUidCountry]?.['dreiecks']
+        || SAP_TAX_MAP[company]?.[triangleUidCountry]?.['ic-exempt']
         || SAP_TAX_MAP[company]?.[home]?.['ic-exempt'];
       l2.type      = 'ig-lieferung';
       l2.title     = 'Steuerfreie EU-Lieferung — Dreiecksgeschäft (ig. Lieferung)';
@@ -11945,6 +11939,19 @@ function buildQuickCheck() {
       ];
       l2.regRisk   = null;
       l2.isDreieck = true;
+    } else if (l2IsRC) {
+      l2.type    = 'rc';
+      l2.title   = `Reverse Charge — ${_qcCountryName(dest)}`;
+      l2.taxInfo = '0 % — Steuerschuldner ist der Käufer (RC)';
+      l2.sapCode = SAP_TAX_MAP[company]?.[dest]?.['rc']?.out
+        || SAP_TAX_MAP[company]?.[home]?.['rc']?.out || null;
+      l2.reqs    = [
+        `UID ${company}`,
+        `UID Kunde (${dest})`,
+        '"Steuerschuldner ist der Leistungsempfänger"',
+      ];
+      l2.sapNote = l2RCNote;
+      l2.regRisk = null;
     } else {
       const taxCountry = dest;
       const rate       = _qcRate(taxCountry);
