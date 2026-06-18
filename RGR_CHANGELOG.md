@@ -2,6 +2,17 @@
 
 ---
 
+## v4.3 · 18.06.2026 — Einführer-Toggle + SAP-Kennzeichen auch für CH/GB (3P)
+
+Der Einführer-Toggle (Importer of Record) lief bisher nur im generischen Drittland-Pfad (TR/RS/BA/RU). Schweiz und UK liefen über ältere Render-Funktionen mit statischen DAP/DDP-Karten ohne Toggle.
+
+- **Toggle in alle 3P-CH/GB-Pfade** (`analyzeCH` CH→EU-Import, `buildCHExportResult` EU→CH, `analyzeGBImport` GB→EU, `buildGBExportResult` EU→GB) — die statischen DAP/DDP-Karten/Prosa wurden durch den interaktiven Toggle ersetzt. (Tote `analyzeCH` Case-1-Karten unangetastet gelassen; 2P-`analyze2`-Karten bleiben als Folgeschritt.)
+- **`_importerConsequence()` länderbewusst:** CH-Spezifika (BAZG, 8,1 % CH-MWST, Steuervertreter Art. 67 MWSTG, CH-Vorsteuer Art. 28 MWSTG), GB-Spezifika (HMRC, UK VAT, 20 %), generisch unverändert.
+- **SAP-MWSKZ je Einführer-Auswahl** über vorhandene Helfer (`sapBadgeBoth`): Export-Ausgangskennzeichen (A0/G0/D0) bei „Kunde = Einführer", Anschlusslieferungs-Codes (z.B. BE BS/BI, CH B5) bei „Wir = Einführer". Wo kein Code hinterlegt ist (ES/FR/IT …) bzw. für die EUSt selbst: expliziter „kein AP-MWSKZ"-Hinweis. Keine erfundenen Codes, keine `SAP_TAX_MAP`-Änderung.
+- Rendering-Layer; VATEngine/`computeTaxCH`/`analyze2` unberührt. 2 neue Tests (CH/GB-Toggle) → **33 Output-Tests grün**; JSDOM-verifiziert (alle 4 Pfade, Rollenwechsel, Badges).
+
+---
+
 ## v4.3 · 18.06.2026 — Drittland-Einführer: Mobile-Sichtbarkeit + UID-Block-Korrektur
 
 UX-Schliff am Einführer-Modell (Importer of Record) im Drittland-Import:

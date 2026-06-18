@@ -258,6 +258,8 @@ thirdC(dep|dest, nonEU≠CH/GB) Export  → buildThirdExportResult()  ← Engine
 eng._depEqDest                        → analyzeInland()
 ```
 
+**Einführer-Toggle in ALLEN 3P-Drittland-Pfaden:** `_importerToggle(country, direction)` wird jetzt auch in `analyzeCH` (Import-Case 2), `buildCHExportResult`, `analyzeGBImport`, `buildGBExportResult` gerendert (statische DAP/DDP-Karten ersetzt). `_importerConsequence()` ist länderbewusst (CH: BAZG/8,1 %/Art. 67+28 MWSTG · GB: HMRC/UK VAT) und blendet je `importerRole` real existierende SAP-MWSKZ via `sapBadgeBoth` ein (Export A0/G0/D0 bei customer · Anschlusslieferung z.B. BE BS/BI, CH B5 bei self); fehlt ein Code bzw. für die EUSt → „kein AP-MWSKZ"-Hinweis (keine erfundenen Codes). 2P-`analyze2`-CH/GB-Karten bleiben (Folgeschritt).
+
 **Generisches Drittland (TR/RS/BA/RU):** Daten in `EU`-Array (`nonEU:true` + Meta `customsUnion`/`saa`/`sanctions`). `analyzeThirdImport()`/`buildThirdExportResult()` mit `_thirdCountryNote()` (Sanktionen RU · Zollunion TR/A.TR · SAA RS/BA) und `_importerToggle()`/`setImporter()` → State `importerRole` ('self'|'customer'|'supplier', in getState/loadState persistiert). Importeur-Logik leitet UID/Registrierung im Bestimmungsland ab (z.B. EPDE→SI vorhanden, ES/RU fehlen → Registrierung). Einfuhr läuft über EORI, nicht UID. Toggle-Folgebox = Checkliste (inkl. EORI-Klarstellung: EU-weit gültig, keine separate Bestimmungsland-EORI). Mobile: `_thirdCountryNote()` und Toggle tragen `data-component` und sind via `@media`-Ausnahme sichtbar (sonst von `.hint`-Verkürzung versteckt). Bei Drittland-Einfuhr (dep nonEU, mode 3) blenden `renderUIDInline()`/`renderUidOverrideBlock()` den irreführenden IG-UID-Block aus (Einfuhr ≠ ig. Erwerb).
 
 ## Linke Seite
