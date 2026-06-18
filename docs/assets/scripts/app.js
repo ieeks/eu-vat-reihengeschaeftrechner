@@ -12487,17 +12487,39 @@ document.addEventListener('DOMContentLoaded', function init() {
 
   // Länderkette wiederherstellen — jetzt existieren die cp-*-Selects (von renderPickers).
   // Priorität: URL (?countries=…, Share-Link H2) vor localStorage. Validierung gegen EU_MAP.
-  const urlCountries = (new URLSearchParams(location.search).get('countries') || '')
+  const _urlParams = new URLSearchParams(location.search);
+  const urlCountries = (_urlParams.get('countries') || '')
     .split(',').map(c => c.trim().toUpperCase()).filter(c => EU_MAP[c]);
   const restoreCountries = urlCountries.length ? urlCountries
     : ((saved && Array.isArray(saved.countries)) ? saved.countries : []);
   if (restoreCountries.length) {
-    let changed = false;
-    restoreCountries.forEach((c, i) => {
-      const el = $(`cp-${i}`);
-      if (el && EU_MAP[c] && el.value !== c) { el.value = c; changed = true; }
-    });
-    if (changed) onCC();   // Country-Change-Kaskade: Chain/Transport/UID/Result neu rendern
+    if (currentMode === 5) {
+      // Lohnveredelung: die Länder stehen in lohnSup/lohnCon/lohnCus, nicht in cp-*.
+      // initLohnPanel() (in renderAll) hat die Selects gerade auf Defaults gesetzt.
+      const lohnIds = ['lohnSup', 'lohnCon', 'lohnCus'];
+      let lohnChanged = false;
+      restoreCountries.slice(0, 3).forEach((c, i) => {
+        const el = $(lohnIds[i]);
+        if (el && EU_MAP[c] && el.value !== c) { el.value = c; lohnChanged = true; }
+      });
+      if (lohnChanged) onLohnChange();   // Flaggen + Ergebnis neu rendern
+    } else {
+      let changed = false;
+      restoreCountries.forEach((c, i) => {
+        const el = $(`cp-${i}`);
+        if (el && EU_MAP[c] && el.value !== c) { el.value = c; changed = true; }
+      });
+      if (changed) onCC();   // Country-Change-Kaskade: Chain/Transport/UID/Result neu rendern
+    }
+  }
+
+  // UID-Override aus URL erneut anwenden: onCC() setzt selectedUidOverride zurück,
+  // daher NACH der Länder-Kaskade wiederherstellen (Share-Link ?uid=…).
+  const urlUid = _urlParams.get('uid');
+  if (urlUid) {
+    setState({ uidOverride: urlUid });
+    renderUidOverrideBlock();
+    renderResult();
   }
 
   showChangelogBanner();
