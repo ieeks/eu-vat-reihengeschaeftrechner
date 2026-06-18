@@ -36,6 +36,7 @@ Stand: 20.05.2026
 - [x] **QuickCheck 4P · Ausbaustufe 2 (Dreiecks-Überlagerung)** — `buildQuickCheck4()` überlagert die ruhende Ausgangslieferung des Beneficiary (first3→B/mePos2, last3→C/mePos3) zur Dreieckslieferung AF (EPROHA) / DH (EPDE-Pendant), `regRisk` entfällt, IG-Erwerb-Risk neutralisiert; RC-Empfänger/Erstlieferant behalten Pflichten. Spiegelt 3P-QC + Hauptpfad. QC4-01 aktualisiert. JSDOM-verifiziert (Session 31). Offen: Transport „2. ZH" (middle2) + 4P-Diagramm im QC.
 - [ ] **QuickCheck Lohnveredelung** — Coming Soon: Sonderlogik aus `analyzeLohn()` ableiten.
 - [x] **QuickCheck 3P · Dreieck vs. RC (L2)** — gelöst: `triangle` gewinnt über `l2IsRC` → Dreieck-L2 = AF (statt IC). IC/VI bleiben dem IT-Inlandsfall dep=dest vorbehalten. Tests QC-01/05/13/14.
+- [x] **Drittländer TR/RS/BA/RU + Einführer (Importer of Record)** — neue nonEU-Länder im `EU`-Modell (Meta: customsUnion/saa/sanctions); generisches 3P-Routing `analyzeThirdImport()`/`buildThirdExportResult()`; DDP/DAP-Toggle `setImporter()`/`importerRole` leitet UID/Registrierung im Bestimmungsland ab (EPDE→SI vorhanden, ES/RU fehlen→Registrierung); RU-Sanktionswarnung, TR-Zollunion/A.TR, RS/BA-SAA. Tests OT-3RD-* (30 grün) (Session 32). Offen: 2P/4P-Drittland-Spezialpfade, weitere Drittländer.
 - [ ] **Scope B (Backlog, niedrig):** bewusst gewählte dep-UID auch ohne `vatIds`-Eintrag wirken lassen (`LIT-C-02`). Berührt Registrierungs-Risiko-Logik; in der echten UI nicht erzeugbar → vorerst zurückgestellt.
 
 ---

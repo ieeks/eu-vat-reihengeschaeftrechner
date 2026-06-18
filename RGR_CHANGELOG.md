@@ -2,6 +2,27 @@
 
 ---
 
+## v4.3 · 18.06.2026 — Neue Drittländer (TR/RS/BA/RU) + modellierter Einführer (Importer of Record)
+
+Bisher waren nur **CH und GB** als Drittland abgebildet, und **wer importiert** war im 3P nur als Hinweistext vorhanden (strukturiert nur in Mode 2/EPROHA). Beides ist jetzt gelöst.
+
+### Feature · 4 neue Drittländer
+- **TR (Türkei), RS (Serbien), BA (Bosnien-Herz.), RU (Russland)** im `EU`-Datenmodell (`nonEU:true` + Metaflags `customsUnion`/`saa`/`sanctions`) → in allen Länder-Dropdowns wählbar, Flaggen ergänzt.
+- Länderspezifische Hinweise (`_thirdCountryNote()`): **RU → EU-Sanktionswarnung (VO 833/2014) ZUERST**; **TR → EU-Zollunion (A.TR, Zoll entfällt, EUSt bleibt)**; **RS/BA → SAA-Zollpräferenz (EUR.1)**.
+
+### Feature · Generisches Drittland-Routing (3P)
+- Neuer Dispatcher-Zweig: `analyzeThirdImport()` (Drittland→EU, Einfuhr) und `buildThirdExportResult()` (EU→Drittland, Ausfuhr) — modelliert nach den GB-Pfaden, generisch für alle nonEU außer CH/GB.
+
+### Feature · Einführer (Importer of Record) als modellierter Parameter
+- DDP/DAP-Umschalter (`_importerToggle()` + `setImporter()`, State `importerRole`): **Wir (DDP) / Kunde (DAP/EXW) / Lieferant (DDP)**.
+- Leitet die **konkrete Folge** ab: bei „Wir importieren" → habe ich eine UID im Bestimmungsland? EPDE→SI vorhanden (`SI…`), ES/RU fehlen → **Registrierung erforderlich** (EU-Unternehmen: Direktregistrierung, kein zwingender Fiskalvertreter). Klarstellung: Einfuhr läuft über **EORI**, nicht UID; UID erst für EUSt-Verrechnung + Anschlusslieferung.
+- `importerRole` in `getState`/`loadState` persistiert und im Test-Runner gesichert/zurückgesetzt.
+
+### Tests
+- `OT-3RD-RU-01` (Sanktion+EORI+ES-Registrierung), `OT-3RD-RS-01` (SAA + EPDE SI-UID), `OT-3RD-TR-01` (Zollunion/A.TR), `OT-3RD-IMP-TOGGLE` (Kunde=Einführer). **30 Output-Tests grün.**
+
+---
+
 ## v4.3 · 18.06.2026 — QuickCheck 4P · Ausbaustufe 2 (Dreiecks-Überlagerung)
 
 Der 4P-QuickCheck zeigte bei greifendem Dreieck zwar den Hinweis-Chip „Dreiecksgeschäft anwendbar", die einzelne Rechnungs-Box L2 aber weiterhin die **rohe** Engine-Behandlung („Ruhende Lieferung steuerpflichtig HU 27 %, EPROHA hat keine HU-UID"). Das widersprach sich selbst und dem Hauptpfad (dort L2 = Dreieckslieferung **AF**/**DH**).
