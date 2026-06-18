@@ -9157,9 +9157,12 @@ function runOutputTests() {
   // Felder: company, q4[4], mePos, transport, movingIndex, triangle, boxes[{role,type,sap?}].
   // Werte gegen Engine verifiziert (Code-Review 06/2026). Box-Reihenfolge = L1,L2,L3.
   const QC4_TESTS = [
-    { id:'QC4-01', name:'EPDE FR→DE→NL→IT, U2, Lieferant: L1 IG-Erwerb VH (Eingang), L2 IT-RC IC (Ausgang), L3 ruhend andere Parteien',
+    { id:'QC4-01', name:'EPDE FR→DE→NL→IT, U2 (ich=B, Mittler), Lieferant: L1 IG-Erwerb VH (Eingang), L2 Dreieckslieferung DH (Ausgang, Ausbaustufe 2), L3 ruhend andere Parteien',
       company:'EPDE', q4:['FR','DE','NL','IT'], mePos:2, transport:'supplier', movingIndex:0, triangle:true,
-      boxes:[{role:'in',type:'ig-erwerb',sap:'VH'},{role:'out',type:'rc',sap:'IC'},{role:'info',type:'resting-info'}] },
+      // first3-Dreieck, ich = mittlerer Unternehmer (Beneficiary) → ruhende L2 wird zur
+      // Dreieckslieferung (DH = EPDE-Pendant zu AF), keine IT-Registrierung. Konsistent zum
+      // Hauptpfad und zur Regel „triangle gewinnt über rc → AF/DH, nicht IC" (CLAUDE.md).
+      boxes:[{role:'in',type:'ig-erwerb',sap:'VH'},{role:'out',type:'ig-lieferung',sap:'DH'},{role:'info',type:'resting-info'}] },
     { id:'QC4-02', name:'EPDE FR→DE→NL→IT, U2, Kunde holt ab: bewegte L3 andere Parteien, L1/L2 ruhend in FR → Reg. FR',
       company:'EPDE', q4:['FR','DE','NL','IT'], mePos:2, transport:'customer', movingIndex:2, triangle:false,
       boxes:[{role:'in',type:'domestic'},{role:'out',type:'resting'},{role:'info',type:'moving-info'}], regRisk:'FR' },
@@ -12174,16 +12177,46 @@ function buildQuickCheck4() {
 
   const depIsThird  = ctx.isNonEU(dep);
   const destIsThird = ctx.isNonEU(dest);
-  const triangle    = eng.trianglePossible && !depIsThird && !destIsThird; // nur Hinweis-Chip
+  const triangle    = eng.trianglePossible && !depIsThird && !destIsThird;
+
+  // ── Dreiecks-Überlagerung (Ausbaustufe 2) ──────────────────────────────────
+  // Bin ICH der mittlere Unternehmer (Beneficiary) des Dreiecks, wird meine ruhende
+  // Ausgangslieferung zur Dreieckslieferung → AF (EPROHA) bzw. DH (EPDE-Pendant),
+  // 0 %, RC beim Empfänger, keine Registrierung. Spiegelt 3P-QuickCheck + Hauptpfad,
+  // keine neue Steuerlogik. Beneficiary-Position laut Engine: first3 → B (mePos 2),
+  // last3 → C (mePos 3). RC-Empfänger/Erstlieferant-Rollen behalten ihre Engine-Behandlung.
+  const triType = triangle ? (eng.triangle?.primary?.type || eng.triangle?.type) : null;
+  const iAmBeneficiary = (triType === 'first3' && mePos === 2) ||
+                         (triType === 'last3'  && mePos === 3);
+  if (iAmBeneficiary) {
+    const sapEntry = SAP_TAX_MAP[company]?.[home]?.['dreiecks']
+      || SAP_TAX_MAP[company]?.[home]?.['ic-exempt'];   // EPROHA → AF · EPDE → DH (Pendant)
+    const outBox = boxes.find(b => b.role === 'out' && !b.isMoving);
+    if (outBox) {
+      outBox.type     = 'ig-lieferung';
+      outBox.title    = 'Steuerfreie EU-Lieferung — Dreiecksgeschäft (ig. Lieferung)';
+      outBox.taxInfo  = '0 % — ig. Lieferung, RC beim Empfänger (§ 25b UStG)';
+      outBox.sapCode  = sapEntry?.out || null;
+      outBox.sapDesc  = sapEntry?.desc || null;
+      outBox.sapNote  = sapEntry?.out ? null : `⚠ Kein SAP-Kennzeichen für Dreiecksgeschäft (${home})`;
+      outBox.reqs     = [`UID ${company} (${vatIds[home] || home})`, `UID Kunde (${outBox.to})`,
+                         '„Steuerschuldnerschaft geht auf Leistungsempfänger über" (§ 25b UStG)'];
+      outBox.regRisk  = null;
+      outBox.isDreieck = true;
+    }
+  }
 
   const engineRisks = (eng.risks?.risks || [])
     .filter(r => r.type === 'ic-acquisition-no-reg' || r.type === 'resting-buyer-no-uid')
+    // Dreiecksgeschäft neutralisiert die IG-Erwerb-Registrierungspflicht im Bestimmungsland,
+    // wenn ICH der mittlere Unternehmer bin (Erwerb gilt als besteuert, Art. 25 Abs. 2 UStG).
+    .filter(r => !(iAmBeneficiary && r.type === 'ic-acquisition-no-reg'))
     .map(r => r.country);
   const sapRisks = boxes.map(b => b.regRisk).filter(Boolean);
   const regRisks = [...new Set([...engineRisks, ...sapRisks])];
 
   return { mode4:true, mePos, boxes, parties:q4, movingIndex:eng.movingIndex,
-           triangle, regRisks, transport, company, home };
+           triangle, iAmBeneficiary, regRisks, transport, company, home };
 }
 
 function renderQuickCheck() {
@@ -12322,8 +12355,10 @@ function renderQuickCheck() {
     ].map(o => `<label class="qc-radio-label">
       <input type="radio" name="qc-transport" value="${o.v}" ${transport === o.v ? 'checked' : ''}
              onchange="qcState.transport=this.value;renderQuickCheck()">${o.l}</label>`).join('');
-    // Registrierungs-Banner
-    const reg4 = r4.triangle ? '' : [...new Set(r4.regRisks)].map(c =>
+    // Registrierungs-Banner — unterdrückt, wenn ICH der mittlere Unternehmer des Dreiecks
+    // bin (Vereinfachung greift für mich). Bin ich nicht der Beneficiary (z.B. RC-Empfänger
+    // oder Erstlieferant), bleiben echte Registrierungspflichten sichtbar (wie im Hauptpfad).
+    const reg4 = r4.iAmBeneficiary ? '' : [...new Set(r4.regRisks)].map(c =>
       `<div class="qc-reg-banner">
         <div class="qc-reg-banner-title">🚨 Registrierungspflicht ${_qcCountryName(c)} (${_qcRate(c)} %)</div>
         <div class="qc-reg-banner-body">${r4.company} hat keine ${c}-UID. Ohne Registrierung kann die betroffene Rechnung nicht korrekt ausgestellt werden.</div>
@@ -12334,11 +12369,14 @@ function renderQuickCheck() {
       invoiceBox(sideLabel(b.role), `L${i + 1}: ${flag(b.from)} ${cn(b.from)} → ${flag(b.to)} ${cn(b.to)}`, b)).join('');
     // Hinweise
     const risks4 = [...new Set(r4.regRisks)];
-    const hints4 = (r4.triangle
-      ? [`✅ <strong>Dreiecksgeschäft</strong> nach Art. 141 MwStSystRL möglicherweise anwendbar (Hinweis — SAP-Überlagerung folgt in Ausbaustufe 2)`]
-      : risks4.length
-        ? risks4.map(c => `📋 Registrierung in <strong>${_qcCountryName(c)}</strong> beantragen oder Steuerberater konsultieren`)
-        : ['✅ Kein Registrierungsrisiko erkannt']
+    const hints4 = (r4.iAmBeneficiary
+      ? [`✅ <strong>Dreiecksgeschäft</strong> (Art. 141 MwStSystRL) — du bist der mittlere Unternehmer: keine Registrierung im Bestimmungsland, Steuerschuld geht auf den Empfänger über (§ 25b UStG)`]
+      : r4.triangle
+        ? [`ℹ️ <strong>Dreiecksgeschäft</strong> (Art. 141 MwStSystRL) im Sinne der Kette anwendbar — entlastet jedoch den <em>mittleren</em> Unternehmer; in deiner Rolle gelten die Pflichten laut Rechnungs-Boxen` + (risks4.length ? '' : '')].concat(
+            risks4.map(c => `📋 Registrierung in <strong>${_qcCountryName(c)}</strong> beantragen oder Steuerberater konsultieren`))
+        : risks4.length
+          ? risks4.map(c => `📋 Registrierung in <strong>${_qcCountryName(c)}</strong> beantragen oder Steuerberater konsultieren`)
+          : ['✅ Kein Registrierungsrisiko erkannt']
     ).map(i => `<li>${i}</li>`).join('');
 
     return `

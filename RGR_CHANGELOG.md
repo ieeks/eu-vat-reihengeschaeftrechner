@@ -2,6 +2,17 @@
 
 ---
 
+## v4.3 · 18.06.2026 — QuickCheck 4P · Ausbaustufe 2 (Dreiecks-Überlagerung)
+
+Der 4P-QuickCheck zeigte bei greifendem Dreieck zwar den Hinweis-Chip „Dreiecksgeschäft anwendbar", die einzelne Rechnungs-Box L2 aber weiterhin die **rohe** Engine-Behandlung („Ruhende Lieferung steuerpflichtig HU 27 %, EPROHA hat keine HU-UID"). Das widersprach sich selbst und dem Hauptpfad (dort L2 = Dreieckslieferung **AF**/**DH**).
+
+- **Ursache:** `_qcBox4()` rendert die Engine-`vatTreatment` ohne die Dreiecks-Überlagerung, die der 3P-QuickCheck (`buildQuickCheck`) und der Hauptpfad bereits anwenden („triangle gewinnt über rc → AF/DH, nicht IC", CLAUDE.md). Es war die offene TODO „QuickCheck 4P · Ausbaustufe 2".
+- **Fix:** `buildQuickCheck4()` bestimmt aus `eng.triangle.primary.type` + `mePos`, ob ICH der **mittlere Unternehmer (Beneficiary)** bin (first3 → Position B/mePos 2, last3 → Position C/mePos 3). Wenn ja, wird meine ruhende Ausgangslieferung zur **Dreieckslieferung** (EPROHA **AF**, EPDE **DH** via Pendant-Fallback `ic-exempt[home]`), `regRisk` entfällt, IG-Erwerb-Risk neutralisiert. Spiegelt 3P-QuickCheck + Hauptpfad, **keine neue Steuerlogik**.
+- **RC-Empfänger / Erstlieferant** (z.B. Position C in first3) behalten ihre echten Pflichten — Banner/Hinweise nur unterdrückt, wenn ich Beneficiary bin (konsistent zum Hauptpfad, der dort „Problem vorhanden" zeigt). Hinweistext „… folgt in Ausbaustufe 2" entfernt.
+- **Verifiziert (JSDOM):** B/first3 (AF), C/last3 (EPROHA AF · EPDE DH), RC-Empfänger (Pflichten bleiben), Nicht-Dreieck (Banner bleibt). Test **QC4-01** auf das Hauptpfad-konforme Dreieck-Ergebnis (DH) aktualisiert. 26/26 Output-Tests grün.
+
+---
+
 ## v4.3 · 18.06.2026 — Fix · 4P-Dreieck: Top-Status widersprach der Vereinfachung
 
 Im 4-gliedrigen Reihengeschäft mit greifender Dreiecks-Vereinfachung (z.B. IT→AT→SI→SI, EPROHA an Position B) zeigte der **Top-Status** rot **„Problem vorhanden / IG-Erwerb ohne UID — Registrierung erforderlich"**, obwohl das Tool darunter die Dreiecks-Vereinfachung (RC, keine Registrierung) korrekt anwendet. Das **3P-Pendant desselben Dreiecks war bereits grün** — das 4P war inkonsistent.
