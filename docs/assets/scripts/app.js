@@ -5520,20 +5520,21 @@ function buildTrafficStatus(ctx, eng, options = {}) {
   if (_dest && (isGB(_dest) || isCH(_dest))) return '';
   if (_dep  && (isGB(_dep)  || isCH(_dep)))  return '';
   const risks = eng.risks?.risks || [];
-  const hasBlockingRegistrationRisk = options.hasBlockingRegistrationRisk || risks.some((r) =>
-    r.type === 'registration-required' ||
-    r.type === 'ic-acquisition-no-reg' ||
-    r.type === 'resting-buyer-no-uid'
-  );
   const dreiecksApplied = options.dreiecksApplied;
   const dreiecksPossible = options.dreiecksPossible;
+  // Dreiecksgeschäft neutralisiert die IG-Erwerb-/Registrierungspflicht im Bestimmungsland
+  // (Erwerb gilt als besteuert, Art. 25 Abs. 2 UStG / Art. 141 MwStSystRL). Im 4P-Pfad meldet
+  // die Engine den Risk dennoch — daher hier (wie schon bei engRegHtml in analyze()) filtern,
+  // sonst widerspricht der Top-Status der angewendeten Dreiecks-Vereinfachung (3P-Verhalten).
+  const _isBlockingRisk = (r) =>
+    (r.type === 'registration-required' ||
+     r.type === 'ic-acquisition-no-reg' ||
+     r.type === 'resting-buyer-no-uid') &&
+    !(dreiecksApplied && (r.type === 'ic-acquisition-no-reg' || r.type === 'registration-required'));
+  const hasBlockingRegistrationRisk = options.hasBlockingRegistrationRisk || risks.some(_isBlockingRisk);
 
   if (hasBlockingRegistrationRisk) {
-    const blockingRisks = risks.filter(r =>
-      r.type === 'registration-required' ||
-      r.type === 'ic-acquisition-no-reg' ||
-      r.type === 'resting-buyer-no-uid'
-    );
+    const blockingRisks = risks.filter(_isBlockingRisk);
     const riskItems = blockingRisks.map(r => {
       if (r.type === 'registration-required') {
         return `<div style="display:flex;gap:8px;align-items:baseline;margin-top:6px;">
@@ -5615,10 +5616,15 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
   const transport = getCanonicalTransport();
   const dreiecksPossible = dreiecksOpportunity && !selectedUidOverride;
   const risks = eng.risks?.risks || [];
+  // Dreiecksgeschäft neutralisiert IG-Erwerb-/Registrierungspflicht im Bestimmungsland
+  // (Erwerb gilt als besteuert) — konsistent zur engRegHtml-Filterung in analyze() und zum
+  // Top-Status. Ohne diese Filterung zeigt das Summary im 4P-Dreieck fälschlich „Registrierung
+  // prüfen", obwohl die Vereinfachung greift (3P meldet den Risk gar nicht erst).
   const hasBlockingRegistrationRisk = risks.some(r =>
-    r.type === 'registration-required' ||
-    r.type === 'ic-acquisition-no-reg' ||
-    r.type === 'resting-buyer-no-uid'
+    (r.type === 'registration-required' ||
+     r.type === 'ic-acquisition-no-reg' ||
+     r.type === 'resting-buyer-no-uid') &&
+    !(dreiecks && (r.type === 'ic-acquisition-no-reg' || r.type === 'registration-required'))
   );
   const roleMap = {
     supplier: `vom Lieferanten (${cn(ctx.s1)})`,
