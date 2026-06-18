@@ -2,6 +2,16 @@
 
 ---
 
+## v4.3 · 18.06.2026 — Fix · 4P-Dreieck: Top-Status widersprach der Vereinfachung
+
+Im 4-gliedrigen Reihengeschäft mit greifender Dreiecks-Vereinfachung (z.B. IT→AT→SI→SI, EPROHA an Position B) zeigte der **Top-Status** rot **„Problem vorhanden / IG-Erwerb ohne UID — Registrierung erforderlich"**, obwohl das Tool darunter die Dreiecks-Vereinfachung (RC, keine Registrierung) korrekt anwendet. Das **3P-Pendant desselben Dreiecks war bereits grün** — das 4P war inkonsistent.
+
+- **Ursache:** Die VATEngine meldet im 4P-Pfad den Risk `ic-acquisition-no-reg`, obwohl `trianglePossible=true` (im 3P-Pfad meldet sie ihn gar nicht erst). `analyze()` filtert ihn für den `engRegHtml`-Banner bereits via `_dreiecksNeutralises`, aber `buildTrafficStatus()` und das „Registrierung"-Summary in `buildKurzbeschreibung()` prüften die **rohe** Risk-Liste erneut ohne diese Filterung → rot.
+- **Fix (nur Rendering-Layer, Engine/`analyze()` unberührt):** Beide Stellen filtern `ic-acquisition-no-reg`/`registration-required` jetzt heraus, wenn das Dreieck angewendet wird (`dreiecks`/`dreiecksApplied`) — konsistent zur `engRegHtml`-Logik und zum 3P-Verhalten.
+- **Verifiziert (JSDOM):** 4P-Dreieck → grün; 3P-Dreieck → unverändert grün; echte Nicht-Dreieck-4P-Kette mit realem Registrierungsrisiko → bleibt korrekt rot (keine Über-Unterdrückung). 26/26 Output-Tests grün.
+
+---
+
 ## v4.3 · 18.06.2026 — Fix · Link teilen (Share-Link) Restore
 
 Geteilte Links stellten zwei Eingaben nicht wieder her:
