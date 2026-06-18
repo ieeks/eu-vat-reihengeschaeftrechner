@@ -3025,8 +3025,8 @@ function analyzeCH(supplier, me, customer, departure, destination) {
     if (myCHVat) {
       html += rH({type:'info', icon:'🇨🇭', text:`CH-MWST: <strong>${myCHVat}</strong>. Ausfuhr in MWST-Abrechnung unter Ziffer 200 deklarieren (MWST-Info 22 Ziff. 3.2).`});
     }
-    html += rH({type:'info', icon:'🚛', text:`Incoterms entscheiden wer Einführer ist und damit wer EUSt schuldet. DDP (Delivered Duty Paid) = Lieferant übernimmt Einfuhr; DAP/FCA = Käufer übernimmt Einfuhr.`});
     html += `</div>`;
+    html += _importerToggle(destination, 'import');
 
   // ── Case 3: CH intern oder unklare Konstellation ────────────────────────
   } else {
@@ -5099,13 +5099,6 @@ function analyzeGBImport(ctx) {
     ⚠️ Kumulierung UK+EU Ursprung möglich — Warenkunde prüfen.`
   });
 
-  html += rH({type:'info', icon:'📋', text:
-    `<strong>Incoterms entscheiden wer Einführer ist</strong><br>
-    DDP (Delivered Duty Paid): GB-Lieferant übernimmt Einfuhr → du erhältst Ware verzollt.<br>
-    DAP/FCA/EXW: Du (EPDE) bist Einführer → du meldest an, zahlst EUSt, ziehst als Vorsteuer ab.<br>
-    Empfehlung: DAP — Kontrolle über Zollanmeldung + Vorsteuerabzug bei dir.`
-  });
-
   html += rH({type:'ok', icon:'✅', text:
     `<strong>Keine UK VAT Number nötig</strong> für reinen Import aus GB.<br>
     UK VAT Registration bei HMRC nur erforderlich wenn du in UK Ausgangsumsätze hast (Lieferungen in UK).`
@@ -5117,6 +5110,7 @@ function analyzeGBImport(ctx) {
   });
 
   html += `</div>`;
+  html += _importerToggle(dest, 'import');
   html += buildLegalRefs(['chain'], true);
   return html;
 }
@@ -5168,21 +5162,13 @@ function buildCHExportResult(ctx, eng) {
     });
   }
 
-  html += rH({type:'info', icon:'🇨🇭', text:
-    `<strong>CH-seitig: Einfuhr durch CH-Käufer (DAP/EXW) oder durch dich (DDP)</strong><br>
-    DAP/EXW: CH-Käufer meldet beim BAZG an, zahlt 8,1% EUSt + Zoll — keine CH-Pflichten für dich.<br>
-    DDP: Du meldest an → ${myCHVat
-      ? `CH-UID vorhanden: <strong>${myCHVat}</strong> + Steuervertreter (Art. 67 MWSTG) erforderlich.`
-      : `<strong>CH-MWST-Registrierung erforderlich!</strong> + Steuervertreter (Art. 67 MWSTG).`
-    }`
-  });
-
   html += rH({type:'info', icon:'🤝', text:
     `<strong>CH-EU Freihandelsabkommen (FHA 1972)</strong><br>
     Bei EU-Ursprungsware kann Zoll entfallen → <strong>EUR.1 Warenverkehrsbescheinigung</strong> oder Lieferantenerklärung erforderlich.`
   });
 
   html += `</div>`;
+  html += _importerToggle('CH', 'export');
   html += buildLegalRefs(['chain'], true);
   return html;
 }
@@ -5255,6 +5241,7 @@ function buildGBExportResult(ctx, eng) {
   });
 
   html += `</div>`;
+  html += _importerToggle('GB', 'export');
   html += buildLegalRefs(['chain'], true);
   return html;
 }
@@ -5287,28 +5274,71 @@ function _thirdCountryNote(code, direction) {
 
 function _importerConsequence(country, direction) {
   const co = currentCompany;
+  const home = COMPANIES[co].home;
   const eustRate = rate(country);
+  const isCHc = country === 'CH';
+  const isGBc = country === 'GB';
   const line = (icon, t) => `<div style="display:flex;gap:6px;align-items:baseline;margin-top:3px;"><span style="flex-shrink:0;">${icon}</span><span>${t}</span></div>`;
+  // SAP-MWSKZ nur einblenden, wenn im SAP_TAX_MAP real hinterlegt (keine erfundenen Codes)
+  const sapBoth = (c, treatment) => sapBadgeBoth(c, treatment);
+
+  // ── Drittland-AUSFUHR (Verkauf an Kunde im Drittland `country`) ──
+  if (direction === 'export') {
+    if (importerRole === 'customer') {
+      const eust = isCHc ? '8,1 % CH-EUSt + Zoll ans BAZG'
+                 : isGBc ? '20 % UK Import VAT + Zoll an HMRC'
+                 : 'die Einfuhrabgaben';
+      const exp = sapBoth(home, 'export');
+      return line('✅', `Der <strong>Kunde</strong> ist Einführer (DAP/EXW): er meldet die Einfuhr in ${cn(country)} an und zahlt ${eust}.`)
+           + line('✅', `Für ${co}: <strong>0 % Ausfuhr</strong> (${home==='AT'?'§ 7 UStG AT':'§ 6 UStG'}) mit ATLAS/AES-Ausgangsvermerk — du lieferst „unverzollt".`)
+           + line('🧾', `Ausgangsrechnung (Ausfuhr):${exp || ` <strong>${home==='AT'?'A0':'G0'}</strong>`}`);
+    }
+    if (importerRole === 'supplier') {
+      return line('✅', `Der <strong>Lieferant</strong> ist Einführer (DDP) und trägt die Einfuhr in ${cn(country)}.`)
+           + line('📋', `Für ${co}: nur verzollte Anlieferung + korrekten Belegfluss sicherstellen.`);
+    }
+    // self / DDP → wir importieren ins Drittland
+    if (isCHc) {
+      const chVat = COMPANIES[co].vatIds['CH'];
+      const dom = sapBoth('CH', 'domestic');
+      return line('🛃', `<strong>${co} ist Einführer (DDP)</strong> in der Schweiz: Anmeldung beim <strong>BAZG</strong>, EUSt 8,1 % + Zoll; EUSt als CH-Vorsteuer abziehbar (Art. 28 MWSTG).`)
+           + (chVat
+              ? line('✅', `CH-MWST vorhanden: <strong>${chVat}</strong> → Rechnung mit <strong>8,1 % CH-MWST</strong>, Lieferort Schweiz.${dom}`)
+              : line('🚨', `Keine CH-MWST → <strong>CH-Registrierung erforderlich</strong> (MWST-Info 22).`))
+           + line('⚖️', `<strong>Steuervertreter in der Schweiz</strong> mit CH-Sitz nötig (Art. 67 MWSTG).`);
+    }
+    if (isGBc) {
+      const gbVat = COMPANIES[co].vatIds['GB'];
+      return line('🛃', `<strong>${co} ist Einführer (DDP)</strong> in UK: Anmeldung bei <strong>HMRC</strong>, 20 % UK Import VAT + Zoll.`)
+           + (gbVat
+              ? line('✅', `UK VAT vorhanden: <strong>${gbVat}</strong>.`)
+              : line('🚨', `Keine UK VAT → <strong>UK VAT Registration (HMRC) erforderlich</strong> → DDP eher vermeiden.`));
+    }
+    // generisches Drittland
+    return line('🛃', `<strong>${co} ist Einführer (DDP)</strong> in ${cn(country)} → dort <strong>Steuerregistrierung bzw. Fiskal-/Steuervertreter erforderlich</strong> (${co} ist dort nicht registriert) + Einfuhrabgaben.`)
+         + line('📋', `In der Praxis meist <strong>DAP/EXW</strong> bevorzugen (Kunde ist Einführer).`);
+  }
+
+  // ── Drittland-EINFUHR (Ware aus Drittland → EU-Bestimmungsland `country`) ──
   if (importerRole === 'customer') {
-    return line('✅', `Der <strong>Kunde</strong> meldet die Einfuhr an und schuldet ${direction==='import'?`die Einfuhr-USt ${eustRate}% in ${cn(country)}`:`die Einfuhrabgaben in ${cn(country)}`}.`)
+    return line('✅', `Der <strong>Kunde</strong> meldet die Einfuhr an und schuldet die Einfuhr-USt ${eustRate}% in ${cn(country)}.`)
          + line('✅', `Für ${co}: <strong>0 %</strong>, keine ${cn(country)}-Pflichten — du lieferst „unverzollt".`);
   }
   if (importerRole === 'supplier') {
     return line('✅', `Der <strong>Lieferant</strong> ist Einführer (DDP) und trägt die Einfuhr in ${cn(country)}.`)
          + line('📋', `Für ${co}: nur verzollte Anlieferung + korrekten Belegfluss sicherstellen.`);
   }
-  // self (wir = Einführer / DDP)
-  if (direction === 'import') {
-    const uid = myVat(country);
-    return line('🛃', `Zollanmeldung über deine <strong>EORI-Nummer</strong> (EU-weit gültig — <strong>keine separate ${cn(country)}-EORI</strong> nötig).`)
-         + (uid
-            ? line('✅', `Einfuhr-USt ${eustRate}% in ${cn(country)} — mit eigener <strong>${cn(country)}-UID ${uid}</strong>; EUSt als Vorsteuer bzw. per Verlagerung in der Voranmeldung abziehbar.`)
-            : line('🚨', `Einfuhr-USt ${eustRate}% — aber ${co} hat <strong>keine ${cn(country)}-UID</strong> → <strong>USt-Registrierung in ${cn(country)} erforderlich</strong> (EU-Unternehmen: Direktregistrierung, kein zwingender Fiskalvertreter). Alternativ Kunde als Einführer (DAP/EXW).`))
-         + line('✅', `Anschlusslieferung in ${cn(country)}: ${eustRate}% ${cn(country)}-MwSt oder Reverse Charge.`);
-  }
-  // export: Einfuhr findet im Drittland statt
-  return line('🛃', `${co} importiert in ${cn(country)} → dort <strong>Steuerregistrierung bzw. Fiskal-/Steuervertreter erforderlich</strong> (${co} ist dort nicht registriert) + Einfuhrabgaben.`)
-       + line('📋', `In der Praxis meist <strong>DAP/EXW</strong> bevorzugen (Kunde ist Einführer).`);
+  // self / DDP → wir führen in die EU ein
+  const uid = myVat(country);
+  const onward = sapBoth(country, 'domestic');
+  return line('🛃', `Zollanmeldung über deine <strong>EORI-Nummer</strong> (EU-weit gültig — <strong>keine separate ${cn(country)}-EORI</strong> nötig).`)
+       + line('ℹ️', `Einfuhr-USt selbst = Zoll/EUSt-Vorgang über EORI — <strong>kein AP-Steuerkennzeichen</strong> (kein EUSt-MWSKZ im SAP-Determination-File).`)
+       + (uid
+          ? line('✅', `Einfuhr-USt ${eustRate}% in ${cn(country)} — mit eigener <strong>${cn(country)}-UID ${uid}</strong>; EUSt als Vorsteuer bzw. per Verlagerung in der Voranmeldung abziehbar.`)
+          : line('🚨', `Einfuhr-USt ${eustRate}% — aber ${co} hat <strong>keine ${cn(country)}-UID</strong> → <strong>USt-Registrierung in ${cn(country)} erforderlich</strong> (EU-Unternehmen: Direktregistrierung, kein zwingender Fiskalvertreter). Alternativ Kunde als Einführer (DAP/EXW).`))
+       + (onward
+          ? line('🧾', `Anschlusslieferung in ${cn(country)} (${eustRate}% / RC):${onward}`)
+          : line('🧾', `Anschlusslieferung in ${cn(country)} (${eustRate}% / RC): <strong>kein AP-MWSKZ hinterlegt</strong> — ${cn(country)}-Registrierung/Mapping prüfen.`));
 }
 
 function _importerToggle(country, direction) {
@@ -9289,6 +9319,29 @@ const OUTPUT_TESTS = [
     expect: [
       { contains: 'Kunde', desc: 'Kunde ist Einführer' },
       { contains: 'unverzollt', desc: 'wir liefern unverzollt' },
+    ],
+  },
+  {
+    id: 'OT-3RD-CH-IMP-TOGGLE',
+    name: 'CH-Import (3P): Einführer-Toggle + SAP-Anschlusslieferung',
+    setup() { currentCompany='EPDE'; MY_VAT_IDS=COMPANIES['EPDE'].vatIds; currentMode=3; importerRole='self'; },
+    run() { document.getElementById('resultContent').innerHTML =
+      analyzeCH('CH','DE','BE','CH','BE'); },
+    expect: [
+      { contains: 'data-component="importerToggle"', desc: 'Toggle auch im CH-Pfad' },
+      { contains: 'EORI', desc: 'Einfuhr über EORI' },
+      { contains: 'BS', desc: 'BE-Anschlusslieferung Ausgangs-MWSKZ' },
+    ],
+  },
+  {
+    id: 'OT-3RD-GB-IMP-TOGGLE',
+    name: 'GB-Import (3P): Einführer-Toggle vorhanden',
+    setup() { currentCompany='EPDE'; MY_VAT_IDS=COMPANIES['EPDE'].vatIds; currentMode=3; importerRole='customer'; },
+    run() { document.getElementById('resultContent').innerHTML =
+      analyzeGBImport({s1:'GB',s2:'DE',s4:'BE',dep:'GB',dest:'BE'}); },
+    expect: [
+      { contains: 'data-component="importerToggle"', desc: 'Toggle auch im GB-Pfad' },
+      { contains: 'unverzollt', desc: 'Kunde-Variante schaltet Folgebox' },
     ],
   },
 
