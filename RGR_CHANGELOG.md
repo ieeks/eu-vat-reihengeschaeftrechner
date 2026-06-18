@@ -18,8 +18,11 @@ Bisher waren nur **CH und GB** als Drittland abgebildet, und **wer importiert** 
 - Leitet die **konkrete Folge** ab: bei „Wir importieren" → habe ich eine UID im Bestimmungsland? EPDE→SI vorhanden (`SI…`), ES/RU fehlen → **Registrierung erforderlich** (EU-Unternehmen: Direktregistrierung, kein zwingender Fiskalvertreter). Klarstellung: Einfuhr läuft über **EORI**, nicht UID; UID erst für EUSt-Verrechnung + Anschlusslieferung.
 - `importerRole` in `getState`/`loadState` persistiert und im Test-Runner gesichert/zurückgesetzt.
 
+### Feature · Mode 2 (EPROHA AT-Lager) — Drittland nachgezogen
+- Neuer `analyze2()`-Branch `else if (isNonEU(dest))` (nach CH/GB-Sonderpfaden): AT→Drittland (TR/RS/BA/RU) = **Ausfuhrlieferung A0** (§ 7 UStG AT), mit `_thirdCountryNote()` (Sanktionen/Zollunion/SAA) + `_importerToggle()`. Bestehende CH/GB/Drop-Shipment-Pfade unberührt; EU-Kunden weiterhin IG-Lieferung. Drop-Shipment zu Drittland-Warenempfängern war bereits generisch (A0).
+
 ### Tests
-- `OT-3RD-RU-01` (Sanktion+EORI+ES-Registrierung), `OT-3RD-RS-01` (SAA + EPDE SI-UID), `OT-3RD-TR-01` (Zollunion/A.TR), `OT-3RD-IMP-TOGGLE` (Kunde=Einführer). **30 Output-Tests grün.**
+- `OT-3RD-RU-01` (Sanktion+EORI+ES-Registrierung), `OT-3RD-RS-01` (SAA + EPDE SI-UID), `OT-3RD-TR-01` (Zollunion/A.TR), `OT-3RD-M2-TR` (Mode 2 AT→TR Ausfuhr A0), `OT-3RD-IMP-TOGGLE` (Kunde=Einführer). **31 Output-Tests grün.**
 
 ---
 

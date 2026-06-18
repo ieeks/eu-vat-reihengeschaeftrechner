@@ -4510,6 +4510,25 @@ function analyze2() {
       html += rH({type:'warn', icon:'🚗', text:`<strong>Abholung durch Kunden (EXW):</strong> Lieferort = AT-Lager. EPROHA hat keine Kontrolle über die Ausfuhr — Ausfuhrbestätigung vom Kunden/Spediteur einfordern! Ohne ATLAS-Nachweis → 20% AT-MwSt-Risiko.`});
     }
 
+  // ── AT → Drittland (TR/RS/BA/RU u.a., außer CH/GB mit Sonderpfad) — Ausfuhr ──
+  } else if (isNonEU(dest)) {
+    html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--amber);margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:8px;">
+      ${flag(dest)} <strong>Drittland-Transaktion</strong> — ${cn(dest)} ist kein EU-Mitglied. Keine ig. Lieferung — <strong>Ausfuhrlieferung</strong> nach § 7 UStG AT / Art. 146 MwStSystRL.
+    </div>`;
+    html += `<div class="mode2-flow">${buildFlowDiagram([{code:'AT',role:'EPROHA (Lager/Werk)'},{code:dest,role:'Kunde'}], 0, 'AT', dest, false, -1, -1)}</div>`;
+
+    const _tnote = _thirdCountryNote(dest, 'export');
+    if (_tnote) html += _tnote;
+
+    html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: A0</strong> (Ausgangssteuer AT 0% Ausfuhr) · Kein ZM-Eintrag — ${cn(dest)} ist kein EU-Land`});
+    html += rH({type:'ok', icon:'⚡', text:`Ausfuhrlieferung AT → ${cn(dest)}: Rechnung <strong>0% MwSt</strong> gem. § 7 UStG AT / Art. 146 MwStSystRL. AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>.`});
+    html += rH({type:'warn', icon:'📦', text:`Belegnachweis: <strong>AT-Ausfuhrbestätigung (ATLAS/e-dec)</strong> aufbewahren (§ 7 Abs. 3 UStG AT). Gelangensbestätigung allein reicht nicht für Drittland-Ausfuhr!`});
+    html += rH({type:'warn', icon:'🛃', text:`<strong>Zoll AT (Ausfuhr):</strong> Ausfuhranmeldung in AT via ATLAS/e-dec. Zolltarifnummer (KN-Code) + Ursprungsland angeben. Empfehlung: Spediteur mit ATLAS-Zugang beauftragen.`});
+    html += _importerToggle(dest, 'export');
+    if (isAbholung) {
+      html += rH({type:'warn', icon:'🚗', text:`<strong>Abholung durch Kunden (EXW):</strong> Lieferort = AT-Lager. EPROHA hat keine Kontrolle über die Ausfuhr — Ausfuhrbestätigung vom Kunden/Spediteur einfordern! Ohne ATLAS-Nachweis → 20% AT-MwSt-Risiko.`});
+    }
+
   // ── AT → EU-Kunde + Drop-Shipment (Reihengeschäft / Dreiecksgeschäft) ──────
   //    EPROHA(AT) = erster Lieferant → Kunde(dest) → Warenempfänger(dropShipDest)
   } else if (dropShipDest && dropShipDest !== dest && dropShipDest !== 'AT' && !isNonEU(dest)) {
@@ -9225,6 +9244,24 @@ const OUTPUT_TESTS = [
       { contains: 'Zollunion', desc: 'TR-Zollunion' },
       { contains: 'A.TR', desc: 'A.TR-Warenverkehrsbescheinigung' },
       { contains: 'Einfuhrumsatzsteuer', desc: 'EUSt fällt trotz Zollfreiheit an' },
+    ],
+  },
+
+  {
+    id: 'OT-3RD-M2-TR',
+    name: 'Mode 2 AT→TR (EPROHA): Drittland-Ausfuhr A0 + Zollunion-Hinweis',
+    setup() {
+      currentCompany='EPROHA'; MY_VAT_IDS=COMPANIES['EPROHA'].vatIds; currentMode=2;
+      selectedTransport='supplier'; importerRole='self'; dropShipDest=null;
+      const setV=(id,val)=>{let el=document.getElementById(id); if(!el){el=document.createElement('select');el.id=id;el.style.display='none';document.body.appendChild(el);} el.innerHTML=`<option value="${val}" selected>${val}</option>`;};
+      setV('cp-0','AT'); setV('cp-1','TR');
+      setV('s1','AT'); setV('s2','TR'); setV('s3','TR'); setV('s4','TR'); setV('dep','AT'); setV('dest','TR');
+    },
+    run() { analyze2(); },
+    expect: [
+      { contains: 'Drittland-Transaktion', desc: 'TR als Drittland erkannt' },
+      { contains: 'Ausg: A0', desc: 'Ausfuhr-Kennzeichen A0' },
+      { contains: 'Zollunion', desc: 'TR Zollunion-Hinweis (A.TR)' },
     ],
   },
 
