@@ -2,6 +2,17 @@
 
 ---
 
+## v4.3 · 18.06.2026 — Drittland-Einführer: Mobile-Sichtbarkeit + UID-Block-Korrektur
+
+UX-Schliff am Einführer-Modell (Importer of Record) im Drittland-Import:
+
+- **Einführer-Toggle (+ Länder-/Sanktionshinweis) jetzt auf Mobile sichtbar.** Die Mobile-Verkürzung blendet alle `.hint` aus (außer `.reg-warnings`) — dadurch waren der Toggle (Kernentscheidung) und v.a. die **RU-Sanktionswarnung** am Handy unsichtbar. Fix: `@media`-Ausnahme für `[data-component="importerToggle"]` und `[data-component="thirdCountryNote"]`; `_thirdCountryNote()` setzt jetzt dieses Attribut.
+- **Folge-Box des Toggles als Checkliste** statt Fließtext (✅/🛃/📋), inkl. **EORI-Klarstellung** in der „Wir importieren"-Variante: deutsche EORI ist EU-weit gültig → **keine separate Bestimmungsland-EORI** nötig; UID/Registrierung nur falls keine UID im Bestimmungsland.
+- **Irreführenden IG-UID-Block bei Einfuhr ausgeblendet.** Bei Drittland-Import (Abgangsland nonEU) ist „Als Käufer (L1)" kein ig. Erwerb → `renderUIDInline()` zeigt stattdessen einen kurzen Einfuhr-Hinweis (Zoll über EORI), `renderUidOverrideBlock()` (Art. 36a) wird ausgeblendet. Greift auch für CH/GB-Import; EU-Fälle und Export (dest nonEU) unverändert.
+- Rendering-/CSS-Layer; VATEngine/`analyze()` unberührt. Test `OT-3RD-RU-01` um EORI-Folgebox erweitert; 31 Output-Tests grün. JSDOM-verifiziert (Toggle/UID-Block/EORI/Sanktion + EU-Kontrolle).
+
+---
+
 ## v4.3 · 18.06.2026 — Neue Drittländer (TR/RS/BA/RU) + modellierter Einführer (Importer of Record)
 
 Bisher waren nur **CH und GB** als Drittland abgebildet, und **wer importiert** war im 3P nur als Hinweistext vorhanden (strukturiert nur in Mode 2/EPROHA). Beides ist jetzt gelöst.

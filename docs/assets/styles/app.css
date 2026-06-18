@@ -1575,6 +1575,9 @@ header {
   .hints.reg-warnings { display: block !important; }
   .hints.reg-warnings .hint { display: flex !important; }
   .hint { display: none !important; }
+  /* Drittland: Einführer-Toggle (Kernentscheidung) + Länder-/Sanktionshinweis trotz Mobile zeigen */
+  .hint[data-component="importerToggle"],
+  .hint[data-component="thirdCountryNote"] { display: flex !important; }
   .perspektiv-wrap { display: none !important; }
   .perspektiv-block { display: none !important; }
   .fade { display: flex !important; flex-direction: column !important; }
