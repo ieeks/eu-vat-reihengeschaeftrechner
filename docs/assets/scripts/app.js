@@ -5269,32 +5269,46 @@ function buildGBExportResult(ctx, eng) {
 
 function _thirdCountryNote(code, direction) {
   const c = getC(code) || {};
-  if (c.sanctions) return rH({type:'warn', icon:'🚫', text:
+  // wie rH(), aber mit data-component (damit der Hinweis auf Mobile sichtbar bleibt)
+  const box = (type, icon, text) => `<div class="hint hint-${type}" data-component="thirdCountryNote"><span class="hint-icon">${icon}</span><span>${text}</span></div>`;
+  if (c.sanctions) return box('warn', '🚫',
     `<strong>⚠️ EU-Sanktionen ${cn(code)} (VO 833/2014 ff.) — ZUERST prüfen!</strong><br>
     Zahlreiche Warengruppen sind ${direction==='import'?'einfuhr':'ausfuhr'}verboten (Stahl/Eisen, viele Industrie-, Luxus-, Dual-Use-Güter), dazu Zahlungs-/Logistikbeschränkungen.<br>
-    <strong>Die umsatzsteuerliche Beurteilung ist nachrangig — ohne zulässige Ware ist alles andere irrelevant.</strong>`});
-  if (c.customsUnion) return rH({type:'info', icon:'🔗', text:
+    <strong>Die umsatzsteuerliche Beurteilung ist nachrangig — ohne zulässige Ware ist alles andere irrelevant.</strong>`);
+  if (c.customsUnion) return box('info', '🔗',
     `<strong>EU-Türkei-Zollunion (Beschluss 1/95)</strong><br>
     Für Industriewaren im freien Verkehr entfällt der <strong>Zoll</strong> (Nachweis: <strong>A.TR-Warenverkehrsbescheinigung</strong>) — die <strong>Einfuhrumsatzsteuer fällt dennoch an</strong>.<br>
-    Agrar-/EGKS-Waren und Drittlandsware außerhalb des freien Verkehrs sind ausgenommen.`});
-  if (c.saa) return rH({type:'info', icon:'🤝', text:
+    Agrar-/EGKS-Waren und Drittlandsware außerhalb des freien Verkehrs sind ausgenommen.`);
+  if (c.saa) return box('info', '🤝',
     `<strong>Stabilisierungs- und Assoziierungsabkommen EU–${cn(code)}</strong><br>
-    Zollpräferenz für Ursprungswaren möglich (Nachweis: <strong>EUR.1</strong> oder Ursprungserklärung) — die <strong>Einfuhrumsatzsteuer bleibt unberührt</strong>.`});
+    Zollpräferenz für Ursprungswaren möglich (Nachweis: <strong>EUR.1</strong> oder Ursprungserklärung) — die <strong>Einfuhrumsatzsteuer bleibt unberührt</strong>.`);
   return '';
 }
 
 function _importerConsequence(country, direction) {
   const co = currentCompany;
   const eustRate = rate(country);
-  if (importerRole === 'customer') return `Der <strong>Kunde</strong> ist Einführer (DAP/EXW): er meldet die Einfuhr an und schuldet ${direction==='import'?`die Einfuhr-USt ${eustRate}% in ${cn(country)}`:`die Einfuhrabgaben in ${cn(country)}`}. <strong>Für ${co} keine Einfuhrpflichten</strong> — du lieferst „unverzollt".`;
-  if (importerRole === 'supplier') return `Der <strong>Lieferant</strong> ist Einführer (DDP): er trägt die Einfuhr in ${cn(country)}. Für ${co} keine Einfuhrpflichten — nur korrekten Belegfluss (verzollte Anlieferung) sicherstellen.`;
-  // self
+  const line = (icon, t) => `<div style="display:flex;gap:6px;align-items:baseline;margin-top:3px;"><span style="flex-shrink:0;">${icon}</span><span>${t}</span></div>`;
+  if (importerRole === 'customer') {
+    return line('✅', `Der <strong>Kunde</strong> meldet die Einfuhr an und schuldet ${direction==='import'?`die Einfuhr-USt ${eustRate}% in ${cn(country)}`:`die Einfuhrabgaben in ${cn(country)}`}.`)
+         + line('✅', `Für ${co}: <strong>0 %</strong>, keine ${cn(country)}-Pflichten — du lieferst „unverzollt".`);
+  }
+  if (importerRole === 'supplier') {
+    return line('✅', `Der <strong>Lieferant</strong> ist Einführer (DDP) und trägt die Einfuhr in ${cn(country)}.`)
+         + line('📋', `Für ${co}: nur verzollte Anlieferung + korrekten Belegfluss sicherstellen.`);
+  }
+  // self (wir = Einführer / DDP)
   if (direction === 'import') {
     const uid = myVat(country);
-    if (uid) return `<strong>${co} ist Einführer (DDP)</strong> in ${cn(country)}: Einfuhr-USt ${eustRate}% — mit eigener <strong>${cn(country)}-UID ${uid}</strong> abwickelbar, EUSt als Vorsteuer bzw. per Verlagerung in der Voranmeldung abziehbar.`;
-    return `<strong>${co} ist Einführer (DDP)</strong> in ${cn(country)}: Einfuhr-USt ${eustRate}% fällt an, aber <strong>${co} hat keine ${cn(country)}-UID</strong> → <strong>USt-Registrierung in ${cn(country)} erforderlich</strong> (als EU-Unternehmen Direktregistrierung möglich, kein zwingender Fiskalvertreter). Alternativ Importeursrolle auf den Kunden verlagern (DAP/EXW).`;
+    return line('🛃', `Zollanmeldung über deine <strong>EORI-Nummer</strong> (EU-weit gültig — <strong>keine separate ${cn(country)}-EORI</strong> nötig).`)
+         + (uid
+            ? line('✅', `Einfuhr-USt ${eustRate}% in ${cn(country)} — mit eigener <strong>${cn(country)}-UID ${uid}</strong>; EUSt als Vorsteuer bzw. per Verlagerung in der Voranmeldung abziehbar.`)
+            : line('🚨', `Einfuhr-USt ${eustRate}% — aber ${co} hat <strong>keine ${cn(country)}-UID</strong> → <strong>USt-Registrierung in ${cn(country)} erforderlich</strong> (EU-Unternehmen: Direktregistrierung, kein zwingender Fiskalvertreter). Alternativ Kunde als Einführer (DAP/EXW).`))
+         + line('✅', `Anschlusslieferung in ${cn(country)}: ${eustRate}% ${cn(country)}-MwSt oder Reverse Charge.`);
   }
-  return `<strong>${co} ist Einführer (DDP)</strong> im Drittland ${cn(country)}: dort <strong>Steuerregistrierung bzw. Fiskal-/Steuervertreter erforderlich</strong> (${co} ist dort nicht registriert) + Einfuhrabgaben. In der Praxis meist DAP/EXW bevorzugen (Kunde ist Einführer).`;
+  // export: Einfuhr findet im Drittland statt
+  return line('🛃', `${co} importiert in ${cn(country)} → dort <strong>Steuerregistrierung bzw. Fiskal-/Steuervertreter erforderlich</strong> (${co} ist dort nicht registriert) + Einfuhrabgaben.`)
+       + line('📋', `In der Praxis meist <strong>DAP/EXW</strong> bevorzugen (Kunde ist Einführer).`);
 }
 
 function _importerToggle(country, direction) {
@@ -9218,6 +9232,7 @@ const OUTPUT_TESTS = [
       { contains: 'Sanktionen', desc: 'RU Sanktionswarnung zuerst' },
       { contains: 'EORI', desc: 'EORI statt UID bei der Einfuhr' },
       { contains: 'Registrierung in Spanien', desc: 'EPDE hat keine ES-UID' },
+      { contains: 'keine separate Spanien-EORI', desc: 'EORI-Hinweis in Einführer-Folgebox' },
       { contains: 'Kein Dreiecksgeschäft', desc: 'Drittland → kein Art.-141-Dreieck' },
     ],
   },
@@ -10555,6 +10570,8 @@ function renderUidOverrideBlock() {
   const countries = getSelectedCountries();
   const dep = countries[0];
   const dest = countries[countries.length-1];
+  // Drittland-Einfuhr (dep = nonEU): kein ig. Vorgang → Art. 36a nicht anwendbar
+  if (currentMode === 3 && isNonEU(dep)) { $('uidOverrideSection').style.display = 'none'; return; }
   const home = COMPANIES[currentCompany].home;
   const transportIdx = ['A','B','C','D'].indexOf(getTransportLetter());
   const isMiddle = transportIdx === mePosition - 1 && transportIdx > 0 && transportIdx < countries.length - 1;
@@ -10609,6 +10626,14 @@ function renderUIDInline() {
   const el = $('uidInlineGrid');
   if (!el) return;
   const countries = getSelectedCountries();
+  // Drittland-Einfuhr (Abgangsland = nonEU): "Als Käufer (L1)" wäre irreführend —
+  // L1 ist kein ig. Erwerb, sondern eine Einfuhr (EORI statt UID).
+  if (currentMode === 3 && isNonEU(countries[0])) {
+    el.innerHTML = `<div class="uid-inline-note" style="font-size:0.72rem;color:var(--tx-3);line-height:1.55;padding:2px 2px;">
+      🛃 <strong>Drittland-Einfuhr</strong> — keine ig. UID hier. Zoll läuft über die <strong>EORI-Nummer</strong>; eine UID des Bestimmungslands ist erst für EUSt-Verrechnung + Anschlusslieferung relevant → siehe <strong>Einführer-Auswahl</strong> im Ergebnis.
+    </div>`;
+    return;
+  }
   const meIdx = currentMode === 2 ? 0 : mePosition - 1;
   const vids = MY_VAT_IDS;
   const n = countries.length;

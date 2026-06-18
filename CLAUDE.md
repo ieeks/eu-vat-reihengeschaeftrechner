@@ -258,7 +258,7 @@ thirdC(dep|dest, nonEU≠CH/GB) Export  → buildThirdExportResult()  ← Engine
 eng._depEqDest                        → analyzeInland()
 ```
 
-**Generisches Drittland (TR/RS/BA/RU):** Daten in `EU`-Array (`nonEU:true` + Meta `customsUnion`/`saa`/`sanctions`). `analyzeThirdImport()`/`buildThirdExportResult()` mit `_thirdCountryNote()` (Sanktionen RU · Zollunion TR/A.TR · SAA RS/BA) und `_importerToggle()`/`setImporter()` → State `importerRole` ('self'|'customer'|'supplier', in getState/loadState persistiert). Importeur-Logik leitet UID/Registrierung im Bestimmungsland ab (z.B. EPDE→SI vorhanden, ES/RU fehlen → Registrierung). Einfuhr läuft über EORI, nicht UID.
+**Generisches Drittland (TR/RS/BA/RU):** Daten in `EU`-Array (`nonEU:true` + Meta `customsUnion`/`saa`/`sanctions`). `analyzeThirdImport()`/`buildThirdExportResult()` mit `_thirdCountryNote()` (Sanktionen RU · Zollunion TR/A.TR · SAA RS/BA) und `_importerToggle()`/`setImporter()` → State `importerRole` ('self'|'customer'|'supplier', in getState/loadState persistiert). Importeur-Logik leitet UID/Registrierung im Bestimmungsland ab (z.B. EPDE→SI vorhanden, ES/RU fehlen → Registrierung). Einfuhr läuft über EORI, nicht UID. Toggle-Folgebox = Checkliste (inkl. EORI-Klarstellung: EU-weit gültig, keine separate Bestimmungsland-EORI). Mobile: `_thirdCountryNote()` und Toggle tragen `data-component` und sind via `@media`-Ausnahme sichtbar (sonst von `.hint`-Verkürzung versteckt). Bei Drittland-Einfuhr (dep nonEU, mode 3) blenden `renderUIDInline()`/`renderUidOverrideBlock()` den irreführenden IG-UID-Block aus (Einfuhr ≠ ig. Erwerb).
 
 ## Linke Seite
 Struktur → Warenkette → Transport → UID-Override → Context → Lohn → UID-Status (unten)
