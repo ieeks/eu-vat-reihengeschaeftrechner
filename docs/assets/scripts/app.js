@@ -143,12 +143,16 @@ const FLAGS = {
   AT:'🇦🇹',BE:'🇧🇪',BG:'🇧🇬',CY:'🇨🇾',CZ:'🇨🇿',DE:'🇩🇪',DK:'🇩🇰',EE:'🇪🇪',
   ES:'🇪🇸',FI:'🇫🇮',FR:'🇫🇷',GR:'🇬🇷',HR:'🇭🇷',HU:'🇭🇺',IE:'🇮🇪',IT:'🇮🇹',
   LT:'🇱🇹',LU:'🇱🇺',LV:'🇱🇻',MT:'🇲🇹',NL:'🇳🇱',PL:'🇵🇱',PT:'🇵🇹',RO:'🇷🇴',
-  SE:'🇸🇪',SI:'🇸🇮',SK:'🇸🇰',CH:'🇨🇭',GB:'🇬🇧'
+  SE:'🇸🇪',SI:'🇸🇮',SK:'🇸🇰',CH:'🇨🇭',GB:'🇬🇧',TR:'🇹🇷',RS:'🇷🇸',BA:'🇧🇦',RU:'🇷🇺'
 };
 
 const EU = [
   {code:'CH',name:'Schweiz',          en:'Switzerland',     std:8.1,  nonEU:true},
   {code:'GB',name:'Großbritannien',   en:'United Kingdom',  std:20,   nonEU:true},
+  {code:'TR',name:'Türkei',           en:'Türkiye',         std:20,   nonEU:true, customsUnion:true},
+  {code:'RS',name:'Serbien',          en:'Serbia',          std:20,   nonEU:true, saa:true},
+  {code:'BA',name:'Bosnien-Herz.',    en:'Bosnia and Herz.',std:17,   nonEU:true, saa:true},
+  {code:'RU',name:'Russland',         en:'Russia',          std:20,   nonEU:true, sanctions:true},
   {code:'BE',name:'Belgien',      en:'Belgium',     std:21},
   {code:'BG',name:'Bulgarien',    en:'Bulgaria',    std:20},
   {code:'DK',name:'Dänemark',     en:'Denmark',     std:25},
@@ -198,6 +202,7 @@ let activeInvSupply   = 0;
 let activeRpaSupply   = 0;
 let uidPanelOpen      = false;
 let dropShipDest      = null;   // Mode 2: Warenempfänger-Land bei Drop-Shipment (null = kein Drop-Shipment)
+let importerRole      = 'self';  // Drittland-Einfuhr: wer ist Einführer? 'self' (wir/DDP) | 'customer' (DAP/EXW) | 'supplier' (Lieferant DDP)
 
 // Country helpers
 const EU_MAP   = Object.fromEntries(EU.map(c => [c.code, c]));
@@ -4505,6 +4510,25 @@ function analyze2() {
       html += rH({type:'warn', icon:'🚗', text:`<strong>Abholung durch Kunden (EXW):</strong> Lieferort = AT-Lager. EPROHA hat keine Kontrolle über die Ausfuhr — Ausfuhrbestätigung vom Kunden/Spediteur einfordern! Ohne ATLAS-Nachweis → 20% AT-MwSt-Risiko.`});
     }
 
+  // ── AT → Drittland (TR/RS/BA/RU u.a., außer CH/GB mit Sonderpfad) — Ausfuhr ──
+  } else if (isNonEU(dest)) {
+    html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--amber);margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:8px;">
+      ${flag(dest)} <strong>Drittland-Transaktion</strong> — ${cn(dest)} ist kein EU-Mitglied. Keine ig. Lieferung — <strong>Ausfuhrlieferung</strong> nach § 7 UStG AT / Art. 146 MwStSystRL.
+    </div>`;
+    html += `<div class="mode2-flow">${buildFlowDiagram([{code:'AT',role:'EPROHA (Lager/Werk)'},{code:dest,role:'Kunde'}], 0, 'AT', dest, false, -1, -1)}</div>`;
+
+    const _tnote = _thirdCountryNote(dest, 'export');
+    if (_tnote) html += _tnote;
+
+    html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: A0</strong> (Ausgangssteuer AT 0% Ausfuhr) · Kein ZM-Eintrag — ${cn(dest)} ist kein EU-Land`});
+    html += rH({type:'ok', icon:'⚡', text:`Ausfuhrlieferung AT → ${cn(dest)}: Rechnung <strong>0% MwSt</strong> gem. § 7 UStG AT / Art. 146 MwStSystRL. AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>.`});
+    html += rH({type:'warn', icon:'📦', text:`Belegnachweis: <strong>AT-Ausfuhrbestätigung (ATLAS/e-dec)</strong> aufbewahren (§ 7 Abs. 3 UStG AT). Gelangensbestätigung allein reicht nicht für Drittland-Ausfuhr!`});
+    html += rH({type:'warn', icon:'🛃', text:`<strong>Zoll AT (Ausfuhr):</strong> Ausfuhranmeldung in AT via ATLAS/e-dec. Zolltarifnummer (KN-Code) + Ursprungsland angeben. Empfehlung: Spediteur mit ATLAS-Zugang beauftragen.`});
+    html += _importerToggle(dest, 'export');
+    if (isAbholung) {
+      html += rH({type:'warn', icon:'🚗', text:`<strong>Abholung durch Kunden (EXW):</strong> Lieferort = AT-Lager. EPROHA hat keine Kontrolle über die Ausfuhr — Ausfuhrbestätigung vom Kunden/Spediteur einfordern! Ohne ATLAS-Nachweis → 20% AT-MwSt-Risiko.`});
+    }
+
   // ── AT → EU-Kunde + Drop-Shipment (Reihengeschäft / Dreiecksgeschäft) ──────
   //    EPROHA(AT) = erster Lieferant → Kunde(dest) → Warenempfänger(dropShipDest)
   } else if (dropShipDest && dropShipDest !== dest && dropShipDest !== 'AT' && !isNonEU(dest)) {
@@ -5231,6 +5255,133 @@ function buildGBExportResult(ctx, eng) {
   });
 
   html += `</div>`;
+  html += buildLegalRefs(['chain'], true);
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  SECTION · Generisches Drittland (TR/RS/BA/RU u.a. — nonEU außer CH/GB)
+//  analyzeThirdImport()      → Drittland → EU: Einfuhr + Einführer (Importer of Record)
+//  buildThirdExportResult()  → EU → Drittland: Ausfuhr + Einführer auf Drittlandseite
+//  _thirdCountryNote()       → Spezifika: Sanktionen (RU) · Zollunion (TR) · SAA (RS/BA)
+//  _importerToggle()         → DDP/DAP-Umschalter (importerRole) mit UID-/Registrierungs-Folge
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function _thirdCountryNote(code, direction) {
+  const c = getC(code) || {};
+  if (c.sanctions) return rH({type:'warn', icon:'🚫', text:
+    `<strong>⚠️ EU-Sanktionen ${cn(code)} (VO 833/2014 ff.) — ZUERST prüfen!</strong><br>
+    Zahlreiche Warengruppen sind ${direction==='import'?'einfuhr':'ausfuhr'}verboten (Stahl/Eisen, viele Industrie-, Luxus-, Dual-Use-Güter), dazu Zahlungs-/Logistikbeschränkungen.<br>
+    <strong>Die umsatzsteuerliche Beurteilung ist nachrangig — ohne zulässige Ware ist alles andere irrelevant.</strong>`});
+  if (c.customsUnion) return rH({type:'info', icon:'🔗', text:
+    `<strong>EU-Türkei-Zollunion (Beschluss 1/95)</strong><br>
+    Für Industriewaren im freien Verkehr entfällt der <strong>Zoll</strong> (Nachweis: <strong>A.TR-Warenverkehrsbescheinigung</strong>) — die <strong>Einfuhrumsatzsteuer fällt dennoch an</strong>.<br>
+    Agrar-/EGKS-Waren und Drittlandsware außerhalb des freien Verkehrs sind ausgenommen.`});
+  if (c.saa) return rH({type:'info', icon:'🤝', text:
+    `<strong>Stabilisierungs- und Assoziierungsabkommen EU–${cn(code)}</strong><br>
+    Zollpräferenz für Ursprungswaren möglich (Nachweis: <strong>EUR.1</strong> oder Ursprungserklärung) — die <strong>Einfuhrumsatzsteuer bleibt unberührt</strong>.`});
+  return '';
+}
+
+function _importerConsequence(country, direction) {
+  const co = currentCompany;
+  const eustRate = rate(country);
+  if (importerRole === 'customer') return `Der <strong>Kunde</strong> ist Einführer (DAP/EXW): er meldet die Einfuhr an und schuldet ${direction==='import'?`die Einfuhr-USt ${eustRate}% in ${cn(country)}`:`die Einfuhrabgaben in ${cn(country)}`}. <strong>Für ${co} keine Einfuhrpflichten</strong> — du lieferst „unverzollt".`;
+  if (importerRole === 'supplier') return `Der <strong>Lieferant</strong> ist Einführer (DDP): er trägt die Einfuhr in ${cn(country)}. Für ${co} keine Einfuhrpflichten — nur korrekten Belegfluss (verzollte Anlieferung) sicherstellen.`;
+  // self
+  if (direction === 'import') {
+    const uid = myVat(country);
+    if (uid) return `<strong>${co} ist Einführer (DDP)</strong> in ${cn(country)}: Einfuhr-USt ${eustRate}% — mit eigener <strong>${cn(country)}-UID ${uid}</strong> abwickelbar, EUSt als Vorsteuer bzw. per Verlagerung in der Voranmeldung abziehbar.`;
+    return `<strong>${co} ist Einführer (DDP)</strong> in ${cn(country)}: Einfuhr-USt ${eustRate}% fällt an, aber <strong>${co} hat keine ${cn(country)}-UID</strong> → <strong>USt-Registrierung in ${cn(country)} erforderlich</strong> (als EU-Unternehmen Direktregistrierung möglich, kein zwingender Fiskalvertreter). Alternativ Importeursrolle auf den Kunden verlagern (DAP/EXW).`;
+  }
+  return `<strong>${co} ist Einführer (DDP)</strong> im Drittland ${cn(country)}: dort <strong>Steuerregistrierung bzw. Fiskal-/Steuervertreter erforderlich</strong> (${co} ist dort nicht registriert) + Einfuhrabgaben. In der Praxis meist DAP/EXW bevorzugen (Kunde ist Einführer).`;
+}
+
+function _importerToggle(country, direction) {
+  const opts = [{v:'self',l:'Wir (DDP)'},{v:'customer',l:'Kunde (DAP/EXW)'},{v:'supplier',l:'Lieferant (DDP)'}];
+  const btns = opts.map(o =>
+    `<button class="t-opt${importerRole===o.v?' active':''}" style="display:inline-flex;width:auto;margin:0 6px 6px 0;" onclick="setImporter('${o.v}')"><span class="t-label">${o.l}</span></button>`).join('');
+  return `<div class="hint hint-info" data-component="importerToggle" style="flex-direction:column;align-items:flex-start;margin-bottom:12px;">
+    <div style="font-weight:700;margin-bottom:6px;">🛃 Wer ist Einführer (Importer of Record)?</div>
+    <div style="margin-bottom:8px;">${btns}</div>
+    <div>${_importerConsequence(country, direction)}</div>
+  </div>`;
+}
+
+function analyzeThirdImport(ctx, third) {
+  const { s1, s2, s4, dep, dest } = ctx;
+  const isAT = COMPANIES[currentCompany].home === 'AT';
+  const co = currentCompany;
+  const eustLaw = isAT ? '§ 26 UStG AT i.V.m. Art. 201 UZK' : '§ 21 UStG i.V.m. Art. 201 UZK';
+
+  let html = `<div style="padding:14px 16px; background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.3); border-radius:var(--r-md); margin-bottom:16px;">
+    <div style="color:var(--amber); font-weight:700; font-size:0.8rem; margin-bottom:6px;">${flag(third)} Drittland-Import · ${cn(third)} → EU</div>
+    <div style="color:var(--tx-2); font-size:0.78rem; line-height:1.7;">
+      <strong>${cn(s1)}</strong> (U1) → <strong>${cn(s2)}</strong> (U2/Ich) → <strong>${cn(s4)}</strong> (U3)<br>
+      Ware kommt aus ${cn(third)} (Drittland). Keine IG-Lieferung — <strong>Einfuhr ins EU-Zollgebiet</strong> (Bestimmungsland: ${cn(dest)}).
+    </div>
+  </div>`;
+
+  const note = _thirdCountryNote(third, 'import');
+  if (note) html += `<div class="hints" style="margin-bottom:12px;">${note}</div>`;
+
+  html += `<div class="tldr-box" style="margin-bottom:16px;">
+    <div class="tldr-header">⚡ KURZFASSUNG</div>
+    <div class="tldr-row"><span class="tldr-label">L1</span><span><strong>${cn(s1)} → ${cn(s2)}</strong> · ${cn(third)}-Ausfuhr (Drittlandsrecht, kein EU-MwSt-Ausweis) · EU-Einfuhr: EUSt ${rate(dest)}% in ${cn(dest)}</span></div>
+    <div class="tldr-row"><span class="tldr-label">L2</span><span><strong>${cn(s2)} → ${cn(s4)}</strong> · Inlandslieferung in ${cn(dest)} nach Einfuhr · ${rate(dest)}% MwSt oder RC</span></div>
+    <div class="tldr-row"><span class="tldr-label">🆔</span><span>Bei der Einfuhr selbst <strong>keine UID</strong> — Zoll läuft über die <strong>EORI-Nummer</strong>; UID erst für EUSt-Verrechnung + Anschlusslieferung</span></div>
+    <div class="tldr-row"><span class="tldr-label">❌</span><span>Kein Dreiecksgeschäft (Art. 141 nur EU), keine ZM, kein Intrastat (kein IG-Vorgang)</span></div>
+  </div>`;
+
+  html += _importerToggle(dest, 'import');
+
+  html += `<div class="hints" style="margin-bottom:12px;">`;
+  html += rH({type:'warn', icon:'🛃', text:
+    `<strong>Zollanmeldung Pflicht (Art. 201 UZK)</strong><br>
+    Überführung in den freien Verkehr im EU-Eingangsland; Einfuhrumsatzsteuer <strong>${rate(dest)}%</strong> auf den Zollwert (Warenwert + Fracht + Versicherung bis EU-Grenze).<br>
+    EUSt als Vorsteuer abziehbar bei unternehmerischer Verwendung (${eustLaw}).`});
+  html += rH({type:'info', icon:'🆔', text:
+    `<strong>Welche Nummer wofür?</strong><br>
+    • Zollanmeldung: <strong>EORI-Nummer</strong> des Einführers.<br>
+    • EUSt-Verrechnung + Anschlusslieferung in ${cn(dest)}: <strong>${cn(dest)}-UID</strong> des Einführers ${myVat(dest) ? `→ ${co} hat: <strong>${myVat(dest)}</strong>` : `→ ${co} hat keine → Registrierung nötig, falls ${co} Einführer ist`}.`});
+  html += rH({type:'ok', icon:'✅', text:
+    `<strong>Keine ${cn(third)}-Steuernummer nötig</strong> für den reinen Import — eine ${cn(third)}-Registrierung wäre nur bei eigenen Ausgangsumsätzen in ${cn(third)} erforderlich.`});
+  html += `</div>`;
+  html += buildLegalRefs(['chain'], true);
+  return html;
+}
+
+function buildThirdExportResult(ctx, eng, third) {
+  const { s1, s2, s4, dep, dest } = ctx;
+  const isAT = COMPANIES[currentCompany].home === 'AT';
+  const movingL1 = eng.movingIndex === 0;
+  const exportLaw = isAT ? '§ 7 UStG AT / Art. 146 MwStSystRL' : '§ 6 UStG / Art. 146 MwStSystRL';
+  const exporterCode = movingL1 ? s1 : s2;
+  const isIExporter = exporterCode === COMPANIES[currentCompany].home;
+
+  buildResultContextBar(s1, s2, null, s4);
+  let html = '';
+  const parties = [{code:s1,role:'Lieferant'},{code:s2,role:'Zwischenhändler'},{code:s4,role:`Kunde (${third})`}];
+  html += buildFlowDiagram(parties, movingL1?0:1, dep, dest, false, -1, -1);
+  html += buildKurzbeschreibung(ctx, eng);
+
+  const note = _thirdCountryNote(third, 'export');
+  if (note) html += `<div class="hints" style="margin-bottom:12px;">${note}</div>`;
+
+  html += `<div class="hints" data-component="buildThirdExportResult" style="margin-bottom:12px;">`;
+  html += rH({type:'warn', icon:'🛃', text:
+    `<strong>Ausfuhr ins Drittland ${cn(third)} — 0% (${exportLaw})</strong><br>
+    Steuerbefreiung nur mit EX-Ausfuhranmeldung (ATLAS/AES) + amtlichem Ausgangsvermerk. Gelangensbestätigung reicht NICHT.`});
+  if (isIExporter) {
+    html += rH({type:'info', icon:'📋', text:`<strong>Du bist Exporteur</strong> → Ausfuhranmeldung in ${isAT?'AT':'DE'}, Ausgangsvermerk 10 Jahre aufbewahren.`});
+  } else {
+    html += rH({type:'info', icon:'📋', text:`<strong>Dein Vorlieferant (${cn(s1)}) ist Exporteur</strong> → Ausgangsvermerk als Belegnachweis anfordern.`});
+  }
+  if (!movingL1) {
+    html += rH({type:'info', icon:'📦', text:`<strong>L1 (ruhend in ${cn(dep)}): ${rate(dep)}% ${cn(dep)}-MwSt</strong> — Lieferort = ${cn(dep)} (vor Transport). Normale Inlandsrechnung.`});
+  }
+  html += `</div>`;
+  html += _importerToggle(third, 'export');
   html += buildLegalRefs(['chain'], true);
   return html;
 }
@@ -6157,6 +6308,28 @@ function analyze() {
       const engGB = VATEngine.run(ctx);
       html = buildGBExportResult(ctx, engGB);
       document.getElementById('resultContent').innerHTML = html;
+      el.scrollIntoView({ behavior:'smooth', block:'start' });
+      setTimeout(() => { const b = document.getElementById('stickyResultBtn'); if (b) b.classList.add('visible'); }, 600);
+      hideVergleichTab();
+      return;
+    }
+  }
+
+  // Generisches Drittland (TR/RS/BA/RU u.a. — alles nonEU außer CH/GB, die eigene Pfade haben)
+  const thirdC = [ctx.dep, ctx.dest].find(c => isNonEU(c) && c !== 'CH' && c !== 'GB');
+  if (thirdC) {
+    if (ctx.dep === thirdC && ctx.dest !== thirdC) {
+      // Drittland → EU: Einfuhr
+      document.getElementById('resultContent').innerHTML = analyzeThirdImport(ctx, thirdC);
+      el.scrollIntoView({ behavior:'smooth', block:'start' });
+      setTimeout(() => { const b = document.getElementById('stickyResultBtn'); if (b) b.classList.add('visible'); }, 600);
+      hideVergleichTab();
+      return;
+    }
+    if (ctx.dest === thirdC && ctx.dep !== thirdC) {
+      // EU → Drittland: Ausfuhr (Engine für Transportzuordnung, dann generischer Export-Renderer)
+      const engTh = VATEngine.run(ctx);
+      document.getElementById('resultContent').innerHTML = buildThirdExportResult(ctx, engTh, thirdC);
       el.scrollIntoView({ behavior:'smooth', block:'start' });
       setTimeout(() => { const b = document.getElementById('stickyResultBtn'); if (b) b.classList.add('visible'); }, 600);
       hideVergleichTab();
@@ -9033,6 +9206,77 @@ const OUTPUT_TESTS = [
     ],
   },
 
+  // ── Generisches Drittland (TR/RS/BA/RU) — Import + Einführer-Toggle ────────
+
+  {
+    id: 'OT-3RD-RU-01',
+    name: 'RU→ES Import (EPDE): Sanktionswarnung + EORI + keine ES-UID → Registrierung',
+    setup() { currentCompany='EPDE'; MY_VAT_IDS=COMPANIES['EPDE'].vatIds; currentMode=3; importerRole='self'; },
+    run() { document.getElementById('resultContent').innerHTML =
+      analyzeThirdImport({s1:'RU',s2:'DE',s4:'ES',dep:'RU',dest:'ES'}, 'RU'); },
+    expect: [
+      { contains: 'Sanktionen', desc: 'RU Sanktionswarnung zuerst' },
+      { contains: 'EORI', desc: 'EORI statt UID bei der Einfuhr' },
+      { contains: 'Registrierung in Spanien', desc: 'EPDE hat keine ES-UID' },
+      { contains: 'Kein Dreiecksgeschäft', desc: 'Drittland → kein Art.-141-Dreieck' },
+    ],
+  },
+
+  {
+    id: 'OT-3RD-RS-01',
+    name: 'RS→SI Import (EPDE): SAA-Hinweis + EPDE tritt mit SI-UID auf',
+    setup() { currentCompany='EPDE'; MY_VAT_IDS=COMPANIES['EPDE'].vatIds; currentMode=3; importerRole='self'; },
+    run() { document.getElementById('resultContent').innerHTML =
+      analyzeThirdImport({s1:'RS',s2:'DE',s4:'SI',dep:'RS',dest:'SI'}, 'RS'); },
+    expect: [
+      { contains: 'Assoziierungsabkommen', desc: 'RS SAA-Hinweis' },
+      { contains: 'Slowenien-UID', desc: 'EPDE hat SI-UID → kein Registrierungszwang' },
+    ],
+  },
+
+  {
+    id: 'OT-3RD-TR-01',
+    name: 'TR→DE Import (EPROHA): Zollunion-Hinweis (A.TR), EUSt trotzdem',
+    setup() { currentCompany='EPROHA'; MY_VAT_IDS=COMPANIES['EPROHA'].vatIds; currentMode=3; importerRole='self'; },
+    run() { document.getElementById('resultContent').innerHTML =
+      analyzeThirdImport({s1:'TR',s2:'AT',s4:'DE',dep:'TR',dest:'DE'}, 'TR'); },
+    expect: [
+      { contains: 'Zollunion', desc: 'TR-Zollunion' },
+      { contains: 'A.TR', desc: 'A.TR-Warenverkehrsbescheinigung' },
+      { contains: 'Einfuhrumsatzsteuer', desc: 'EUSt fällt trotz Zollfreiheit an' },
+    ],
+  },
+
+  {
+    id: 'OT-3RD-M2-TR',
+    name: 'Mode 2 AT→TR (EPROHA): Drittland-Ausfuhr A0 + Zollunion-Hinweis',
+    setup() {
+      currentCompany='EPROHA'; MY_VAT_IDS=COMPANIES['EPROHA'].vatIds; currentMode=2;
+      selectedTransport='supplier'; importerRole='self'; dropShipDest=null;
+      const setV=(id,val)=>{let el=document.getElementById(id); if(!el){el=document.createElement('select');el.id=id;el.style.display='none';document.body.appendChild(el);} el.innerHTML=`<option value="${val}" selected>${val}</option>`;};
+      setV('cp-0','AT'); setV('cp-1','TR');
+      setV('s1','AT'); setV('s2','TR'); setV('s3','TR'); setV('s4','TR'); setV('dep','AT'); setV('dest','TR');
+    },
+    run() { analyze2(); },
+    expect: [
+      { contains: 'Drittland-Transaktion', desc: 'TR als Drittland erkannt' },
+      { contains: 'Ausg: A0', desc: 'Ausfuhr-Kennzeichen A0' },
+      { contains: 'Zollunion', desc: 'TR Zollunion-Hinweis (A.TR)' },
+    ],
+  },
+
+  {
+    id: 'OT-3RD-IMP-TOGGLE',
+    name: 'Einführer-Toggle: Kunde (DAP) → keine Einfuhrpflichten für uns',
+    setup() { currentCompany='EPDE'; MY_VAT_IDS=COMPANIES['EPDE'].vatIds; currentMode=3; importerRole='customer'; },
+    run() { document.getElementById('resultContent').innerHTML =
+      analyzeThirdImport({s1:'RS',s2:'DE',s4:'SI',dep:'RS',dest:'SI'}, 'RS'); },
+    expect: [
+      { contains: 'Kunde', desc: 'Kunde ist Einführer' },
+      { contains: 'unverzollt', desc: 'wir liefern unverzollt' },
+    ],
+  },
+
 ];
 
 function runOutputTests() {
@@ -9046,6 +9290,7 @@ function runOutputTests() {
   const savedMode      = currentMode;
   const savedTransport = selectedTransport;
   const savedLvDirect  = window.lvDirect;
+  const savedImporter  = importerRole;
 
   let passed = 0, failed = 0;
 
@@ -9104,6 +9349,7 @@ function runOutputTests() {
   currentMode      = savedMode;
   selectedTransport = savedTransport;
   window.lvDirect  = savedLvDirect;
+  importerRole     = savedImporter;
   MY_VAT_IDS = COMPANIES[savedCompany].vatIds;
 
   // ── QuickCheck-Smoke-Tests (K1: Transport-/UID-Durchreichung an Engine) ──
@@ -9300,6 +9546,7 @@ function getState() {
     transport: getCanonicalTransport(),
     transportLetter: getTransportLetter(),
     uidOverride: selectedUidOverride,
+    importerRole: importerRole,
     lang: currentLang,
     theme: document.documentElement.getAttribute('data-theme') || 'light',
   };
@@ -9338,6 +9585,7 @@ function loadState() {
     const s = JSON.parse(raw);
     if (s.theme) document.documentElement.setAttribute('data-theme', s.theme);
     if (s.lang) currentLang = 'de'; // EN nicht implementiert, immer DE erzwingen
+    if (['self','customer','supplier'].includes(s.importerRole)) importerRole = s.importerRole;
     if (s.company && COMPANIES[s.company]) {
       setState({ company: s.company });
       document.querySelectorAll('.co-pill button').forEach(b => {
@@ -10247,6 +10495,13 @@ function setT(t) {
   saveState();
   renderTransport();
   renderUidOverrideBlock();
+  renderResult();
+}
+
+// Drittland-Einfuhr: Einführer (Importer of Record) umschalten — DDP/DAP-Toggle
+function setImporter(role) {
+  if (['self', 'customer', 'supplier'].includes(role)) importerRole = role;
+  saveState();
   renderResult();
 }
 

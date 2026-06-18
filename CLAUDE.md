@@ -66,7 +66,7 @@ docs/assets/scripts/app.js
   computeTaxCH() ← export/import/domestic-l1/domestic-l2-ch
   computeTaxGB() ← export/domestic-l1/domestic-l2-gb (NEU v4.2)
   analyzeLohn() ← sup===con → Inland-Sonderfall (v4.1)
-  analyze2() ← Mode 2 EPROHA; Drop-Shipment-Branches: (a) dest=AT + dropShipDest≠AT; (b) EU-Kunde dest≠AT + dropShipDest≠dest → Reihengeschäft/Dreiecksgeschäft (EPROHA=erster Lieferant)
+  analyze2() ← Mode 2 EPROHA; Drop-Shipment-Branches: (a) dest=AT + dropShipDest≠AT; (b) EU-Kunde dest≠AT + dropShipDest≠dest → Reihengeschäft/Dreiecksgeschäft (EPROHA=erster Lieferant); Drittland-Branch: dest=CH/GB (Sonderpfad) bzw. isNonEU(dest) generisch (TR/RS/BA/RU) → AT-Ausfuhr A0 + _thirdCountryNote + _importerToggle
   buildVergleichTab() ← ⚖ Vergleich-Tab (v4.1)
   simplifyBasisOutput() ← sekundäre Hints in Desktop-Panel bündeln
   setDropShip(country) / clearDropShip() ← Drop-Shipment State für Mode 2
@@ -253,8 +253,12 @@ hasCH + dep===CH + dest!==CH          → analyzeCH()
 hasCH + dest===CH + dep!==CH          → buildCHExportResult() ← Diagramm+Delivery-Boxen
 hasGB + dep===GB + dest!==GB          → analyzeGBImport()
 hasGB + dest===GB + dep!==GB          → buildGBExportResult() ← Diagramm+Delivery-Boxen
+thirdC(dep|dest, nonEU≠CH/GB) Import  → analyzeThirdImport()      ← TR/RS/BA/RU generisch
+thirdC(dep|dest, nonEU≠CH/GB) Export  → buildThirdExportResult()  ← Engine + generischer Renderer
 eng._depEqDest                        → analyzeInland()
 ```
+
+**Generisches Drittland (TR/RS/BA/RU):** Daten in `EU`-Array (`nonEU:true` + Meta `customsUnion`/`saa`/`sanctions`). `analyzeThirdImport()`/`buildThirdExportResult()` mit `_thirdCountryNote()` (Sanktionen RU · Zollunion TR/A.TR · SAA RS/BA) und `_importerToggle()`/`setImporter()` → State `importerRole` ('self'|'customer'|'supplier', in getState/loadState persistiert). Importeur-Logik leitet UID/Registrierung im Bestimmungsland ab (z.B. EPDE→SI vorhanden, ES/RU fehlen → Registrierung). Einfuhr läuft über EORI, nicht UID.
 
 ## Linke Seite
 Struktur → Warenkette → Transport → UID-Override → Context → Lohn → UID-Status (unten)
