@@ -2,6 +2,16 @@
 
 ---
 
+## v4.3 · 18.06.2026 — Fix · Link teilen (Share-Link) Restore
+
+Geteilte Links stellten zwei Eingaben nicht wieder her:
+
+- **UID-Override ging verloren:** `init()` wendet zuerst `handleURLParams()` (setzt `selectedUidOverride` aus `?uid=`) an, ruft danach beim Wiederherstellen der Länderkette aber `onCC()` auf — und `onCC()` setzt `selectedUidOverride = null`. **Fix:** Den `?uid=`-Override **nach** der Länder-Kaskade erneut anwenden (`setState({uidOverride})` + `renderUidOverrideBlock()` + `renderResult()`).
+- **Lohnveredelung (Mode 5) stellte die Länder nicht her:** Der Restore schrieb pauschal in die `cp-*`-Selects, die Lohn-Länder stehen aber in `lohnSup`/`lohnCon`/`lohnCus`. Da `initLohnPanel()` in `renderAll()` die Selects zuvor auf Defaults zurücksetzt, blieb z.B. `FR,PL,DE` als `FI,PL,DE` stehen. **Fix:** Bei `currentMode === 5` in die Lohn-Selects schreiben und `onLohnChange()` auslösen.
+- 3P/4P-Normalfall und Mode 2 (EPROHA) waren bereits korrekt und bleiben unverändert. Verifiziert per JSDOM-Roundtrip (Share-URL erzeugen → frisch booten → State vergleichen) für Mode 2/3/4/5 + UID-Override.
+
+---
+
 ## v4.3 · 17.06.2026 — QuickCheck 4-Parteien-Modus (Normalkette)
 
 Erste Ausbaustufe des 4P-QuickChecks (Entscheidung: Normalkette zuerst, Dreieck nur als Hinweis-Chip).
