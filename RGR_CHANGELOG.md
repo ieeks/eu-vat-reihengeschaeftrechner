@@ -2,6 +2,16 @@
 
 ---
 
+## v4.3 · 19.06.2026 — Fix: Drittland-Import Anschlusslieferung nur Ausgangs-MWSKZ
+
+Bug aus dem CH/GB-Toggle-Release: Die Einführer-Folgebox zeigte bei „Wir = Einführer" die Anschlusslieferung via `sapBadgeBoth` mit **beiden** Codes (z.B. BE `Ausg: BS · Eing: BI`). Das `Eing: BI` ist die Vorsteuer des **Kunden**, nicht unsere — es suggerierte fälschlich eine Eingangsrechnung mit Bestimmungsland-USt vom Drittland-Lieferanten.
+
+- Anschlusslieferung (wir = Verkäufer) zeigt jetzt nur das **Ausgangs-MWSKZ** (`sapBadge(..., 'seller')`, z.B. BS / CH B5 / Export A0/G0).
+- Neue **L1-Klarstellung** im self-Zweig: Eingangsrechnung des Drittland-Lieferanten ist **ohne EU-USt** (Drittlandskauf) → kein Vorsteuer-Stkz und **kein Ausfuhr-Stkz wie G0** (G0 wäre ein deutscher Ausgangsumsatz und gehört nicht in die deutsche UVA); abziehbar nur als Bestimmungsland-**EUSt-Vorsteuer**.
+- Regressionstest `OT-3RD-BA-SAP-OUT` (BA→DE→BE) → **34 Output-Tests grün**; JSDOM-verifiziert.
+
+---
+
 ## v4.3 · 18.06.2026 — Einführer-Toggle + SAP-Kennzeichen auch für CH/GB (3P)
 
 Der Einführer-Toggle (Importer of Record) lief bisher nur im generischen Drittland-Pfad (TR/RS/BA/RU). Schweiz und UK liefen über ältere Render-Funktionen mit statischen DAP/DDP-Karten ohne Toggle.

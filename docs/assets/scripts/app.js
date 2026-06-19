@@ -5279,8 +5279,10 @@ function _importerConsequence(country, direction) {
   const isCHc = country === 'CH';
   const isGBc = country === 'GB';
   const line = (icon, t) => `<div style="display:flex;gap:6px;align-items:baseline;margin-top:3px;"><span style="flex-shrink:0;">${icon}</span><span>${t}</span></div>`;
-  // SAP-MWSKZ nur einblenden, wenn im SAP_TAX_MAP real hinterlegt (keine erfundenen Codes)
-  const sapBoth = (c, treatment) => sapBadgeBoth(c, treatment);
+  // SAP-MWSKZ nur einblenden, wenn im SAP_TAX_MAP real hinterlegt (keine erfundenen Codes).
+  // Bei eigenen Umsätzen sind wir Verkäufer → nur das Ausgangs-Kennzeichen (out) ist UNSER Code;
+  // das in-Kennzeichen wäre die Vorsteuer des Kunden und hier irreführend.
+  const sapOut = (c, treatment) => sapBadge(c, treatment, 'seller');
 
   // ── Drittland-AUSFUHR (Verkauf an Kunde im Drittland `country`) ──
   if (direction === 'export') {
@@ -5288,7 +5290,7 @@ function _importerConsequence(country, direction) {
       const eust = isCHc ? '8,1 % CH-EUSt + Zoll ans BAZG'
                  : isGBc ? '20 % UK Import VAT + Zoll an HMRC'
                  : 'die Einfuhrabgaben';
-      const exp = sapBoth(home, 'export');
+      const exp = sapOut(home, 'export');
       return line('✅', `Der <strong>Kunde</strong> ist Einführer (DAP/EXW): er meldet die Einfuhr in ${cn(country)} an und zahlt ${eust}.`)
            + line('✅', `Für ${co}: <strong>0 % Ausfuhr</strong> (${home==='AT'?'§ 7 UStG AT':'§ 6 UStG'}) mit ATLAS/AES-Ausgangsvermerk — du lieferst „unverzollt".`)
            + line('🧾', `Ausgangsrechnung (Ausfuhr):${exp || ` <strong>${home==='AT'?'A0':'G0'}</strong>`}`);
@@ -5300,7 +5302,7 @@ function _importerConsequence(country, direction) {
     // self / DDP → wir importieren ins Drittland
     if (isCHc) {
       const chVat = COMPANIES[co].vatIds['CH'];
-      const dom = sapBoth('CH', 'domestic');
+      const dom = sapOut('CH', 'domestic');
       return line('🛃', `<strong>${co} ist Einführer (DDP)</strong> in der Schweiz: Anmeldung beim <strong>BAZG</strong>, EUSt 8,1 % + Zoll; EUSt als CH-Vorsteuer abziehbar (Art. 28 MWSTG).`)
            + (chVat
               ? line('✅', `CH-MWST vorhanden: <strong>${chVat}</strong> → Rechnung mit <strong>8,1 % CH-MWST</strong>, Lieferort Schweiz.${dom}`)
@@ -5330,14 +5332,15 @@ function _importerConsequence(country, direction) {
   }
   // self / DDP → wir führen in die EU ein
   const uid = myVat(country);
-  const onward = sapBoth(country, 'domestic');
+  const onward = sapOut(country, 'domestic');
   return line('🛃', `Zollanmeldung über deine <strong>EORI-Nummer</strong> (EU-weit gültig — <strong>keine separate ${cn(country)}-EORI</strong> nötig).`)
-       + line('ℹ️', `Einfuhr-USt selbst = Zoll/EUSt-Vorgang über EORI — <strong>kein AP-Steuerkennzeichen</strong> (kein EUSt-MWSKZ im SAP-Determination-File).`)
+       + line('📥', `Eingangsrechnung des Drittland-Lieferanten: <strong>ohne EU-USt</strong> (Drittlandskauf) — <strong>kein deutsches/${cn(country)}-Vorsteuer-Stkz</strong> und <strong>kein Ausfuhr-Stkz (z.B. G0)</strong>: das wäre ein deutscher Ausgangsumsatz und gehört nicht in die deutsche UVA. Kein EU-Vorgang.`)
+       + line('ℹ️', `Einfuhr-USt selbst = Zoll/EUSt-Vorgang über EORI — <strong>kein AP-Steuerkennzeichen</strong> (kein EUSt-MWSKZ im SAP-Determination-File); abziehbar nur als <strong>${cn(country)}-EUSt-Vorsteuer</strong>, nicht als ${cn(country)}-Inlands-Vorsteuer.`)
        + (uid
           ? line('✅', `Einfuhr-USt ${eustRate}% in ${cn(country)} — mit eigener <strong>${cn(country)}-UID ${uid}</strong>; EUSt als Vorsteuer bzw. per Verlagerung in der Voranmeldung abziehbar.`)
           : line('🚨', `Einfuhr-USt ${eustRate}% — aber ${co} hat <strong>keine ${cn(country)}-UID</strong> → <strong>USt-Registrierung in ${cn(country)} erforderlich</strong> (EU-Unternehmen: Direktregistrierung, kein zwingender Fiskalvertreter). Alternativ Kunde als Einführer (DAP/EXW).`))
        + (onward
-          ? line('🧾', `Anschlusslieferung in ${cn(country)} (${eustRate}% / RC):${onward}`)
+          ? line('🧾', `Anschlusslieferung in ${cn(country)} (${eustRate}% / RC) — <strong>du als Verkäufer</strong>, nur Ausgangs-MWSKZ:${onward}`)
           : line('🧾', `Anschlusslieferung in ${cn(country)} (${eustRate}% / RC): <strong>kein AP-MWSKZ hinterlegt</strong> — ${cn(country)}-Registrierung/Mapping prüfen.`));
 }
 
@@ -9342,6 +9345,21 @@ const OUTPUT_TESTS = [
     expect: [
       { contains: 'data-component="importerToggle"', desc: 'Toggle auch im GB-Pfad' },
       { contains: 'unverzollt', desc: 'Kunde-Variante schaltet Folgebox' },
+    ],
+  },
+  {
+    id: 'OT-3RD-BA-SAP-OUT',
+    name: 'Drittland-Import (BA→DE→BE): Anschlusslieferung nur Ausgangs-MWSKZ, kein irreführendes EING:BI / G0',
+    setup() { currentCompany='EPDE'; MY_VAT_IDS=COMPANIES['EPDE'].vatIds; currentMode=3; importerRole='self'; },
+    run() { document.getElementById('resultContent').innerHTML =
+      analyzeThirdImport({s1:'BA',s2:'DE',s4:'BE',dep:'BA',dest:'BE'}, 'BA'); },
+    expect: [
+      { contains: 'BS', desc: 'BE-Anschlusslieferung Ausgangs-MWSKZ (Verkäufer)' },
+      { contains: 'du als Verkäufer', desc: 'Klarstellung Verkäuferrolle' },
+      { contains: 'Drittlandskauf', desc: 'L1-Eingangsrechnung ohne EU-USt' },
+    ],
+    notExpect: [
+      { contains: 'Eing:', desc: 'kein irreführendes Eingangs-(Kunden-)Kennzeichen BI' },
     ],
   },
 
