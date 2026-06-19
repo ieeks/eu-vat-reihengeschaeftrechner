@@ -3014,10 +3014,13 @@ function analyzeCH(supplier, me, customer, departure, destination) {
 
   // ── Case 2: CH → EU (Import aus der Schweiz) ────────────────────────────
   } else if (isCH(departure) && !isCH(destination)) {
+    // Ruhende L2 = Inlandslieferung im Bestimmungsland nach Einfuhr: dort-UID auf Rechnung
+    // + in den Pflichtangaben, nicht die Heimat-UID
+    const l2Code = myVat(destination) ? destination : myCode;
     const l1tax = computeTaxCH('import', supplier, me, myCode);
-    const l2tax = computeTaxCH('import-l2', me, customer, myCode);
+    const l2tax = computeTaxCH('import-l2', me, customer, l2Code);
     html += buildDeliveryBox('L1', supplier, me, true, l1tax, myCode, destination);
-    html += buildDeliveryBox('L2', me, customer, false, l2tax, myCode, destination);
+    html += buildDeliveryBox('L2', me, customer, false, l2tax, l2Code, destination, false, destination);
 
     html += `<div class="hints" style="margin-bottom:12px;">`;
     html += rH({type:'warn', icon:'🛃', text:`Einfuhrumsatzsteuer (EUSt) im EU-Bestimmungsland <strong>${cn(destination)}</strong> (${rate(destination)}%) fällt beim Einführer an. Als Vorsteuer abziehbar wenn für unternehmerische Zwecke (§ 21 UStG / Art. 168 MwStSystRL).`});
@@ -9333,6 +9336,17 @@ const OUTPUT_TESTS = [
       { contains: 'unverzollt', desc: 'wir liefern unverzollt' },
       { contains: 'nicht steuerbar', desc: 'Lieferung vor Einfuhr = nicht steuerbar' },
       { contains: 'XD', desc: 'EPDE-Ausgangs-MWSKZ nicht steuerbar (DE)' },
+    ],
+  },
+  {
+    id: 'OT-CH-IMP-L2-UID',
+    name: 'CH-Import (CH→DE→BE): L2-Inlandslieferung nutzt BE-UID, nicht DE-Heimat-UID',
+    setup() { currentCompany='EPDE'; MY_VAT_IDS=COMPANIES['EPDE'].vatIds; currentMode=3; },
+    run() { document.getElementById('resultContent').innerHTML =
+      analyzeCH('CH','DE','BE','CH','BE'); },
+    expect: [
+      { contains: 'BE1022245089', desc: 'BE-UID für belgische Inlandslieferung nach Einfuhr' },
+      { contains: 'BS', desc: 'SAP-Ausgangskennzeichen BE domestic' },
     ],
   },
   {
