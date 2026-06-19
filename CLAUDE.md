@@ -48,7 +48,8 @@ docs/assets/scripts/app.js
   Constants + Engine + Analysis
   VATEngine IIFE (NICHT modifizieren)
     detectStructureRisks() Section F: resting-buyer-no-uid
-  buildTrafficStatus() ← Top-Status aus Risiko-/Dreiecksstatus
+  buildTrafficStatus() ← Top-Status aus Risiko-/Dreiecksstatus; CH/GB-Guard ruft buildDrittlandStatus()
+  buildDrittlandStatus() ← Drittland-Ampel (CH/GB Import+Export); ROT nur bei echtem Reg.-Problem (Mittler ohne dest-/Drittland-UID), sonst GRÜN (Session 22)
   buildKurzbeschreibung() ← PRIMARY OUTPUT als Executive Summary + Decision Flow + SAP/UID-Hinweise
   buildInvoiceSnapshot() ← gibt '' zurück
   buildDreiecks3Result() ← selectedUidOverride
@@ -158,7 +159,8 @@ _devTipShow() → composedPath() + instanceof Element + parentElement-Fallback
 Getaggte Komponenten: data-component="..."
   Output: buildFlowDiagram, buildKurzbeschreibung, buildDeliveryBox,
           buildLegalRefs, buildPerspektivwechsel, buildMeldepflichten,
-          buildVergleichTab, reg-warnings, resultContextBar, quickFix (Art. 36a)
+          buildVergleichTab, reg-warnings, resultContextBar, quickFix (Art. 36a),
+          drittlandStatus (CH/GB-Ampel)
   Input:  input.Structur, input.Warenkette, input.Transport, input.UidOverride,
           input.AnalyseOptionen, input.Lohnveredelung, input.UidStatus
 ```
@@ -166,12 +168,14 @@ Getaggte Komponenten: data-component="..."
 ## Drittland-Routing (3P)
 ```
 hasCH + dep===CH + dest===CH + EPROHA → analyzeCHInland()
-hasCH + dep===CH + dest!==CH          → analyzeCH()
-hasCH + dest===CH + dep!==CH          → buildCHExportResult() ← Diagramm+Delivery-Boxen
-hasGB + dep===GB + dest!==GB          → analyzeGBImport()
-hasGB + dest===GB + dep!==GB          → buildGBExportResult() ← Diagramm+Delivery-Boxen
+hasCH + dep===CH + dest!==CH          → analyzeCH()           ← Import: prepend buildDrittlandStatus(import)
+hasCH + dest===CH + dep!==CH          → buildCHExportResult() ← Diagramm+Delivery-Boxen; Status via buildTrafficStatus→buildDrittlandStatus(export)
+hasGB + dep===GB + dest!==GB          → analyzeGBImport()     ← Import: prepend buildDrittlandStatus(import)
+hasGB + dest===GB + dep!==GB          → buildGBExportResult() ← Diagramm+Delivery-Boxen; Status via buildTrafficStatus→buildDrittlandStatus(export)
 eng._depEqDest                        → analyzeInland()
 ```
+
+> **Drittland-Status (Session 22):** `buildDrittlandStatus(ctx, {direction, drittland, movingL1, standalone})` erzeugt eine `.traffic-status`-Box. ROT nur wenn der Mittler eine Inlandslieferung im Reg.-Land erbringt ohne dortige UID/MWST-Nr./Niederlassung — Import: `dest`; Export: nur bei `movingL1` das Drittland. Sonst GRÜN. Keine neue Steuerlogik (spiegelt `computeTaxCH/GB`).
 
 ## Linke Seite
 Struktur → Warenkette → Transport → UID-Override → Context → Lohn → UID-Status (unten)

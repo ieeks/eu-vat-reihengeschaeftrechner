@@ -2,6 +2,24 @@
 
 ---
 
+## v4.2 · 19.06.2026 — Session 22
+
+### Drittland-Status — laute Warnung analog EU-Fall (CH/GB)
+
+- **Neue Funktion `buildDrittlandStatus(ctx, opts)`** — prominente Ampelbox (`.traffic-status`) für Drittland-Konstellationen, optisch identisch zum EU-`buildTrafficStatus`.
+  - **ROT „Problem vorhanden"** NUR bei echtem Registrierungsproblem: der Mittler (=ich) erbringt eine Inlandslieferung im Bestimmungs-/Drittland, hat dort aber keine UID/MWST-Nr. und keine Niederlassung → konkrete Registrierungspflicht + Lösungsoptionen.
+  - **GRÜN „Kein Registrierungsproblem"** sonst (z.B. dest-UID vorhanden, Heimatland, EPROHA mit CH-UID, oder Kunde kann Einfuhr übernehmen).
+- **Bedingung leitet sich aus vorhandener L2-Behandlung ab** (`computeTaxCH/GB` „Inland nach Einfuhr" / `domestic-l2-*`) — keine neue Steuerlogik, nur Hochstufung in den Hauptstatus (Projektregel 11).
+- **Eingebunden in alle 4 Drittland-Pfade:**
+  - Import: `analyzeCH()` Case 2 (CH→EU) + `analyzeGBImport()` (GB→EU) — Box wird oben vorangestellt (`standalone:true`).
+  - Export: `buildCHExportResult()` + `buildGBExportResult()` via `buildKurzbeschreibung()` → `buildTrafficStatus()`-Guard ruft jetzt `buildDrittlandStatus()` statt `return ''`.
+- **Kehrt den Session-19-Guard bewusst um** („kein roter Block bei GB/CH") — jetzt konditionale Drittland-Ampel statt pauschaler Unterdrückung.
+- Dev-Overlay: neue Komponente `data-component="drittlandStatus"`.
+- Verifikation: 8 Szenarien gegen die real extrahierte Funktion (CH/GB · Import/Export · EPDE/EPROHA) — rot/grün korrekt, keine Fehlalarme. `node --check` grün.
+- **Offen:** Live-Browserabnahme der Box-Platzierung/Optik (lokale Preview-Umgebung war nicht nutzbar).
+
+---
+
 ## v4.2 · 21.04.2026 — Session 21
 
 ### Quick Check Tab — Full-Width Layout + Exit UX

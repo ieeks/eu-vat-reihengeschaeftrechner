@@ -8,7 +8,8 @@ Stand: 21.04.2026
 
 - [x] **Vergleichsmodus fachlich harmonisieren** — `⚖ Vergleich` 1:1 mit Hauptanalyse konsistent (Session 17)
 - [x] **Lokale UI-/Code-Änderungen bewusst nachziehen** — Session 16 committed/pushed (04.04.2026)
-- [x] **buildTrafficStatus: kein roter Block bei GB/CH** — Guard eingefügt (Session 19)
+- [x] **buildTrafficStatus: kein roter Block bei GB/CH** — Guard eingefügt (Session 19); ~~pauschale Unterdrückung~~ → in Session 22 durch konditionale `buildDrittlandStatus()`-Ampel ersetzt (rot nur bei echtem Reg.-Problem)
+- [x] **Drittland-Status laut wie EU-Fall** — `buildDrittlandStatus()` für CH/GB Import+Export, konditional rot/grün (Session 22)
 - [x] **buildKurzbeschreibung ruhende Lieferung: Rollen-Label** — `(A)`/`(B)`/`(C)` im intro (Session 19)
 - [x] **GB/CH Export: verschlankt** — Header-Banner + Delivery-Boxen entfernt; DAP/DDP-Panel in step4 (Session 19)
 - [x] **UID-Chip + Rechnungshinweis Ausfuhr** — Teal-Chip, 📄-Zeile bei dep=AT/DE (Session 19)
@@ -16,6 +17,7 @@ Stand: 21.04.2026
 - [x] **Quick Check: Full-Width Layout + Exit UX** — `html.qc-active`, `toggleQuickCheck()`, Exit-Chip, STRUKTUR-Header (Session 21)
 - [ ] **Release v4.2** — Finale Browserabnahme der `docs/`-App (inkl. Quick-Check-Fullwidth-Tests)
 - [ ] **3P CH/GB Browsertest** — B003a (AT→AT→CH middle), B003b (AT→DE→CH supplier), GB analog
+- [ ] **Drittland-Status Live-Abnahme** — `buildDrittlandStatus()`-Box visuell prüfen: CH→DE→ES (rot), CH→DE→NL (grün), GB→DE→ES (rot), EU→CH Export movL1 ohne CH-UID (rot) vs. EPROHA mit CH-UID (grün); Platzierung oben/Decision-Flow + Optik
 
 ---
 

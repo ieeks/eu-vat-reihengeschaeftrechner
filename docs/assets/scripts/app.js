@@ -2768,6 +2768,12 @@ function analyzeCH(supplier, me, customer, departure, destination) {
     🇨🇭 <strong>Drittland-Transaktion</strong> – Schweiz ist kein EU-Mitglied (MWST-Info 22 ESTV). Keine MwStSystRL, kein Dreiecksgeschäft.
   </div>`;
 
+  // Drittland-Ampel (Import CH→EU): Registrierungs-Problem prominent hochstufen
+  if (isCH(departure) && !isCH(destination)) {
+    html = buildDrittlandStatus({ dep: departure, dest: destination },
+      { direction:'import', drittland:'CH', standalone:true }) + html;
+  }
+
   // ── Case 1: EU → CH (Export in die Schweiz) ─────────────────────────────
   if (isCH(destination) && !isCH(departure)) {
 
@@ -4808,6 +4814,9 @@ function analyzeGBImport(ctx) {
     </div>
   </div>`;
 
+  // Drittland-Ampel (Import GB→EU): Registrierungs-Problem prominent hochstufen
+  html = buildDrittlandStatus(ctx, { direction:'import', drittland:'GB', standalone:true }) + html;
+
   // TLDR
   html += `<div class="tldr-box" style="margin-bottom:16px;">
     <div class="tldr-header">⚡ KURZFASSUNG</div>
@@ -5281,14 +5290,98 @@ function getTriangulationReason(result) {
   return eng.triangle?.reason || 'Die Voraussetzungen für die Dreiecksgeschäfts-Vereinfachung sind in dieser Konstellation nicht erfüllt.';
 }
 
+// ── Drittland-Status (CH/GB) ─────────────────────────────────────────────────
+// Prominente Ampelbox analog zum EU-Fall (buildTrafficStatus), aber für
+// Drittland-Konstellationen. ROT ("Problem vorhanden") NUR bei echtem
+// Registrierungsproblem für uns: der Mittler (=ich) erbringt eine Inlands-
+// lieferung im Bestimmungs- bzw. Drittland, hat dort aber keine UID/MWST-Nr.
+// und keine Niederlassung. Sonst GRÜN: Reihengeschäft umsetzbar.
+// Die Bedingung spiegelt die bereits berechnete L2-Behandlung wider
+// (computeTaxCH/GB "Inland nach Einfuhr" bzw. "domestic-l2-*") — keine neue
+// Steuerlogik, nur Hochstufung des vorhandenen Hinweises in den Hauptstatus.
+// Braucht der Mittler (=ich) in `country` eine Registrierung für eine dortige
+// Inlandslieferung? Geteilt von buildDrittlandStatus() (Ampel) und
+// buildKurzbeschreibung() (Summary-Karte), damit beide nie auseinanderlaufen.
+function drittlandNeedsReg(country) {
+  if (!country) return false;
+  if (isNonEU(country)) return !COMPANIES[currentCompany].vatIds[country]; // CH-MWST / UK-VAT vorhanden?
+  return !hasVat(country) && COMPANIES[currentCompany].home !== country && !hasEstablishment(country);
+}
+
+function buildDrittlandStatus(ctx, opts = {}) {
+  const direction = opts.direction;            // 'import' (Drittland→EU) | 'export' (EU→Drittland)
+  const drittland = opts.drittland;            // 'CH' | 'GB'
+  const movingL1  = !!opts.movingL1;
+  const _drittLabel = drittland === 'CH' ? 'Schweiz' : drittland === 'GB' ? 'Großbritannien' : cn(drittland);
+
+  // Land, in dem WIR (Mittler) eine Inlandslieferung erbringen → Registrierungspflicht-Land
+  let regCountry = null;
+  if (direction === 'import') {
+    // Einfuhr ins EU-Bestimmungsland, danach Inlandslieferung (L2) durch uns im dest
+    regCountry = drittlandNeedsReg(ctx.dest) ? ctx.dest : null;
+  } else {
+    // Export EU→Drittland: nur wenn L1 die bewegte Ausfuhr ist, liegt L2 ruhend im Drittland
+    if (movingL1) regCountry = drittlandNeedsReg(drittland) ? drittland : null;
+  }
+
+  const mb = opts.standalone ? 'margin-bottom:14px;' : '';
+
+  if (regCountry) {
+    const isNon   = isNonEU(regCountry);
+    const regRate = isNon ? (regCountry === 'CH' ? '8,1' : '20') : rate(regCountry);
+    const lackTxt = isNon
+      ? `keine ${_drittLabel}-${regCountry === 'CH' ? 'MWST-Nummer' : 'VAT-Nummer'} vorhanden`
+      : `keine ${cn(regCountry)}-UID vorhanden`;
+    const causeTxt = direction === 'import'
+      ? `Du erbringst nach der Einfuhr eine Inlandslieferung in ${cn(regCountry)}; ohne Registrierung kann die Ausgangsrechnung (L2) nicht korrekt mit lokaler MwSt gestellt und die Einfuhrumsatzsteuer nicht als Vorsteuer geltend gemacht werden.`
+      : `Die ruhende Lieferung (L2) hat ihren Lieferort im ${_drittLabel}; ohne lokale Registrierung ist sie nicht korrekt abrechenbar.`;
+    const optTxt = direction === 'import'
+      ? `Registrierung in ${cn(regCountry)} beantragen — oder Kunde übernimmt die Einfuhr (Incoterms DAP/EXW) — oder lokale Reverse-Charge-Regelung prüfen.`
+      : `${_drittLabel}-Registrierung (${regCountry === 'CH' ? 'CH-MWST + Steuervertreter, Art. 67 MWSTG' : 'UK VAT bei HMRC'}) — oder Transportzuordnung so wählen, dass deine Lieferung die bewegte Ausfuhr ist und der Kunde als Einführer auftritt.`;
+    return `<div class="traffic-status traffic-status-red" data-component="drittlandStatus" style="${mb}">
+      <div class="traffic-status-light"></div>
+      <div style="flex:1">
+        <div class="traffic-status-title">Problem vorhanden</div>
+        <div class="traffic-status-body">
+          Dieses Reihengeschäft ist in der aktuellen Konstellation für dich nicht ohne weiteres umsetzbar:
+          <div style="display:flex;gap:8px;align-items:baseline;margin-top:6px;">
+            <span style="color:var(--red);flex-shrink:0;">🚨</span>
+            <span><strong>Registrierungspflicht in ${cn(regCountry)} (${regRate}%)</strong> — ${lackTxt}. ${causeTxt}</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:baseline;margin-top:6px;">
+            <span style="color:var(--tx-3);flex-shrink:0;">💡</span>
+            <span><strong>Optionen:</strong> ${optTxt}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // Kein Registrierungsproblem → grün, mit Drittland-spezifischem Hinweis
+  const greenBody = direction === 'import'
+    ? `Die Einfuhr aus ${_drittLabel} ist für dich umsetzbar. Die Einfuhrumsatzsteuer im EU-Bestimmungsland ${cn(ctx.dest)} ist als Vorsteuer abziehbar. Kein Dreiecksgeschäft — Art. 141 MwStSystRL gilt nur für EU-Mitgliedstaaten.`
+    : `Die Ausfuhr nach ${_drittLabel} ist als Reihengeschäft umsetzbar und EU-seitig steuerfrei (Ausfuhrnachweis erforderlich). Kein Dreiecksgeschäft — Art. 141 MwStSystRL gilt nur für EU-Mitgliedstaaten.`;
+  return `<div class="traffic-status traffic-status-green" data-component="drittlandStatus" style="${mb}">
+    <div class="traffic-status-light"></div>
+    <div style="flex:1">
+      <div class="traffic-status-title">Kein Registrierungsproblem</div>
+      <div class="traffic-status-body">${greenBody}</div>
+    </div>
+  </div>`;
+}
+
 function buildTrafficStatus(ctx, eng, options = {}) {
   if (!eng || !eng.supplies || !eng.supplies.length) return '';
 
-  // Drittland GB/CH: keine EU-IG-Warnungen anzeigen
+  // Drittland GB/CH: eigene Drittland-Ampel statt EU-IG-Status
   const _dest = ctx?.dest;
   const _dep  = ctx?.dep;
-  if (_dest && (isGB(_dest) || isCH(_dest))) return '';
-  if (_dep  && (isGB(_dep)  || isCH(_dep)))  return '';
+  if (_dest && (isGB(_dest) || isCH(_dest))) {
+    return buildDrittlandStatus(ctx, { direction:'export', drittland:_dest, movingL1: eng.movingIndex === 0 });
+  }
+  if (_dep && (isGB(_dep) || isCH(_dep))) {
+    return buildDrittlandStatus(ctx, { direction:'import', drittland:_dep });
+  }
   const risks = eng.risks?.risks || [];
   const hasBlockingRegistrationRisk = options.hasBlockingRegistrationRisk || risks.some((r) =>
     r.type === 'registration-required' ||
@@ -5390,6 +5483,13 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
     r.type === 'ic-acquisition-no-reg' ||
     r.type === 'resting-buyer-no-uid'
   );
+  // Drittland-Reg-Problem (CH/GB) parallel zu buildDrittlandStatus() — hält die
+  // Summary-Karte konsistent mit der Ampel (keine "keine Registrierung" bei ROT).
+  const _drittlandRegProblem = (() => {
+    if (isCH(ctx.dest) || isGB(ctx.dest)) return eng.movingIndex === 0 && drittlandNeedsReg(ctx.dest); // Export: nur movL1 → L2 ruhend im Drittland
+    if (isCH(ctx.dep)  || isGB(ctx.dep))  return drittlandNeedsReg(ctx.dest);                          // Import: Inlandslieferung im EU-dest
+    return false;
+  })();
   const roleMap = {
     supplier: `vom Lieferanten (${cn(ctx.s1)})`,
     middle: `vom Zwischenhändler (${cn(ctx.s2)})`,
@@ -5608,7 +5708,7 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
       },
     ];
 
-    if (hasBlockingRegistrationRisk) {
+    if (hasBlockingRegistrationRisk || _drittlandRegProblem) {
       items.push({
         label: 'Registrierung',
         value: `⚠️ In der aktuellen Struktur zusätzliche Registrierung prüfen`,
