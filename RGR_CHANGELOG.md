@@ -2,6 +2,20 @@
 
 ---
 
+## v4.3 · 19.06.2026 — Einführer-Folgebox kompakt (Ausgangs-/Eingangs-MWSKZ)
+
+Die Einführer-Folgebox war mit P0/EUSt/EORI/Registrierungs-Prosa zu lang. Jetzt auf das Wesentliche reduziert: **1 Kontextzeile + Ausgangsrechnung-MWSKZ + Eingangsrechnung-MWSKZ** je Rolle.
+
+- Codes kommen aus `getSapCode` (echte Codes oder ⚠-Lückenhinweis, keine Erfindung). Beispiel BA→DE→BE, EPDE:
+  - **Wir (DDP):** Ausgang **BS** · Eingang ⚠ (Drittlandseinkauf 0 %, Typ P0 — BE-Pendant fehlt)
+  - **Kunde (DAP/EXW):** Ausgang **XD** (nicht steuerbar) · Eingang **P0**
+  - **Lieferant (DDP):** Ausgang **BS** · Eingang **BI** (belgische Inlandsrechnung an uns — hier ist BI korrekt)
+- Export-DDP: EU-Ausfuhr (A0/G0) + Kundenrechnung (B5 CH). Heimat-UID auf 0 %-Ausfuhrrechnung bleibt korrekt.
+- Die ausführliche Begründung (EUSt-Lücke, P0/Ledger, Registrierung, ATLAS/BAZG) steckt jetzt in einem aufklappbaren `<details>` — die 3 Kernzeilen bleiben sichtbar.
+- Deutlich weniger Text auf Mobile; `OT-3RD-BA-SAP-OUT` an Kompaktformat angepasst → 36 Tests grün.
+
+---
+
 ## v4.3 · 19.06.2026 — Fix: Drittland-Import Anschlusslieferung nur Ausgangs-MWSKZ
 
 Bug aus dem CH/GB-Toggle-Release: Die Einführer-Folgebox zeigte bei „Wir = Einführer" die Anschlusslieferung via `sapBadgeBoth` mit **beiden** Codes (z.B. BE `Ausg: BS · Eing: BI`). Das `Eing: BI` ist die Vorsteuer des **Kunden**, nicht unsere — es suggerierte fälschlich eine Eingangsrechnung mit Bestimmungsland-USt vom Drittland-Lieferanten.
