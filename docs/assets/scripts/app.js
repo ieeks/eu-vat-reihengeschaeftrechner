@@ -2934,8 +2934,11 @@ function analyzeCH(supplier, me, customer, departure, destination) {
   const myCHVat = COMPANIES[currentCompany].vatIds['CH'];
   const isMeInvolved = (supplier === myCode || customer === myCode);
 
+  // Drittland-Status-Ampel (prominent am Kopf, wie EU-Ampel)
+  let html = buildDrittlandStatus({ dep: departure, dest: destination });
+
   // Header banner
-  let html = `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--amber);margin-bottom:20px;padding:12px 16px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:8px;">
+  html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--amber);margin-bottom:20px;padding:12px 16px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:8px;">
     🇨🇭 <strong>Drittland-Transaktion</strong> – Schweiz ist kein EU-Mitglied (MWST-Info 22 ESTV). Keine MwStSystRL, kein Dreiecksgeschäft.
   </div>`;
 
@@ -5054,7 +5057,9 @@ function analyzeGBImport(ctx) {
   const myCode = COMPANIES[currentCompany].home;
   const eustLaw = isAT ? '§ 26 UStG AT i.V.m. Art. 201 UZK' : '§ 21 UStG i.V.m. Art. 201 UZK';
 
-  let html = `<div style="padding:14px 16px; background:rgba(251,191,36,0.06);
+  let html = buildDrittlandStatus(ctx);
+
+  html += `<div style="padding:14px 16px; background:rgba(251,191,36,0.06);
     border:1px solid rgba(251,191,36,0.3); border-radius:var(--r-md); margin-bottom:16px;">
     <div style="color:var(--amber); font-weight:700; font-size:0.8rem; margin-bottom:6px;">
       🇬🇧 Drittland-Import · Großbritannien (Post-Brexit) · UK VAT Act 1994 / HMRC
@@ -5131,6 +5136,9 @@ function buildCHExportResult(ctx, eng) {
   let html = '';
   buildResultContextBar(s1, s2, null, s4);
 
+  // Drittland-Status-Ampel (prominent am Kopf, wie EU-Ampel)
+  html += buildDrittlandStatus(ctx);
+
   // ── Warenfluss-Diagramm ───────────────────────────────────────────────────
   const _chParties = [{code:s1,role:'Lieferant'},{code:s2,role:'Zwischenhändler'},{code:s4,role:'Kunde (CH)'}];
   html += buildFlowDiagram(_chParties, movingL1?0:1, dep, dest, false, -1, -1);
@@ -5190,6 +5198,9 @@ function buildGBExportResult(ctx, eng) {
 
   // Context bar
   buildResultContextBar(s1, s2, null, s4);
+
+  // Drittland-Status-Ampel (prominent am Kopf, wie EU-Ampel)
+  html += buildDrittlandStatus(ctx);
 
   // ── Warenfluss-Diagramm ───────────────────────────────────────────────────
   const _gbParties = [{code:s1,role:'Lieferant'},{code:s2,role:'Zwischenhändler'},{code:s4,role:'Kunde (GB)'}];
@@ -5356,7 +5367,9 @@ function analyzeThirdImport(ctx, third) {
   const co = currentCompany;
   const eustLaw = isAT ? '§ 26 UStG AT i.V.m. Art. 201 UZK' : '§ 21 UStG i.V.m. Art. 201 UZK';
 
-  let html = `<div style="padding:14px 16px; background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.3); border-radius:var(--r-md); margin-bottom:16px;">
+  let html = buildDrittlandStatus(ctx);
+
+  html += `<div style="padding:14px 16px; background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.3); border-radius:var(--r-md); margin-bottom:16px;">
     <div style="color:var(--amber); font-weight:700; font-size:0.8rem; margin-bottom:6px;">${flag(third)} Drittland-Import · ${cn(third)} → EU</div>
     <div style="color:var(--tx-2); font-size:0.78rem; line-height:1.7;">
       <strong>${cn(s1)}</strong> (U1) → <strong>${cn(s2)}</strong> (U2/Ich) → <strong>${cn(s4)}</strong> (U3)<br>
@@ -5402,7 +5415,7 @@ function buildThirdExportResult(ctx, eng, third) {
   const isIExporter = exporterCode === COMPANIES[currentCompany].home;
 
   buildResultContextBar(s1, s2, null, s4);
-  let html = '';
+  let html = buildDrittlandStatus(ctx);
   const parties = [{code:s1,role:'Lieferant'},{code:s2,role:'Zwischenhändler'},{code:s4,role:`Kunde (${third})`}];
   html += buildFlowDiagram(parties, movingL1?0:1, dep, dest, false, -1, -1);
   html += buildKurzbeschreibung(ctx, eng);
@@ -5704,14 +5717,106 @@ function getTriangulationReason(result) {
   return eng.triangle?.reason || 'Die Voraussetzungen für die Dreiecksgeschäfts-Vereinfachung sind in dieser Konstellation nicht erfüllt.';
 }
 
+// ── Drittland-Status-Ampel ───────────────────────────────────────────────────
+// Macht das Registrierungs-/Einfuhrproblem im Drittlandsfall (CH/GB/TR/RS/BA/RU)
+// genauso prominent wie die EU-Ampel (buildTrafficStatus). KEINE neue Steuerlogik:
+// die Aussage wird allein aus importerRole + den vorhandenen UID-Daten (myVat)
+// abgeleitet und spiegelt 1:1 die Konsequenz aus _importerConsequence().
+function drittlandRegCountry(ctx) {
+  if (!ctx) return null;
+  const depNonEU  = ctx.dep  && isNonEU(ctx.dep);
+  const destNonEU = ctx.dest && isNonEU(ctx.dest);
+  if (!depNonEU && !destNonEU) return null;          // kein Drittlandsfall
+  // Kunde ist Einführer (DAP/EXW): unsere Lieferung ist 0% Ausfuhr bzw. liegt vor der
+  // Einfuhr (nicht steuerbar) → nie ein Registrierungsproblem für uns.
+  if (importerRole === 'customer') return null;
+  if (depNonEU) {
+    // IMPORT Drittland→EU: wir (self) bzw. der DDP-Lieferant (supplier) machen die
+    // Anschluss-Inlandslieferung im EU-Bestimmungsland → dort registriert sein müssen.
+    return myVat(ctx.dest) ? null : ctx.dest;
+  }
+  // EXPORT EU→Drittland: nur als eigener Einführer (self/DDP) entsteht im Drittland
+  // eine Inlandslieferung → dortige Registrierung/Steuervertreter nötig.
+  if (importerRole === 'self') return myVat(ctx.dest) ? null : ctx.dest;
+  return null;  // supplier-DDP-Export: keine eigene Auslandslieferung durch uns
+}
+
+function _drittlandRegRate(country) {
+  if (country === 'CH') return '8,1';
+  if (country === 'GB') return '20';
+  const r = rate(country);
+  return r ? String(r).replace('.', ',') : '';
+}
+
+function buildDrittlandStatus(ctx) {
+  if (!ctx) return '';
+  const depNonEU  = ctx.dep  && isNonEU(ctx.dep);
+  const destNonEU = ctx.dest && isNonEU(ctx.dest);
+  if (!depNonEU && !destNonEU) return '';
+  const isImport   = depNonEU;
+  const drittland  = isImport ? ctx.dep : ctx.dest;
+  const regCountry = drittlandRegCountry(ctx);
+
+  if (regCountry) {
+    const r = _drittlandRegRate(regCountry);
+    const rateTxt = r ? ` (${r}%)` : '';
+    const altCustomer = `oder <strong>Kunde als Einführer</strong> (DAP/EXW) wählen — dann ist deine Lieferung ${isImport ? 'vor der Einfuhr nicht steuerbar' : '0% Ausfuhr'} und keine Registrierung für dich nötig`;
+    let how;
+    if (isImport) {
+      how = `Du machst eine <strong>Inlandslieferung in ${cn(regCountry)}</strong> (nach der Einfuhr) — ohne ${cn(regCountry)}-UID ist sie nicht abwickelbar.<br>→ <strong>Registrierung in ${cn(regCountry)}</strong> beantragen, ${altCustomer}.`;
+    } else if (regCountry === 'CH') {
+      how = `Als Einführer (DDP) lieferst du <strong>CH-inländisch</strong> — ohne CH-MWST-Nr. nicht abwickelbar.<br>→ <strong>CH-Registrierung + Steuervertreter</strong> (Art. 67 MWSTG), ${altCustomer}.`;
+    } else if (regCountry === 'GB') {
+      how = `Als Einführer (DDP) lieferst du <strong>UK-inländisch</strong> — ohne UK-VAT-Nr. nicht abwickelbar.<br>→ <strong>UK-VAT-Registrierung</strong> bei HMRC, ${altCustomer}.`;
+    } else {
+      how = `Als Einführer (DDP) lieferst du <strong>${cn(regCountry)}-inländisch</strong> — ohne dortige Steuernummer nicht abwickelbar.<br>→ <strong>Registrierung / Fiskalvertreter in ${cn(regCountry)}</strong>, ${altCustomer}.`;
+    }
+    return `<div class="traffic-status traffic-status-red" data-component="drittlandStatus" style="margin-bottom:16px;">
+      <div class="traffic-status-light"></div>
+      <div style="flex:1">
+        <div class="traffic-status-title">Problem vorhanden</div>
+        <div class="traffic-status-body">
+          Diese Drittland-Lieferkette ist in der aktuellen Konstellation für dich nicht ohne weiteres umsetzbar:
+          <div style="display:flex;gap:8px;align-items:baseline;margin-top:6px;">
+            <span style="color:var(--red);flex-shrink:0;">🚨</span>
+            <span><strong>Registrierungspflicht in ${cn(regCountry)}${rateTxt}</strong> — ${how}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // GRÜN: kein Registrierungsproblem
+  let why;
+  if (importerRole === 'customer') {
+    why = `Der <strong>Kunde ist Einführer</strong> (DAP/EXW) — deine Lieferung ist ${isImport ? 'vor der Einfuhr nicht steuerbar' : '0% Ausfuhr'}; keine Registrierung im ${isImport ? 'Bestimmungsland' : 'Drittland'} für dich.`;
+  } else if (importerRole === 'supplier') {
+    why = isImport
+      ? `Der <strong>Lieferant ist Einführer</strong> (DDP) und liefert dir ${cn(ctx.dest)}-inländisch; deine Anschlusslieferung ist mit ${cn(ctx.dest)}-UID (${myVat(ctx.dest)}) abwickelbar.`
+      : `Der <strong>Lieferant ist Einführer</strong> (DDP) — du erhältst verzollte Ware; keine Auslandsregistrierung für dich.`;
+  } else {
+    why = isImport
+      ? `Du bist Einführer und hast eine <strong>${cn(ctx.dest)}-UID (${myVat(ctx.dest)})</strong> — Einfuhr-USt als Vorsteuer abziehbar, Anschlusslieferung im Inland möglich.`
+      : `Du bist Einführer und in <strong>${cn(drittland)}</strong> registriert (${myVat(drittland)}) — die Inlandslieferung ist abwickelbar.`;
+  }
+  return `<div class="traffic-status traffic-status-green" data-component="drittlandStatus" style="margin-bottom:16px;">
+    <div class="traffic-status-light"></div>
+    <div>
+      <div class="traffic-status-title">Kein Registrierungsproblem</div>
+      <div class="traffic-status-body">${why}</div>
+    </div>
+  </div>`;
+}
+
 function buildTrafficStatus(ctx, eng, options = {}) {
   if (!eng || !eng.supplies || !eng.supplies.length) return '';
 
-  // Drittland GB/CH: keine EU-IG-Warnungen anzeigen
+  // Drittland (CH/GB + generisch TR/RS/BA/RU): keine EU-IG-Ampel — die Drittland-
+  // Status-Ampel (buildDrittlandStatus) übernimmt diese Fälle prominent am Kopf.
   const _dest = ctx?.dest;
   const _dep  = ctx?.dep;
-  if (_dest && (isGB(_dest) || isCH(_dest))) return '';
-  if (_dep  && (isGB(_dep)  || isCH(_dep)))  return '';
+  if (_dest && isNonEU(_dest)) return '';
+  if (_dep  && isNonEU(_dep))  return '';
   const risks = eng.risks?.risks || [];
   const dreiecksApplied = options.dreiecksApplied;
   const dreiecksPossible = options.dreiecksPossible;
@@ -5819,6 +5924,12 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
      r.type === 'resting-buyer-no-uid') &&
     !(dreiecks && (r.type === 'ic-acquisition-no-reg' || r.type === 'registration-required'))
   );
+  // Drittland: Registrierungsproblem (importerRole-abhängig) mit der Drittland-Ampel synchron halten.
+  // Die EU-zentrische Engine-Risikobewertung (hasBlockingRegistrationRisk) gilt für Drittland NICHT —
+  // dort entscheidet allein die importerRole-Logik, sonst widerspricht das Summary der Drittland-Ampel.
+  const isDrittlandCase = (ctx.dep && isNonEU(ctx.dep)) || (ctx.dest && isNonEU(ctx.dest));
+  const drittlandReg = !!drittlandRegCountry(ctx);
+  const showRegistrationWarn = isDrittlandCase ? drittlandReg : hasBlockingRegistrationRisk;
   const roleMap = {
     supplier: `vom Lieferanten (${cn(ctx.s1)})`,
     middle: `vom Zwischenhändler (${cn(ctx.s2)})`,
@@ -6037,7 +6148,7 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
       },
     ];
 
-    if (hasBlockingRegistrationRisk) {
+    if (showRegistrationWarn) {
       items.push({
         label: 'Registrierung',
         value: `⚠️ In der aktuellen Struktur zusätzliche Registrierung prüfen`,
