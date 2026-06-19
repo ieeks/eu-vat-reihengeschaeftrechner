@@ -51,7 +51,8 @@ docs/assets/scripts/app.js
   Constants + Engine + Analysis
   VATEngine IIFE (NICHT modifizieren)
     detectStructureRisks() Section F: resting-buyer-no-uid
-  buildTrafficStatus() ← Top-Status aus Risiko-/Dreiecksstatus
+  buildTrafficStatus() ← Top-Status aus Risiko-/Dreiecksstatus (Guard: isNonEU(dep|dest) → '' , Drittland übernimmt buildDrittlandStatus)
+  buildDrittlandStatus() ← Drittland-Status-Ampel (CH/GB/TR/RS/BA/RU): rot „Problem vorhanden" nur bei echtem Registrierungsproblem, sonst grün. Status aus importerRole + myVat (Helper drittlandRegCountry), KEINE neue Steuerlogik. Prepend in analyzeCH/analyzeGBImport/analyzeThirdImport/buildCHExportResult/buildGBExportResult/buildThirdExportResult; Summary-Karte via showRegistrationWarn synchron
   buildFlowDiagram() ← Diagramm-Router: 3P→buildTriangleSVG · 4P Dreieck→buildTriangleSVG4 · 4P Normal→buildChainSVG4 · 2P/Mode2→horizontaler Fallback
   buildChainSVG4() ← 4P Normalfall (ohne Dreieck) im Referenz-Stil B021j: Kette A→B→C→D + Warenachse A→D mit Transport-Veranlasser; Behandlung pro Strecke (bewegt IG/Ausfuhr 0%, ruhend Regelsatz Lieferort), KEINE Länder-Sätze in Boxen
   buildKurzbeschreibung() ← PRIMARY OUTPUT als Executive Summary + Decision Flow + SAP/UID-Hinweise

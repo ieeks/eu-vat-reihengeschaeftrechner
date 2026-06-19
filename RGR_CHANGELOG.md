@@ -2,6 +2,22 @@
 
 ---
 
+## v4.3 · 19.06.2026 — Drittland-Status-Ampel (CH/GB/TR/RS/BA/RU)
+
+Drittland-Lieferketten zeigten bisher nur leise Hinweise — anders als der EU-Fall, der bei Registrierungsproblemen eine prominente rote „Problem vorhanden"-Ampel ausgibt. Diese Lücke ist geschlossen: jeder Drittland-Pfad bekommt am Kopf dieselbe `.traffic-status`-Box.
+
+- **`buildDrittlandStatus(ctx)`** — rote Ampel **„Problem vorhanden"** nur bei echtem Registrierungsproblem, sonst grün **„Kein Registrierungsproblem"**. Eingebunden in `analyzeCH` (CH-Import), `analyzeGBImport`, `analyzeThirdImport`, `buildCHExportResult`, `buildGBExportResult`, `buildThirdExportResult`.
+- **Keine neue Steuerlogik** (Regel 11): Status wird allein aus `importerRole` + vorhandenen UID-Daten (`myVat`) abgeleitet und spiegelt 1:1 die `_importerConsequence()`-Konsequenz. Helper `drittlandRegCountry(ctx)`.
+  - **Kunde (DAP/EXW)** → immer grün (Lieferung 0 % Ausfuhr bzw. vor Einfuhr nicht steuerbar).
+  - **Wir / Lieferant (DDP), Import** → rot, falls keine UID im EU-Bestimmungsland (Anschlusslieferung nicht abwickelbar).
+  - **Wir (DDP), Export** → rot, falls keine Registrierung im Drittland (CH: Art. 67 MWSTG · GB: HMRC). EPROHA mit CH-UID → grün.
+- `buildTrafficStatus`-Guard von `isGB/isCH` auf **`isNonEU`** verbreitert → keine doppelte (EU-)Ampel im generischen Drittland-Export.
+- Summary-Karte (`REGISTRIERUNG`) in `buildKurzbeschreibung()` für Drittland an die Ampel gekoppelt (EU-zentrisches `hasBlockingRegistrationRisk` greift dort bewusst nicht).
+- Kehrt den Session-19-Guard (kein roter Block bei GB/CH) bewusst in eine **konditionale** Ampel um.
+- Verifiziert (JSDOM): 36 Output-Tests + 45 Lehrfall-Tests grün; zusätzlich 14 Logik- + 10 Integrationsszenarien (Import/Export · self/customer/supplier · EPDE/EPROHA) → genau eine Statusbox, keine EU-Doppelampel, Summary konsistent. **Visuelle Browserabnahme steht noch aus.**
+
+---
+
 ## v4.3 · 19.06.2026 — Einführer-Folgebox kompakt (Ausgangs-/Eingangs-MWSKZ)
 
 Die Einführer-Folgebox war mit P0/EUSt/EORI/Registrierungs-Prosa zu lang. Jetzt auf das Wesentliche reduziert: **1 Kontextzeile + Ausgangsrechnung-MWSKZ + Eingangsrechnung-MWSKZ** je Rolle.
