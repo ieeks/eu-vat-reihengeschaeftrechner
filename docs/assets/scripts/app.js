@@ -5334,8 +5334,9 @@ function _importerConsequence(country, direction) {
   const uid = myVat(country);
   const onward = sapOut(country, 'domestic');
   return line('🛃', `Zollanmeldung über deine <strong>EORI-Nummer</strong> (EU-weit gültig — <strong>keine separate ${cn(country)}-EORI</strong> nötig).`)
-       + line('📥', `Eingangsrechnung des Drittland-Lieferanten: <strong>ohne EU-USt</strong> (Drittlandskauf) — <strong>kein deutsches/${cn(country)}-Vorsteuer-Stkz</strong> und <strong>kein Ausfuhr-Stkz (z.B. G0)</strong>: das wäre ein deutscher Ausgangsumsatz und gehört nicht in die deutsche UVA. Kein EU-Vorgang.`)
-       + line('ℹ️', `Einfuhr-USt selbst = Zoll/EUSt-Vorgang über EORI — <strong>kein AP-Steuerkennzeichen</strong> (kein EUSt-MWSKZ im SAP-Determination-File); abziehbar nur als <strong>${cn(country)}-EUSt-Vorsteuer</strong>, nicht als ${cn(country)}-Inlands-Vorsteuer.`)
+       + line('📥', `Eingangsrechnung des Drittland-Lieferanten: <strong>ohne EU-USt</strong> (Drittlandskauf) → Buchung mit einem <strong>0%-Vorsteuer-Kennzeichen</strong> („kein Steuervorgang", Typ DE <strong>P0</strong>) — <strong>nicht</strong> mit einem Ausgangs-/Ausfuhr-Stkz wie G0 (das wäre ein deutscher Ausgangsumsatz und gehört nicht in die deutsche UVA).`)
+       + line('🧩', `Da der Weiterverkauf mit <strong>${cn(country)}-USt</strong> läuft, gehört die Vorstufe ins Ledger der <strong>${cn(country)}-Registrierung</strong> → dort ein <strong>${cn(country)}-Pendant zu P0</strong> nötig; aktuell <strong>nicht in SAP angelegt</strong>.`)
+       + line('ℹ️', `Einfuhr-USt selbst = Zoll/EUSt-Vorgang über EORI — <strong>kein AP-Steuerkennzeichen</strong> (EUSt-MWSKZ <strong>weder in EPDE noch EPROHA hinterlegt</strong>); abziehbar nur als <strong>${cn(country)}-EUSt-Vorsteuer</strong>, nicht als ${cn(country)}-Inlands-Vorsteuer.`)
        + (uid
           ? line('✅', `Einfuhr-USt ${eustRate}% in ${cn(country)} — mit eigener <strong>${cn(country)}-UID ${uid}</strong>; EUSt als Vorsteuer bzw. per Verlagerung in der Voranmeldung abziehbar.`)
           : line('🚨', `Einfuhr-USt ${eustRate}% — aber ${co} hat <strong>keine ${cn(country)}-UID</strong> → <strong>USt-Registrierung in ${cn(country)} erforderlich</strong> (EU-Unternehmen: Direktregistrierung, kein zwingender Fiskalvertreter). Alternativ Kunde als Einführer (DAP/EXW).`))
@@ -9357,6 +9358,7 @@ const OUTPUT_TESTS = [
       { contains: 'BS', desc: 'BE-Anschlusslieferung Ausgangs-MWSKZ (Verkäufer)' },
       { contains: 'du als Verkäufer', desc: 'Klarstellung Verkäuferrolle' },
       { contains: 'Drittlandskauf', desc: 'L1-Eingangsrechnung ohne EU-USt' },
+      { contains: 'Pendant zu P0', desc: 'L1: 0%-Vorsteuer-Typ (P0), BE-Pendant fehlt' },
     ],
     notExpect: [
       { contains: 'Eing:', desc: 'kein irreführendes Eingangs-(Kunden-)Kennzeichen BI' },
