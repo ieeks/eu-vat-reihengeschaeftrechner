@@ -4,6 +4,33 @@ Developer guide für AI-Assistenten. **Zuerst lesen vor jeder Session.**
 
 ---
 
+## ⚠️ VOR jeder Änderung — Git-Stand abgleichen (Pflicht)
+
+Der lokale Checkout ist **oft viele Commits hinter `origin/main`**, weil die meiste
+Entwicklung über Cloud-`claude/*`-Branches läuft, die in main mergen, während lokal
+ein alter Feature-Branch liegt. (Am 19.06.2026 war lokal 136 Commits hinter main →
+ein kompletter Patch musste neu gebaut werden.)
+
+**Immer zuerst:**
+```bash
+git fetch origin
+git rev-list --count origin/main..HEAD   # lokale Commits VOR main
+git rev-list --count HEAD..origin/main   # main VOR lokal  → wenn > 0: lokal ist veraltet!
+```
+Ist `HEAD..origin/main > 0`, **erst lokal auf den Git-Stand bringen**, bevor du etwas
+änderst — nicht auf veraltetem Code weiterarbeiten:
+```bash
+git checkout -b <neuer-branch> origin/main   # frisch von main branchen (empfohlen)
+```
+Danach prüfen, ob das geplante Feature nicht längst auf main existiert.
+
+> **Deploy-Hinweis:** Jeder lokale Commit deployt via `hooks/post-commit` →
+> `sync-repos.sh` **sofort live** (rsync `docs/` → Repo `~/Developer/ieeks.github.io`).
+> Es gibt kein „Commit ohne Deploy". Schlägt der Deploy-Push fehl, im Deploy-Repo
+> `git reset --hard origin/main` (sonst wird veralteter `docs/`-Stand ausgeliefert).
+
+---
+
 ## Dateien
 
 | Datei | Beschreibung |
@@ -302,6 +329,7 @@ npm run check:pages
 12. Neue Änderungen primär in `docs/` umsetzen; Legacy-Single-File nicht wieder zur Hauptquelle machen
 13. Hosting-Dokumentation auf tatsächlichen GitHub-Pages-Stand halten
 14. DE-RC-Logik liegt in `computeTax()` (Rendering-Layer), nicht in `_checkRCBlock()` (VATEngine). Engine hat keinen DE-Branch. § 13b UStG wird im Rendering geprüft.
+15. **Vor jeder Änderung Git-Stand abgleichen** — ist `origin/main` weiter als lokal, erst lokal nachziehen / frisch von `origin/main` branchen (siehe Callout ganz oben). Nie auf veraltetem Stand weiterbauen.
 
 ## Tests
 ```bash
