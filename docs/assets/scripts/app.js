@@ -5323,8 +5323,10 @@ function _importerConsequence(country, direction) {
 
   // ── Drittland-EINFUHR (Ware aus Drittland → EU-Bestimmungsland `country`) ──
   if (importerRole === 'customer') {
+    const ntb = sapOut(home, 'not-taxable');
     return line('✅', `Der <strong>Kunde</strong> meldet die Einfuhr an und schuldet die Einfuhr-USt ${eustRate}% in ${cn(country)}.`)
-         + line('✅', `Für ${co}: <strong>0 %</strong>, keine ${cn(country)}-Pflichten — du lieferst „unverzollt".`);
+         + line('✅', `Für ${co}: Lieferung <strong>vor der Einfuhr</strong> (Lieferort außerhalb der EU) → <strong>nicht steuerbar</strong>, keine ${cn(country)}-Pflichten — du lieferst „unverzollt".`)
+         + line('🧾', `Ausgangsrechnung ${co} (nicht steuerbar) — du als Verkäufer, Ausgangs-MWSKZ:${ntb || ` <strong>${home==='AT'?'X0':'XD'}</strong>`}`);
   }
   if (importerRole === 'supplier') {
     return line('✅', `Der <strong>Lieferant</strong> ist Einführer (DDP) und trägt die Einfuhr in ${cn(country)}.`)
@@ -9323,6 +9325,8 @@ const OUTPUT_TESTS = [
     expect: [
       { contains: 'Kunde', desc: 'Kunde ist Einführer' },
       { contains: 'unverzollt', desc: 'wir liefern unverzollt' },
+      { contains: 'nicht steuerbar', desc: 'Lieferung vor Einfuhr = nicht steuerbar' },
+      { contains: 'XD', desc: 'EPDE-Ausgangs-MWSKZ nicht steuerbar (DE)' },
     ],
   },
   {
