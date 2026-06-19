@@ -5299,25 +5299,31 @@ function _importerConsequence(country, direction) {
       return line('✅', `Der <strong>Lieferant</strong> ist Einführer (DDP) und trägt die Einfuhr in ${cn(country)}.`)
            + line('📋', `Für ${co}: nur verzollte Anlieferung + korrekten Belegfluss sicherstellen.`);
     }
-    // self / DDP → wir importieren ins Drittland
+    // self / DDP → wir importieren ins Drittland.
+    // Zwei Vorgänge: (1) EU-Ausfuhr der eigenen Ware 0% (A0/G0/D0), (2) Inlandslieferung im Drittland.
+    const expCode = sapOut(home, 'export');
+    const exitLine = line('🧾', `EU-Ausfuhr der eigenen Ware (0 %, ${home==='AT'?'§ 7 UStG AT':'§ 6 UStG'}) — Ausgangs-MWSKZ:${expCode || ` <strong>${home==='AT'?'A0':'G0'}</strong>`}`);
     if (isCHc) {
       const chVat = COMPANIES[co].vatIds['CH'];
       const dom = sapOut('CH', 'domestic');
-      return line('🛃', `<strong>${co} ist Einführer (DDP)</strong> in der Schweiz: Anmeldung beim <strong>BAZG</strong>, EUSt 8,1 % + Zoll; EUSt als CH-Vorsteuer abziehbar (Art. 28 MWSTG).`)
+      return exitLine
+           + line('🛃', `<strong>${co} ist Einführer (DDP)</strong> in der Schweiz: Anmeldung beim <strong>BAZG</strong>, EUSt 8,1 % + Zoll; EUSt als CH-Vorsteuer abziehbar (Art. 28 MWSTG).`)
            + (chVat
-              ? line('✅', `CH-MWST vorhanden: <strong>${chVat}</strong> → Rechnung mit <strong>8,1 % CH-MWST</strong>, Lieferort Schweiz.${dom}`)
+              ? line('✅', `Kundenrechnung mit <strong>8,1 % CH-MWST</strong> (CH-UID ${chVat}), Lieferort Schweiz — Ausgangs-MWSKZ:${dom || ' <strong>B5</strong>'}`)
               : line('🚨', `Keine CH-MWST → <strong>CH-Registrierung erforderlich</strong> (MWST-Info 22).`))
            + line('⚖️', `<strong>Steuervertreter in der Schweiz</strong> mit CH-Sitz nötig (Art. 67 MWSTG).`);
     }
     if (isGBc) {
       const gbVat = COMPANIES[co].vatIds['GB'];
-      return line('🛃', `<strong>${co} ist Einführer (DDP)</strong> in UK: Anmeldung bei <strong>HMRC</strong>, 20 % UK Import VAT + Zoll.`)
+      return exitLine
+           + line('🛃', `<strong>${co} ist Einführer (DDP)</strong> in UK: Anmeldung bei <strong>HMRC</strong>, 20 % UK Import VAT + Zoll.`)
            + (gbVat
               ? line('✅', `UK VAT vorhanden: <strong>${gbVat}</strong>.`)
-              : line('🚨', `Keine UK VAT → <strong>UK VAT Registration (HMRC) erforderlich</strong> → DDP eher vermeiden.`));
+              : line('🚨', `Keine UK VAT → <strong>UK VAT Registration (HMRC) erforderlich</strong> (kein UK-Ausgangs-MWSKZ hinterlegt) → DDP eher vermeiden.`));
     }
     // generisches Drittland
-    return line('🛃', `<strong>${co} ist Einführer (DDP)</strong> in ${cn(country)} → dort <strong>Steuerregistrierung bzw. Fiskal-/Steuervertreter erforderlich</strong> (${co} ist dort nicht registriert) + Einfuhrabgaben.`)
+    return exitLine
+         + line('🛃', `<strong>${co} ist Einführer (DDP)</strong> in ${cn(country)} → dort <strong>Steuerregistrierung bzw. Fiskal-/Steuervertreter erforderlich</strong> (${co} ist dort nicht registriert; kein Ausgangs-MWSKZ hinterlegt) + Einfuhrabgaben.`)
          + line('📋', `In der Praxis meist <strong>DAP/EXW</strong> bevorzugen (Kunde ist Einführer).`);
   }
 
@@ -9327,6 +9333,17 @@ const OUTPUT_TESTS = [
       { contains: 'unverzollt', desc: 'wir liefern unverzollt' },
       { contains: 'nicht steuerbar', desc: 'Lieferung vor Einfuhr = nicht steuerbar' },
       { contains: 'XD', desc: 'EPDE-Ausgangs-MWSKZ nicht steuerbar (DE)' },
+    ],
+  },
+  {
+    id: 'OT-3RD-CH-EXP-DDP',
+    name: 'CH-Export DDP (Wir): EU-Ausfuhr A0 + CH-Inlandslieferung B5',
+    setup() { currentCompany='EPROHA'; MY_VAT_IDS=COMPANIES['EPROHA'].vatIds; currentMode=3; importerRole='self'; },
+    run() { document.getElementById('resultContent').innerHTML = _importerConsequence('CH','export'); },
+    expect: [
+      { contains: 'A0', desc: 'EU-Ausfuhr eigener Ware 0% (AT)' },
+      { contains: 'B5', desc: 'CH-Inlandslieferung 8,1% Ausgang' },
+      { contains: 'Art. 67 MWSTG', desc: 'CH-Steuervertreter' },
     ],
   },
   {
