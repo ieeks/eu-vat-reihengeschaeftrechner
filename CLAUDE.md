@@ -93,7 +93,9 @@ docs/assets/scripts/app.js
   buildGBExportResult() ← EU→GB 3P: Diagramm + Kurzbeschreibung + Delivery-Boxen
   computeTaxCH() ← export/import/domestic-l1/domestic-l2-ch
   computeTaxGB() ← export/domestic-l1/domestic-l2-gb (NEU v4.2)
-  analyzeLohn() ← sup===con → Inland-Sonderfall (v4.1)
+  computeLohn({company,sup,con,cus,lvDirect,litF}) ← REINE gemeinsame Steuerlogik Lohnveredelung (Mode 5 + QuickCheck). Liefert {inland, sameConCus, litF, regRisks[], steps:[{key:einkauf|veredelung|verkauf, kind, title, taxInfo, sap, note, regRisk}]}. EINZIGE Quelle der Fallunterscheidung — kein DOM.
+  analyzeLohn() ← Mode 5 voller Modus; Fallauswahl (inland/litF/sameConCus) aus computeLohn() abgeleitet, HTML bleibt. sup===con → Inland-Sonderfall (v4.1)
+  buildQuickCheckLohn (in renderQuickCheck, mode 'lohn') ← Kompakt-Ansicht aus computeLohn(): Form (sup/con/cus + Gesellschaft + 2 Schalter lohnDirect/lohnRueck) + 3 Schritt-Boxen + Reg-Banner + Hinweise. qcState.lohn* hält den State.
   analyze2() ← Mode 2 EPROHA; Flag euGoodsRecipient (dropShipDest gesetzt, EU, ≠Kunde) entscheidet Ausfuhr vs. ig. Reihengeschäft. Drop-Shipment-Branches: (a) dest=AT + dropShipDest≠AT; (b) EU-Kunde dest≠AT + dropShipDest≠dest → Reihengeschäft/Dreiecksgeschäft (EPROHA=erster Lieferant); (c) Drittland-Kunde (CH/GB) + EU-Warenempfänger (Sub-Branch bIsNonEU) → 4 Fälle je nach vom Kunden vorgelegter EU-UID (State mode2CustUid, Picker im Drop-Shipment-Panel): keine→20% AT (A2) · Abgangsland-UID(AT)→20% AT · Bestimmungsland-UID(cCode)→ig. Lieferung AF 0% + ig.Erwerb/Inlandslieferung im Bestimmungsland (kein Dreieck) · Dritt-MS-UID→Dreiecksgeschäft Art.141. isTriangle=triByThirdUid (custUid≠AT, ≠cCode, EU). Drittland-Export-Branch (dest=CH/GB Sonderpfad bzw. isNonEU(dest) generisch TR/RS/BA/RU → AT-Ausfuhr A0 + _thirdCountryNote + _importerToggle) greift nur bei !euGoodsRecipient
   buildVergleichTab() ← ⚖ Vergleich-Tab (v4.1)
   simplifyBasisOutput() ← sekundäre Hints in Desktop-Panel bündeln
@@ -107,6 +109,7 @@ Tests
 v4 UI Layer
   toggleDevMode() ← Dev-Overlay mit JS-Tooltip (v4.2)
   toggleQuickCheck(btn) ← QC Header-Button Toggle; Exit via basisBtn aus #tabBar (v4.2 Session 21)
+  renderQuickCheck() ← QC-Renderer; Struktur-Tabs 3p/4p/lohn. lohn-Body aus computeLohn() (kein Coming-Soon mehr)
 
 v4.3 Header/Nav (Session 22)
   setPartiesFromHeader(n, btn) ← Modus-Tab im Header → delegiert an setParties()

@@ -3972,6 +3972,112 @@ function buildVATContext() {
  *   VATEngine.detectTriangleTransaction(ctx, idx)  → triangle result object
  *   VATEngine.detectRegistrationRisk(ctx, …)       → risk result object
  */
+// ═══════════════════════════════════════════════════════════════════════════════
+//  computeLohn — gemeinsame Steuerlogik für Lohnveredelung (Mode 5 + QuickCheck)
+//
+//  EINZIGE Quelle der steuerlichen Entscheidungen für Lohnveredelung. Sowohl
+//  analyzeLohn() (voller Modus) als auch buildQuickCheckLohn() (QuickCheck) leiten
+//  ihre Fallunterscheidung, Behandlung pro Schritt und Registrierungsrisiken hier
+//  ab — damit beide Ansichten nicht auseinanderlaufen. Keine DOM-Zugriffe.
+//
+//  Eingaben:  company ('EPDE'|'EPROHA'), sup/con/cus (ISO), lvDirect (bool),
+//             litF (bool: Ware kommt nach Veredelung zurück → Art. 17 Abs. 2 lit. f)
+//  Rückgabe:  { inland, sameConCus, lvDirect, litF, myConVat, myHomVat, …,
+//               steps: [{key,kind,title,taxInfo,sap,note,regRisk}], regRisks: [] }
+// ═══════════════════════════════════════════════════════════════════════════════
+function computeLohn(opts) {
+  const { company, sup, con, cus, lvDirect } = opts;
+  const litF = opts.litF !== false; // default: Ware kommt zurück (lit. f greift)
+  const C = COMPANIES[company];
+  const myHome = C.home;
+  const vat = (c) => C.vatIds[c] || null;
+  const sap = (c, treatment, role) => getSapCode(company, c, treatment, role) || null;
+
+  const inland     = sup === con;
+  const sameConCus = con === cus;
+  const myConVat = vat(con), myHomVat = vat(myHome), mySupVat = vat(sup);
+  const conRate = rate(con), cusRate = rate(cus), homeRate = rate(myHome), supRate = rate(sup);
+
+  const steps = [];
+  const regRisks = [];
+
+  if (inland) {
+    // ── Sonderfall sup === con: rein innerstaatlich ──
+    steps.push({ key:'einkauf', kind:'inland-purchase',
+      title:`Einkauf Rohmaterial · ${cn(sup)} (Inland)`,
+      taxInfo:`Inlandslieferung ${supRate}% ${cn(sup)}-MwSt · Vorsteuerabzug`,
+      sap: sap(sup, 'domestic', 'buyer') });
+    steps.push({ key:'veredelung', kind:'inland-service', rc:false,
+      title:`Lohnveredelung · ${cn(con)} (Inland)`,
+      taxInfo:`Werkleistung Inland · KEIN Reverse Charge (Art. 196 nur grenzüberschreitend) · Converter ${conRate}% ${cn(con)}-MwSt`,
+      sap: sap(con, 'domestic', 'buyer') });
+    if (sameConCus) {
+      steps.push({ key:'verkauf', kind:'inland-sale',
+        title:`Verkauf · Inland ${cn(con)}`,
+        taxInfo:`Inlandslieferung ${conRate}% ${cn(con)}-MwSt`,
+        sap: sap(con, 'domestic', 'seller') });
+    } else {
+      steps.push({ key:'verkauf', kind:'ig-sale',
+        title:`Verkauf · IG-Lieferung ${cn(con)} → ${cn(cus)}`,
+        taxInfo:`IG-Lieferung 0% · Kunde tätigt ig. Erwerb in ${cn(cus)} (${cusRate}%)`,
+        sap: sap(con, 'ic-exempt', 'seller'), regRisk: myConVat ? null : con });
+      if (!myConVat) regRisks.push(con);
+    }
+    return { company, myHome, sup, con, cus, inland, sameConCus, lvDirect, litF,
+             myConVat, myHomVat, mySupVat, conRate, cusRate, homeRate, supRate, steps, regRisks };
+  }
+
+  // ── Normalpfad sup ≠ con ──
+  // Schritt 1: Einkauf Rohmaterial
+  if (lvDirect) {
+    steps.push({ key:'einkauf', kind:'ig-acquisition',
+      title:`Einkauf · IG-Lieferung ${cn(sup)} → ${cn(con)}`,
+      taxInfo:`${cn(sup)} fakturiert 0% · du tätigst ig. Erwerb in ${cn(con)} (${conRate}%, Saldo 0)`,
+      sap: sap(con, 'ic-acquisition', 'buyer'),
+      note: litF ? `Rücksendung ${cn(con)} → ${cn(myHome)} nach Veredelung = kein ig. Verbringen (Art. 17 Abs. 2 lit. f)`
+                 : `Ware kommt nicht zurück → Fertigprodukt geht direkt zum Kunden (Schritt 3)`,
+      regRisk: myConVat ? null : con });
+    if (!myConVat) regRisks.push(con);
+  } else {
+    steps.push({ key:'einkauf', kind:'ig-acquisition-home',
+      title:`Einkauf · IG-Lieferung ${cn(sup)} → ${cn(myHome)} (über dich)`,
+      taxInfo:`${cn(sup)} 0% · ig. Erwerb in ${cn(myHome)} (${homeRate}%, Saldo 0)`,
+      sap: sap(myHome, 'ic-acquisition', 'buyer'),
+      note: litF ? `Hin- und Rückverbringen ${cn(myHome)} ↔ ${cn(con)} = kein ig. Verbringen (Art. 17 Abs. 2 lit. f)`
+                 : `ig. Verbringen ${cn(myHome)} → ${cn(con)} meldepflichtig (Art. 17 MwStSystRL) — lit. f greift nicht`,
+      regRisk: (!myConVat && !litF) ? con : null });
+    if (!myConVat && !litF) regRisks.push(con);
+  }
+
+  // Schritt 2: Lohnveredelungsleistung (immer Reverse Charge, Leistungsort = Heimat)
+  steps.push({ key:'veredelung', kind:'rc', rc:true,
+    title:`Lohnveredelung · ${cn(con)} Converter → ${cn(myHome)} (du)`,
+    taxInfo:`Werkleistung · Leistungsort Art. 44 = ${cn(myHome)} · Reverse Charge (Art. 196) · Converter 0% · du ${homeRate}% RC (Saldo 0)`,
+    sap: sap(myHome, 'rc', 'buyer'),
+    note: `Converter-Rechnung mit deiner ${cn(myHome)}-UID${myHomVat ? ` (${myHomVat})` : ''} + Pflichttext „Steuerschuldnerschaft des Leistungsempfängers"` });
+
+  // Schritt 3: Verkauf Fertigprodukt
+  if (litF) {
+    steps.push({ key:'verkauf', kind:'separate',
+      title:`Verkauf — separater Vorgang`,
+      taxInfo:`Ware kommt zurück → späterer Verkauf ist eigenständiger Liefervorgang (im 3-Parteien-Modus analysieren)` });
+  } else if (sameConCus) {
+    steps.push({ key:'verkauf', kind:'inland-sale',
+      title:`Verkauf · Inland ${cn(con)}`,
+      taxInfo:`Inlandslieferung ${conRate}% ${cn(con)}-MwSt`,
+      sap: sap(con, 'domestic', 'seller') });
+  } else {
+    steps.push({ key:'verkauf', kind:'ig-sale',
+      title:`Verkauf · IG-Lieferung ${cn(con)} → ${cn(cus)}`,
+      taxInfo:`IG-Lieferung 0% · Kunde tätigt ig. Erwerb in ${cn(cus)} (${cusRate}%)`,
+      sap: sap(con, 'ic-exempt', 'seller'), regRisk: myConVat ? null : con });
+    if (!myConVat) regRisks.push(con);
+  }
+
+  return { company, myHome, sup, con, cus, inland, sameConCus, lvDirect, litF,
+           myConVat, myHomVat, mySupVat, conRate, cusRate, homeRate, supRate, steps, regRisks };
+}
+
 function analyzeLohn() {
   const supEl = document.getElementById('lv_supplier');
   const conEl = document.getElementById('lv_converter');
@@ -3987,6 +4093,10 @@ function analyzeLohn() {
   const myConRate = rate(con);
   const myCusRate = rate(cus);
 
+  // Gemeinsame Entscheidungslogik (siehe computeLohn) — hält Mode 5 + QuickCheck konsistent.
+  const litF = (typeof lvRueck !== 'undefined') ? lvRueck : true;
+  const L = computeLohn({ company: currentCompany, sup, con, cus, lvDirect, litF });
+
   const el = document.getElementById('result');
   el.classList.add('show');
   markStep('result', true);
@@ -3996,7 +4106,7 @@ function analyzeLohn() {
   // Wenn sup und con im selben Land sind, gibt es keine grenzüberschreitende
   // Warenbewegung beim Einkauf. Kein ig. Erwerb, kein ig. Verbringen.
   // Veredelungsleistung ist ebenfalls Inlandsleistung → Art. 44 MwStSystRL greift NICHT.
-  if (sup === con) {
+  if (L.inland) {
     const supConRate = rate(sup);
     const mySupConVat = COMPANIES[currentCompany].vatIds[sup];
     let ihml = `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--tx-2);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;">
@@ -4051,7 +4161,7 @@ function analyzeLohn() {
     </div>`;
 
     // Schritt 3: Verkauf
-    const sameConCus = con === cus;
+    const sameConCus = L.sameConCus;
     ihml += `<div style="background:var(--surface-2);border:1px solid rgba(45,212,191,0.3);border-radius:10px;padding:14px;margin-bottom:10px;">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:700;color:var(--teal);margin-bottom:10px;">
         📦 Schritt 3 · Verkauf fertiges Produkt · ${flag(con)} ${cn(con)} → ${flag(cus)} ${cn(cus)}
@@ -4093,7 +4203,7 @@ function analyzeLohn() {
   // Art. 17 Abs. 2 lit. f MwStSystRL: Ausnahme vom ig. Verbringen wenn Ware zur Bearbeitung
   // ins EU-Ausland verbracht wird UND danach zum Ausgangsmitgliedstaat zurückkommt.
   // Greift unabhängig davon ob Direktlieferung oder Ware über mich.
-  const litFGreift = typeof lvRueck !== 'undefined' ? lvRueck : true;
+  const litFGreift = L.litF;
 
   if (lvDirect) {
     // Direktlieferung sup→con: IG-Lieferung sup→con, Erwerb in con
@@ -4175,7 +4285,7 @@ function analyzeLohn() {
   </div>`;
 
   // ── SCHRITT 3: Verkauf fertiges Produkt (nur wenn Ware nicht zurückkommt) ────
-  const sameCountry = con === cus;
+  const sameCountry = L.sameConCus;
   if (!litFGreift) {
     html += `<div style="background:var(--surface-2);border:1px solid rgba(45,212,191,0.3);border-radius:10px;padding:14px;margin-bottom:10px;">
     <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:700;color:var(--teal);margin-bottom:10px;">
@@ -9812,6 +9922,43 @@ function runOutputTests() {
   });
   qcState = savedQc;
 
+  // ── Lohnveredelung-Smoke-Tests (computeLohn — geteilt von Mode 5 + QuickCheck) ──
+  const LOHN_TESTS = [
+    { id:'LV-01', name:'FI→PL→DE EPROHA direkt, Ware kommt zurück: RC + Verkauf separat + Reg PL',
+      o:{company:'EPROHA',sup:'FI',con:'PL',cus:'DE',lvDirect:true,litF:true},
+      exp:{ inland:false, s2kind:'rc', s3kind:'separate', reg:['PL'] } },
+    { id:'LV-02', name:'FI→PL→DE EPROHA direkt, Ware bleibt: Verkauf IG-Lieferung PL→DE',
+      o:{company:'EPROHA',sup:'FI',con:'PL',cus:'DE',lvDirect:true,litF:false},
+      exp:{ s3kind:'ig-sale', reg:['PL'] } },
+    { id:'LV-03', name:'FI→PL→DE EPDE (PL-UID vorhanden): kein Registrierungsrisiko',
+      o:{company:'EPDE',sup:'FI',con:'PL',cus:'DE',lvDirect:true,litF:false},
+      exp:{ reg:[] } },
+    { id:'LV-04', name:'DE→DE→AT EPROHA (sup=con): rein inländisch, kein RC',
+      o:{company:'EPROHA',sup:'DE',con:'DE',cus:'AT',lvDirect:true,litF:false},
+      exp:{ inland:true, s2rc:false } },
+    { id:'LV-05', name:'FI→PL→PL EPDE, Ware bleibt: Verkauf Inland PL',
+      o:{company:'EPDE',sup:'FI',con:'PL',cus:'PL',lvDirect:true,litF:false},
+      exp:{ s3kind:'inland-sale' } },
+  ];
+  LOHN_TESTS.forEach(t => {
+    const errs = [];
+    try {
+      const L = computeLohn(t.o); const e = t.exp;
+      const s2 = L.steps.find(s => s.key === 'veredelung'), s3 = L.steps.find(s => s.key === 'verkauf');
+      if ('inland' in e && L.inland !== e.inland) errs.push(`inland: erwartet ${e.inland}, erhalten ${L.inland}`);
+      if (e.s2kind && (!s2 || s2.kind !== e.s2kind)) errs.push(`Schritt2.kind: erwartet ${e.s2kind}, erhalten ${s2 && s2.kind}`);
+      if ('s2rc' in e && (!s2 || s2.rc !== e.s2rc)) errs.push(`Schritt2.rc: erwartet ${e.s2rc}, erhalten ${s2 && s2.rc}`);
+      if (e.s3kind && (!s3 || s3.kind !== e.s3kind)) errs.push(`Schritt3.kind: erwartet ${e.s3kind}, erhalten ${s3 && s3.kind}`);
+      if (e.reg) { const got = [...new Set(L.regRisks)].sort().join(','), want = e.reg.slice().sort().join(','); if (got !== want) errs.push(`regRisks: erwartet [${want}], erhalten [${got}]`); }
+    } catch(ex) { errs.push(`Exception: ${ex.message}`); }
+    const ok = errs.length === 0; if (ok) passed++; else failed++;
+    const card = document.createElement('div');
+    card.style.cssText = `background:#0c1222; border:1px solid ${ok ? '#1e3a2e' : '#3d1515'}; border-radius:8px; padding:12px 16px;`;
+    card.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><span>${ok ? '✅' : '❌'}</span><div><span style="color:#64748b;font-size:0.7rem;font-family:var(--mono);">${t.id}</span><span style="margin-left:8px;color:#e2e8f0;font-size:0.82rem;font-weight:600;">${t.name}</span></div></div>`
+      + (errs.length ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;">${errs.map(x => `<div style="font-size:0.72rem;color:#f87171;padding:2px 0;">↳ ${x}</div>`).join('')}</div>` : '');
+    resultsEl.appendChild(card);
+  });
+
   summaryEl.style.display = 'block';
   summaryEl.style.background = failed === 0 ? '#052e16' : '#2d1515';
   summaryEl.style.border = '1px solid ' + (failed === 0 ? '#16a34a' : '#dc2626');
@@ -12379,7 +12526,8 @@ function handleURLParams() {
 // ═══════════════════════════════════════════════════════════════════════
 
 let qcState = { company: 'EPDE', dep: 'DE', dest: 'PL', transport: 'supplier', mode: '3p',
-                q4: ['FR', 'DE', 'NL', 'IT'], mePos: 2 };
+                q4: ['FR', 'DE', 'NL', 'IT'], mePos: 2,
+                lohnSup: 'FI', lohnCon: 'PL', lohnCus: 'DE', lohnDirect: true, lohnRueck: true };
 
 // Länder alphabetisch sortiert (EU-27 + CH + GB)
 const QC_COUNTRIES = EU.slice().sort((a, b) => a.name.localeCompare(b.name, 'de'));
@@ -13098,6 +13246,85 @@ function renderQuickCheck() {
       </div>`;
   })();
 
+  // ── Lohnveredelung-Body (Mode 'lohn') — rendert aus computeLohn() ──────────
+  const lohnBody = (() => {
+    if (mode !== 'lohn') return '';
+    const co = qcState.company;
+    const Lq = computeLohn({ company: co, sup: qcState.lohnSup, con: qcState.lohnCon,
+                             cus: qcState.lohnCus, lvDirect: qcState.lohnDirect, litF: qcState.lohnRueck });
+    const sel = (val, attr) => QC_COUNTRIES.map(c =>
+      `<option value="${c.code}" ${c.code === val ? 'selected' : ''}>${FLAGS[c.code] || ''} ${c.name}</option>`).join('');
+    const regBanner = [...new Set(Lq.regRisks)].map(c => `
+      <div class="qc-reg-banner">
+        <div class="qc-reg-banner-title">🚨 Registrierungspflicht ${_qcCountryName(c)} (${_qcRate(c)} %)</div>
+        <div class="qc-reg-banner-body">${co} hat keine ${c}-UID. Für ig. Erwerb bzw. IG-Lieferung im Veredelungsland ist eine Registrierung in ${_qcCountryName(c)} erforderlich.</div>
+      </div>`).join('');
+    const statusText = Lq.inland
+      ? `Rein innerstaatlich (${_qcCountryName(Lq.sup)}) — kein Reverse Charge, keine ig. Lieferung beim Einkauf`
+      : `Veredelung: Reverse Charge in ${_qcCountryName(Lq.myHome)} (Art. 44/196) · ${Lq.litF ? 'Art. 17 Abs. 2 lit. f: kein ig. Verbringen (Ware kommt zurück)' : 'Ware bleibt im Ausland → Verkauf = Schritt 3'}`;
+    const sideLabels = { einkauf:'SCHRITT 1 · EINKAUF', veredelung:'SCHRITT 2 · VEREDELUNG', verkauf:'SCHRITT 3 · VERKAUF' };
+    const typeFor = (k) => k === 'ig-sale' ? 'ig-lieferung' : (k === 'ig-acquisition' || k === 'ig-acquisition-home') ? 'ig-erwerb' : k === 'separate' ? 'resting-info' : 'resting-info';
+    const boxes = Lq.steps.map(s => invoiceBox(
+      sideLabels[s.key] || s.key.toUpperCase(), '',
+      { type: typeFor(s.kind), title: s.title, taxInfo: s.taxInfo,
+        sapCode: s.sap || '', reqs: s.note ? [s.note] : [] })).join('');
+    const hints = [];
+    const uniq = [...new Set(Lq.regRisks)];
+    if (uniq.length === 0) hints.push('✅ Kein Registrierungsrisiko erkannt (benötigte UIDs vorhanden)');
+    else uniq.forEach(c => hints.push(`📋 Registrierung in <strong>${_qcCountryName(c)}</strong> beantragen oder Steuerberater konsultieren`));
+    if (!Lq.inland) hints.push('🔧 Veredelung: Converter fakturiert 0 % mit deiner Heimat-UID, du rechnest Reverse Charge ab (Saldo 0)');
+    if (Lq.litF && !Lq.inland) hints.push('↩️ Ware kommt zurück (Art. 17 Abs. 2 lit. f) → der spätere Verkauf ist ein separater Vorgang (3-Parteien-Modus)');
+    return `
+      <div class="qc-form">
+        <div class="qc-form-row">
+          <div class="qc-field"><label class="qc-label">Lieferant (Rohmaterial)</label>
+            <select class="qc-select" onchange="qcState.lohnSup=this.value;renderQuickCheck()">${sel(Lq.sup)}</select></div>
+          <div class="qc-field"><label class="qc-label">Converter (Veredelung)</label>
+            <select class="qc-select" onchange="qcState.lohnCon=this.value;renderQuickCheck()">${sel(Lq.con)}</select></div>
+          <div class="qc-field"><label class="qc-label">Kunde (Verkauf)</label>
+            <select class="qc-select" onchange="qcState.lohnCus=this.value;renderQuickCheck()">${sel(Lq.cus)}</select></div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="qc-label" style="margin:0;">Gesellschaft:</span>
+            <div class="qc-co-btns">
+              <button class="qc-co-btn ${co === 'EPDE' ? 'active' : ''}" onclick="qcState.company='EPDE';renderQuickCheck()">EPDE</button>
+              <button class="qc-co-btn ${co === 'EPROHA' ? 'active' : ''}" onclick="qcState.company='EPROHA';renderQuickCheck()">EPROHA</button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="qc-label" style="margin:0;">Warenweg:</span>
+            <div class="qc-co-btns">
+              <button class="qc-co-btn ${Lq.lvDirect ? 'active' : ''}" onclick="qcState.lohnDirect=true;renderQuickCheck()">Direkt → Converter</button>
+              <button class="qc-co-btn ${!Lq.lvDirect ? 'active' : ''}" onclick="qcState.lohnDirect=false;renderQuickCheck()">Über dich</button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="qc-label" style="margin:0;">Ware kommt zurück:</span>
+            <div class="qc-co-btns">
+              <button class="qc-co-btn ${Lq.litF ? 'active' : ''}" onclick="qcState.lohnRueck=true;renderQuickCheck()">Ja · lit. f</button>
+              <button class="qc-co-btn ${!Lq.litF ? 'active' : ''}" onclick="qcState.lohnRueck=false;renderQuickCheck()">Nein</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qc-divider"></div>
+
+      ${regBanner}
+
+      <div class="qc-moving-banner">🔧 <strong>Lohnveredelung</strong><span class="qc-moving-reason">${statusText}</span></div>
+
+      <div class="qc-grid qc-grid-3">
+        ${boxes}
+      </div>
+
+      <div class="qc-hints-box">
+        <div class="qc-hints-hdr">ℹ️ Weitere Hinweise</div>
+        <ul class="qc-hints-list">${hints.map(h => `<li>${h}</li>`).join('')}</ul>
+      </div>`;
+  })();
+
   el.innerHTML = `
     <div class="qc-wrap">
 
@@ -13109,7 +13336,7 @@ function renderQuickCheck() {
           <div class="qc-topbar-btns">
             <button class="qc-topbar-btn ${mode === '3p' ? 'active' : ''}" onclick="qcState.mode='3p';renderQuickCheck()">3</button>
             <button class="qc-topbar-btn ${mode === '4p' ? 'active' : ''}" onclick="qcState.mode='4p';renderQuickCheck()">4</button>
-            <button class="qc-topbar-btn qc-btn-soon ${mode === 'lohn' ? 'active' : ''}" style="font-size:0.72rem;" onclick="renderQcComingSoon('lohn')">🔧 Lohnveredelung</button>
+            <button class="qc-topbar-btn ${mode === 'lohn' ? 'active' : ''}" style="font-size:0.72rem;" onclick="qcState.mode='lohn';renderQuickCheck()">🔧 Lohnveredelung</button>
           </div>
           <span class="qc-topbar-phase">Phase 1</span>
         </div>
@@ -13117,13 +13344,7 @@ function renderQuickCheck() {
       </div>
 
       <div id="qc-result-area">
-      ${mode === 'lohn' ? `
-        <div class="qc-coming-soon">
-          <span class="qc-coming-soon-icon">🚧</span>
-          <div class="qc-coming-soon-title">${comingSoonLabels[mode]} — Coming Soon</div>
-          <div class="qc-coming-soon-text">Dieser Modus wird nach Abnahme des 3-Parteien-Modus implementiert.</div>
-        </div>
-      ` : mode === '4p' ? fourPBody : `
+      ${mode === 'lohn' ? lohnBody : mode === '4p' ? fourPBody : `
       <div class="qc-form">
         <div class="qc-form-row">
           <div class="qc-field">

@@ -2,6 +2,17 @@
 
 ---
 
+## v4.3 · 23.06.2026 — QuickCheck Lohnveredelung (Coming-Soon abgelöst)
+
+Der QuickCheck-Struktur-Tab „🔧 Lohnveredelung" zeigte bisher nur eine Coming-Soon-Box. Jetzt vollwertige Kompakt-Ansicht — gespeist aus derselben Logik wie der volle Mode 5.
+
+- **`computeLohn({company,sup,con,cus,lvDirect,litF})`** — neue **reine** Funktion (kein DOM) als **einzige Quelle** der Lohnveredelungs-Entscheidungen: Fallunterscheidung (Inland `sup===con`, `litF`/Art. 17 Abs. 2 lit. f, `sameConCus`), Behandlung je Schritt (Einkauf · Veredelung-RC · Verkauf) inkl. SAP-Code via `getSapCode`, und Registrierungsrisiken.
+- **`analyzeLohn()`** leitet seine Fallauswahl jetzt aus `computeLohn()` ab (HTML unverändert) → Mode 5 und QuickCheck können nicht mehr auseinanderlaufen. Alle OT-M5-Tests bleiben grün.
+- **QuickCheck `lohn`-Modus**: Form (Lieferant/Converter/Kunde + Gesellschaft + 2 Schalter: Warenweg direkt/über-dich, Ware-kommt-zurück) + 3-Schritt-Boxen + Reg-Banner + Hinweise. Topbar-Button schaltet direkt um (kein `renderQcComingSoon` mehr).
+- Tests **LV-01…LV-05** (computeLohn) ergänzt → 43 Output-Tests grün. Verifiziert (JSDOM): EPROHA ohne PL-UID → Reg-Banner Polen; EPDE mit PL-UID → kein Risiko; `litF` true → Verkauf separat, false → IG-Lieferung/Inland; `sup===con` → Inland ohne RC. **Visuelle Browserabnahme offen.**
+
+---
+
 ## v4.3 · 23.06.2026 — Fix: GB/CH-Export — Exporteur-Partei + Eingangsrechnung-MWSKZ
 
 P0-Bug im 3P-Drittland-Export (DE→DE→GB/CH), nur bei Vorlieferant im selben Land wie EPDE/EPROHA sichtbar.
