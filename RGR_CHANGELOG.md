@@ -2,6 +2,21 @@
 
 ---
 
+## v4.3 · 23.06.2026 — UID-Picker für Drittland-Kunde (Mode 2), 4 UID-Fälle
+
+Folge zum Drop-Shipment-Fall CH-Kunde → SK: Die Behandlung hängt davon ab, **welche EU-UID** der Drittland-Kunde vorlegt. Neuer UID-Picker im Drop-Shipment-Panel + dynamische Klassifikation in `analyze2()` statt pauschaler „Dreieck gesperrt".
+
+- **Neuer State** `mode2CustUid` (+ `setMode2CustUid()`), zurückgesetzt in `clearDropShip()` und `setCompany()`. Picker erscheint nur bei Drittland-Kunde + aktivem Drop-Shipment.
+- **4 Fälle im `bIsNonEU`-Branch** (custUid):
+  - **keine EU-UID** → 20 % AT (SAP A2).
+  - **Abgangsland-UID (AT)** → 20 % AT, bewegte Lieferung verschiebt sich (Art. 36a) — i.d.R. unerwünscht.
+  - **Bestimmungsland-UID (= cCode)** → ig. Lieferung 0 % (AF), Kunde macht ig. Erwerb + Inlandslieferung im Bestimmungsland; kein Dreieck (Art. 141 lit. a).
+  - **Dritt-MS-UID (≠ AT, ≠ cCode)** → **Dreiecksgeschäft (Art. 141)**: ig. Lieferung 0 % an die Dritt-MS-UID, deemed acquisition + Reverse Charge, keine Registrierung im Bestimmungsland; Drittland-Sitz unschädlich.
+- `isTriangle` für das Flussdiagramm an `triByThirdUid` gekoppelt → Dreieck-SVG nur im Dritt-MS-Fall.
+- Verifiziert (JSDOM): 36 Output-Tests grün; alle 4 UID-Fälle + EU-Kunden-Regression geprüft.
+
+---
+
 ## v4.3 · 23.06.2026 — Drop-Shipment bei Drittland-Kunde mit EU-Warenempfänger (Mode 2)
 
 Fall aus der Praxis: **EPROHA (AT) → CH-Kunde → Warenempfänger SK**. Die Ware bewegt sich AT → SK und verlässt die EU **nicht** — also keine Ausfuhr, sondern ein innergemeinschaftliches Reihengeschäft mit Drittlands-Zwischenhändler. Bisher zwei Defekte: (a) die Drop-Shipment-Sektion war bei Drittland-Kunde komplett ausgeblendet, (b) `analyze2()` routete CH-Kunden pauschal in den Schweiz-Export-Pfad (A0/Zoll/EUSt 8,1 %/BAZG).

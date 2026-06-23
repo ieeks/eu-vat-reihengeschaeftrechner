@@ -202,6 +202,7 @@ let activeInvSupply   = 0;
 let activeRpaSupply   = 0;
 let uidPanelOpen      = false;
 let dropShipDest      = null;   // Mode 2: Warenempfänger-Land bei Drop-Shipment (null = kein Drop-Shipment)
+let mode2CustUid      = null;   // Mode 2 Drittland-Kunde: Land der vom Kunden vorgelegten EU-UID (null = keine EU-UID)
 let importerRole      = 'self';  // Drittland-Einfuhr: wer ist Einführer? 'self' (wir/DDP) | 'customer' (DAP/EXW) | 'supplier' (Lieferant DDP)
 
 // Country helpers
@@ -4547,8 +4548,13 @@ function analyze2() {
     const cCode = dropShipDest;      // Warenempfänger (Endkunde des Kunden)
     const cRate = rate(cCode);
     const cIsNonEU = isNonEU(cCode);
-    const bIsNonEU = isNonEU(bCode);            // Drittland-Kunde (z.B. CH) ohne EU-UID
-    const isTriangle = !cIsNonEU && !bIsNonEU;  // AT, bCode, cCode sind drei verschiedene EU-MS
+    const bIsNonEU = isNonEU(bCode);            // Drittland-Kunde (z.B. CH)
+    // Welche EU-UID legt der Kunde vor? EU-Kunde → Heimat-UID; Drittland-Kunde → ausgewählt.
+    const custUid = bIsNonEU ? (mode2CustUid || '') : bCode;
+    // Dreieck nur bei drei verschiedenen EU-MS. Beim Drittland-Kunden setzt das eine UID
+    // eines DRITTEN MS voraus (≠ AT-Abgang, ≠ cCode-Bestimmung).
+    const triByThirdUid = !!custUid && !isNonEU(custUid) && custUid !== 'AT' && custUid !== cCode;
+    const isTriangle = bIsNonEU ? triByThirdUid : (!cIsNonEU && !bIsNonEU);
     const lawTri = 'Art. 25 UStG AT / Art. 141 MwStSystRL';
 
     html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--amber);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">
@@ -4570,31 +4576,55 @@ function analyze2() {
       html += rH({type:'warn', icon:'🛃', text:`Ausfuhrnachweis (ATLAS/e-dec) erforderlich — Bestimmungsland ${cn(cCode)} ist Drittland. Zollanmeldung in AT.`});
     } else if (bIsNonEU) {
       // ── Drittland-Kunde (z.B. CH), Ware bleibt in der EU (AT → cCode) ───────
+      //    Behandlung hängt davon ab, welche EU-UID der Kunde vorlegt (custUid):
+      //      keine          → 20% AT (keine steuerfreie ig. Lieferung)
+      //      = AT (Abgang)  → 20% AT, bewegte Lieferung verschiebt sich (Art. 36a)
+      //      = cCode (Best.)→ IG-Lieferung 0% + ig. Erwerb/Inlandslieferung im Bestimmungsland
+      //      Dritt-MS       → Dreiecksgeschäft (Art. 141)
       html += `<div style="padding:12px 16px;background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.25);border-radius:var(--r-md);margin-bottom:14px;font-size:0.78rem;color:var(--tx-2);line-height:1.7;">
         <strong style="color:var(--teal);">Konstellation:</strong>
         EPROHA (AT) fakturiert an ${flag(bCode)} <strong>${cn(bCode)}-Kunden (Drittland-Rechnungsempfänger)</strong> · Ware gelangt physisch AT → ${flag(cCode)} <strong>${cn(cCode)}</strong> (Warenempfänger).<br>
-        Die Ware <strong>verlässt die EU nicht</strong> → <strong>keine Ausfuhr</strong>, sondern innergemeinschaftliches Reihengeschäft. Der ${cn(bCode)}-Kunde ist nur mittlerer Unternehmer (Erwerber).
+        Die Ware <strong>verlässt die EU nicht</strong> → <strong>keine Ausfuhr</strong>, sondern innergemeinschaftliches Reihengeschäft. Der ${cn(bCode)}-Kunde ist nur mittlerer Unternehmer (Erwerber).<br>
+        <span style="color:var(--tx-2);">Vom Kunden vorgelegte UID: <strong>${custUid ? cn(custUid)+'-UID' : 'keine EU-UID'}</strong> — über das Drop-Shipment-Panel wählbar.</span>
       </div>`;
 
-      html += `<div style="padding:14px 18px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.35);border-radius:var(--r-md);margin-bottom:14px;line-height:1.7;">
-        <div style="font-size:0.82rem;font-weight:600;color:var(--red);margin-bottom:6px;">🆔 Voraussetzung steuerfreie IG-Lieferung</div>
-        <div style="font-size:0.78rem;color:var(--tx-1);">
-          Der ${cn(bCode)}-Kunde ist ein Drittland-Unternehmer <strong>ohne EU-UID</strong>. Für die steuerfreie ig. Lieferung muss er eine <strong>gültige EU-UID</strong> mitteilen (Registrierung in ${cn(cCode)} oder einem anderen MS) — sonst fakturiert EPROHA <strong>20% AT-MwSt</strong>.<br>
-          <span style="color:var(--tx-2);">Art. 6 Abs. 1 iVm. Art. 7 UStG 1994 / Art. 138 MwStSystRL</span>
-        </div>
-      </div>`;
-
-      html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: AF</strong> (IG-Lieferung AT 0% — Art. 6 Abs. 1 iVm. Art. 7 UStG 1994) · <em>nur mit gültiger EU-UID des ${cn(bCode)}-Kunden</em>`});
-      html += rH({type:'ok', icon:'⚡', text:
-        `<strong>EPROHA = erster Lieferant:</strong> bewegte Lieferung = <strong>steuerfreie ig. Lieferung 0%</strong> (Transport durch EPROHA, Ware AT → ${cn(cCode)}). Rechnung mit AT-UID <strong>${myATVat||'ATU...'}</strong> an die mitgeteilte EU-UID des Kunden.`
-      });
-      html += rH({type:'warn', icon:'📦', text:
-        `<strong>Belegnachweis:</strong> Gelangensbestätigung des Warenempfängers in <strong>${cn(cCode)}</strong> einholen — die Ware kommt dort an, nicht in ${cn(bCode)}! Alternativ CMR mit Empfangsbestätigung.`
-      });
-      html += rH({type:'info', icon:'📝', text:`ZM-Meldung: EPROHA meldet die IG-Lieferung mit der vom ${cn(bCode)}-Kunden mitgeteilten <strong>EU-UID</strong> + Betrag. Frist: 25. des Folgemonats.`});
-      html += rH({type:'warn', icon:'△', text:
-        `<strong>Dreiecksgeschäft NICHT anwendbar:</strong> Art. 141 MwStSystRL verlangt drei verschiedene <strong>EU</strong>-UIDs. Der ${cn(bCode)}-Kunde ist Drittland-Unternehmer → er muss sich im Bestimmungsland <strong>${cn(cCode)}</strong> (oder einem anderen MS) registrieren und dort den <strong>ig. Erwerb (${cRate}%)</strong> erklären sowie die Anschlusslieferung an den ${cn(cCode)}-Empfänger abwickeln.`
-      });
+      if (!custUid) {
+        html += `<div style="padding:14px 18px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.35);border-radius:var(--r-md);margin-bottom:14px;line-height:1.7;">
+          <div style="font-size:0.82rem;font-weight:600;color:var(--red);margin-bottom:6px;">🆔 Keine EU-UID → 20% AT-MwSt</div>
+          <div style="font-size:0.78rem;color:var(--tx-1);">
+            Der ${cn(bCode)}-Kunde hat keine EU-UID mitgeteilt → EPROHA fakturiert <strong>20% AT-MwSt</strong>. Für eine steuerfreie ig. Lieferung muss der Kunde eine gültige EU-UID vorlegen (Auswahl im Drop-Shipment-Panel).<br>
+            <span style="color:var(--tx-2);">Art. 6 Abs. 1 iVm. Art. 7 UStG 1994 / Art. 138 MwStSystRL</span>
+          </div>
+        </div>`;
+        html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: A2</strong> (Inlandslieferung AT 20%)`});
+        html += rH({type:'warn', icon:'⚠️', text:`Ohne EU-UID des Kunden keine steuerfreie ig. Lieferung — Rechnung mit 20% AT-MwSt.`});
+      } else if (custUid === 'AT') {
+        html += rH({type:'warn', icon:'🆔', text:
+          `<strong>AT-UID (= Abgangsland):</strong> Legt der Kunde die UID des Abgangslands AT vor, ist die Lieferung EPROHA→Kunde <strong>keine</strong> steuerfreie ig. Lieferung → <strong>20% AT-MwSt</strong>. Die bewegte Lieferung verschiebt sich auf den Kunden (Art. 36a): er wäre ig. Lieferant aus AT nach ${cn(cCode)} und bräuchte eine AT-Registrierung. In der Regel unerwünscht — besser Dritt-MS-UID oder ${cn(cCode)}-UID.`
+        });
+        html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: A2</strong> (Inlandslieferung AT 20%) — ruhende Lieferung an den Kunden`});
+      } else if (custUid === cCode) {
+        html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: AF</strong> (IG-Lieferung AT 0% — Art. 6 Abs. 1 iVm. Art. 7 UStG 1994)`});
+        html += rH({type:'ok', icon:'⚡', text:
+          `<strong>EPROHA = erster Lieferant:</strong> bewegte Lieferung = <strong>steuerfreie ig. Lieferung 0%</strong> an die <strong>${cn(cCode)}-UID</strong> des Kunden (Ware AT → ${cn(cCode)}). Rechnung mit AT-UID <strong>${myATVat||'ATU...'}</strong>.`
+        });
+        html += rH({type:'warn', icon:'🆔', text:
+          `<strong>Kein Dreiecksgeschäft:</strong> Der Kunde legt die UID des Bestimmungslands ${cn(cCode)} vor (Art. 141 lit. a → Vereinfachung blockiert). Er tätigt den <strong>ig. Erwerb in ${cn(cCode)} (${cRate}%)</strong> mit seiner ${cn(cCode)}-UID und erbringt anschließend eine <strong>${cn(cCode)}-Inlandslieferung</strong> an den Empfänger — Registrierung in ${cn(cCode)} vorausgesetzt.`
+        });
+        html += rH({type:'warn', icon:'📦', text:`<strong>Belegnachweis:</strong> Gelangensbestätigung des Warenempfängers in <strong>${cn(cCode)}</strong> / CMR mit Empfangsbestätigung.`});
+        html += rH({type:'info', icon:'📝', text:`ZM-Meldung: EPROHA meldet die IG-Lieferung mit der <strong>${cn(cCode)}-UID des Kunden</strong>. Frist: 25. des Folgemonats.`});
+      } else {
+        html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: AF</strong> (IG-Lieferung AT 0% — Art. 6 Abs. 1 iVm. Art. 7 UStG 1994)`});
+        html += rH({type:'ok', icon:'⚡', text:
+          `<strong>EPROHA = erster Lieferant:</strong> bewegte Lieferung = <strong>steuerfreie ig. Lieferung 0%</strong> an die <strong>${cn(custUid)}-UID</strong> des Kunden (Ware AT → ${cn(cCode)}). Rechnung mit AT-UID <strong>${myATVat||'ATU...'}</strong>.`
+        });
+        html += rH({type:'info', icon:'△', text:
+          `<strong>Dreiecksgeschäft (${lawTri}):</strong> Drei verschiedene MS — AT (Abgang) · ${cn(custUid)} (UID des Kunden) · ${cn(cCode)} (Bestimmung). Der Kunde meldet den ig. Erwerb in ${cn(cCode)} als „deemed taxed", muss sich dort <strong>NICHT registrieren</strong> und wälzt die Lieferung an den ${cn(cCode)}-Empfänger per <strong>Reverse Charge</strong> ab. Der ${cn(bCode)}-Sitz im Drittland ist unschädlich (Art. 141: nur „nicht im Bestimmungsland niedergelassen").`
+        });
+        html += rH({type:'info', icon:'🧾', text:`<strong>${cn(cCode)}-Empfänger:</strong> schuldet die ${cn(cCode)}-USt (${cRate}%) per Reverse Charge, ggf. mit Vorsteuerabzug.`});
+        html += rH({type:'warn', icon:'📦', text:`<strong>Belegnachweis:</strong> Gelangensbestätigung des Warenempfängers in <strong>${cn(cCode)}</strong> / CMR. Rechnung des Kunden mit Pflichthinweis „Dreiecksgeschäft – Steuerschuldnerschaft des Empfängers".`});
+        html += rH({type:'info', icon:'📝', text:`ZM-Meldung: EPROHA meldet die IG-Lieferung mit der <strong>${cn(custUid)}-UID des Kunden</strong>. Frist: 25. des Folgemonats.`});
+      }
     } else {
       html += `<div style="padding:12px 16px;background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.25);border-radius:var(--r-md);margin-bottom:14px;font-size:0.78rem;color:var(--tx-2);line-height:1.7;">
         <strong style="color:var(--teal);">Konstellation:</strong>
@@ -9891,6 +9921,7 @@ function setCompany(co, btn) {
   MY_VAT_IDS = COMPANIES[co].vatIds;
   selectedUidOverride = null;
   dropShipDest = null;
+  mode2CustUid = null;
   document.querySelectorAll('.co-pill button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   // Mode 2 only for EPROHA — reset to 3 if EPDE selected
@@ -11036,6 +11067,21 @@ function renderContextToggles() {
       const opts = EU.filter(c => !c.nonEU && c.code !== kundeCountry)
         .map(c => `<option value="${c.code}"${dropShipDest===c.code?' selected':''}>${flag(c.code)} ${cn(c.code)}</option>`)
         .join('');
+      // Drittland-Kunde + aktives Drop-Shipment: welche EU-UID legt der Kunde vor?
+      // Bestimmt ob Dreieck (Dritt-MS-UID), Registrierung im Bestimmungsland (cCode-UID),
+      // 20% AT (Abgangsland-UID oder keine UID).
+      const uidOpts = `<option value=""${!mode2CustUid?' selected':''}>— keine EU-UID —</option>`
+        + EU.filter(c => !c.nonEU)
+            .map(c => `<option value="${c.code}"${mode2CustUid===c.code?' selected':''}>${flag(c.code)} ${cn(c.code)}-UID${c.code===dropShipDest?' (= Bestimmungsland)':c.code==='AT'?' (= Abgangsland)':''}</option>`)
+            .join('');
+      const custUidPicker = (kundeNonEU && activeDS)
+        ? `<div class="sub" style="margin-top:12px;margin-bottom:4px;">UID, die der ${cn(kundeCountry)}-Kunde vorlegt</div>
+          <div class="picker-wrap">
+            <select id="mode2CustUidPicker" onchange="setMode2CustUid(this.value)" style="width:100%;">
+              ${uidOpts}
+            </select>
+          </div>`
+        : '';
       el.innerHTML = `<div class="sec" style="margin-top:0;border-top:1px solid var(--border-light);">
         <div class="sec-hdr">📦 Drop-Shipment</div>
         <div class="sec-body">
@@ -11056,6 +11102,7 @@ function renderContextToggles() {
               ${opts}
             </select>
           </div>` : `<select id="dsDestPicker" style="display:none;">${opts}</select>`}
+          ${custUidPicker}
         </div>
       </div>`;
       return;
@@ -11072,6 +11119,13 @@ function setDropShip(country) {
 }
 function clearDropShip() {
   dropShipDest = null;
+  mode2CustUid = null;
+  renderContextToggles();
+  renderResult();
+}
+// Mode 2 Drittland-Kunde: Land der vom Kunden vorgelegten EU-UID ('' = keine)
+function setMode2CustUid(code) {
+  mode2CustUid = code || null;
   renderContextToggles();
   renderResult();
 }

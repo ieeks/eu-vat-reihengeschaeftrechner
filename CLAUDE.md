@@ -94,10 +94,11 @@ docs/assets/scripts/app.js
   computeTaxCH() ← export/import/domestic-l1/domestic-l2-ch
   computeTaxGB() ← export/domestic-l1/domestic-l2-gb (NEU v4.2)
   analyzeLohn() ← sup===con → Inland-Sonderfall (v4.1)
-  analyze2() ← Mode 2 EPROHA; Flag euGoodsRecipient (dropShipDest gesetzt, EU, ≠Kunde) entscheidet Ausfuhr vs. ig. Reihengeschäft. Drop-Shipment-Branches: (a) dest=AT + dropShipDest≠AT; (b) EU-Kunde dest≠AT + dropShipDest≠dest → Reihengeschäft/Dreiecksgeschäft (EPROHA=erster Lieferant); (c) Drittland-Kunde (CH/GB) + EU-Warenempfänger (Sub-Branch bIsNonEU) → ig. Lieferung AF 0% (nur mit EU-UID des Kunden), Dreieck gesperrt (isTriangle && !bIsNonEU), Kunde muss sich im Bestimmungsland registrieren. Drittland-Export-Branch (dest=CH/GB Sonderpfad bzw. isNonEU(dest) generisch TR/RS/BA/RU → AT-Ausfuhr A0 + _thirdCountryNote + _importerToggle) greift nur bei !euGoodsRecipient
+  analyze2() ← Mode 2 EPROHA; Flag euGoodsRecipient (dropShipDest gesetzt, EU, ≠Kunde) entscheidet Ausfuhr vs. ig. Reihengeschäft. Drop-Shipment-Branches: (a) dest=AT + dropShipDest≠AT; (b) EU-Kunde dest≠AT + dropShipDest≠dest → Reihengeschäft/Dreiecksgeschäft (EPROHA=erster Lieferant); (c) Drittland-Kunde (CH/GB) + EU-Warenempfänger (Sub-Branch bIsNonEU) → 4 Fälle je nach vom Kunden vorgelegter EU-UID (State mode2CustUid, Picker im Drop-Shipment-Panel): keine→20% AT (A2) · Abgangsland-UID(AT)→20% AT · Bestimmungsland-UID(cCode)→ig. Lieferung AF 0% + ig.Erwerb/Inlandslieferung im Bestimmungsland (kein Dreieck) · Dritt-MS-UID→Dreiecksgeschäft Art.141. isTriangle=triByThirdUid (custUid≠AT, ≠cCode, EU). Drittland-Export-Branch (dest=CH/GB Sonderpfad bzw. isNonEU(dest) generisch TR/RS/BA/RU → AT-Ausfuhr A0 + _thirdCountryNote + _importerToggle) greift nur bei !euGoodsRecipient
   buildVergleichTab() ← ⚖ Vergleich-Tab (v4.1)
   simplifyBasisOutput() ← sekundäre Hints in Desktop-Panel bündeln
   setDropShip(country) / clearDropShip() ← Drop-Shipment State für Mode 2
+  setMode2CustUid(code) ← Mode 2 Drittland-Kunde: Land der vom Kunden vorgelegten EU-UID (State mode2CustUid; '' = keine)
 
 Reihengeschaeftsrechner_22.html
   Legacy-Referenz, nicht wieder zur Hauptquelle machen
