@@ -142,5 +142,28 @@ Lieferant transportiert?
 
 ---
 
-*Code:* `analyzeInland()` (F1) · `determineMovingSupply()` / `_applyQuickFix()` (F2) · `_detectTriangle3()` (F3)
+## F4 · AT(EPROHA)→CH-Kunde→SK — Drittland-Kunde, Ware bleibt in der EU (Mode 2)
+
+```
+🇦🇹 AT/EPROHA ──Rechnung──▶ 🇨🇭 CH-Kunde (Drittland) ──▶ 🇸🇰 SK (Warenempfänger)
+        Ware physisch: AT ───────────────────────────────▶ SK   (bleibt in der EU)
+```
+
+**Kritischer Punkt:** Der Kunde sitzt im Drittland (CH), aber die Ware verlässt die EU nicht (AT → SK). Es ist **keine Ausfuhr** — sondern ein innergemeinschaftliches Reihengeschäft, in dem der CH-Kunde nur mittlerer Unternehmer (Erwerber) ist. Der naheliegende „CH = Schweiz-Export"-Reflex (A0/Zoll/EUSt/BAZG) ist hier falsch.
+
+| | Behandlung |
+|---|---|
+| EPROHA = erster Lieferant | bewegte ig. Lieferung AT → SK, **0 %** (SAP **AF**) — **nur** mit gültiger EU-UID des CH-Kunden, sonst **20 % AT** |
+| Belegnachweis | Gelangensbestätigung des Warenempfängers in **SK** (nicht CH!) / CMR |
+| ZM | mit der vom CH-Kunden mitgeteilten **EU-UID** |
+| Dreiecksgeschäft (Art. 141)? | ❌ — CH-Kunde hat keine EU-UID aus drittem MS. Er muss sich in **SK** (oder anderem MS) registrieren und dort den ig. Erwerb (SK-Satz) + Anschlusslieferung abwickeln |
+
+**Handlungsempfehlung:** Gültige EU-UID des CH-Kunden vor Lieferung einholen — sonst 20 % AT-MwSt. Die Vereinfachung Art. 141 entfällt; der CH-Kunde trägt die Registrierungslast im Bestimmungsland.
+
+*Verwandte Dateien:* `at/ustg_at_reihengeschaeft.md` · `eu/art138_mwstrl.md` · `eu/art141_triangle.md`
+*Code:* `analyze2()` Branch `euGoodsRecipient` / Sub-Branch `bIsNonEU`
+
+---
+
+*Code:* `analyzeInland()` (F1) · `determineMovingSupply()` / `_applyQuickFix()` (F2) · `_detectTriangle3()` (F3) · `analyze2()` euGoodsRecipient (F4)
 *Testfälle:* `RC-BG-AT-BG` · `RC-BG-DE-BG` · `RC-HU-DE-LITC` · `RC-HU-DE-LITA` · `RC-SAPPI-1` · `RC-SAPPI-2` · `RC-SAPPI-3`

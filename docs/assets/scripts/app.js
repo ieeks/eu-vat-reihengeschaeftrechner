@@ -4263,6 +4263,11 @@ function analyze2() {
   const myCHVat = COMPANIES['EPROHA'].vatIds['CH'];
   const myATVat = COMPANIES['EPROHA'].vatIds['AT'];
 
+  // Drittland-Kunde, aber Ware bleibt in der EU (z.B. CH-Kunde, Warenempfänger SK):
+  // Ware verlässt die EU nicht → KEINE Ausfuhr, sondern ig. Reihengeschäft.
+  // Greift nur wenn ein EU-Warenempfänger (dropShipDest) ≠ Kunde gesetzt ist.
+  const euGoodsRecipient = !!dropShipDest && !isNonEU(dropShipDest) && dropShipDest !== dest;
+
   // Transport: 'customer' = Abholung durch Kunden am Lager AT
   //            'supplier' = EPROHA liefert zum Kunden
   const isAbholung = selectedTransport === 'customer' || selectedTransport === 'C';
@@ -4279,7 +4284,7 @@ function analyze2() {
   </div>`;
 
   // ── AT → CH ────────────────────────────────────────────────────────────────
-  if (dest === 'CH') {
+  if (dest === 'CH' && !euGoodsRecipient) {
     html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--amber);margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:8px;">
       🇨🇭 <strong>Drittland-Transaktion</strong> – Schweiz ist kein EU-Mitglied (MWST-Info 22 ESTV). Keine MwStSystRL.
     </div>`;
@@ -4472,7 +4477,7 @@ function analyze2() {
     html += buildInvoiceSnapshot(_atCtx, _atEng);
 
   // ── AT → GB (Ausfuhrlieferung — GB ist seit Brexit kein EU-Mitglied) ──────
-  } else if (dest === 'GB') {
+  } else if (dest === 'GB' && !euGoodsRecipient) {
     html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--amber);margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:8px;">
       🇬🇧 <strong>Drittland-Transaktion</strong> — Großbritannien ist seit 01.01.2021 kein EU-Mitglied mehr (Brexit). Keine ig. Lieferung — Ausfuhrlieferung nach § 7 UStG AT / Art. 146 MwStSystRL.
     </div>`;
@@ -4517,7 +4522,7 @@ function analyze2() {
     }
 
   // ── AT → Drittland (TR/RS/BA/RU u.a., außer CH/GB mit Sonderpfad) — Ausfuhr ──
-  } else if (isNonEU(dest)) {
+  } else if (isNonEU(dest) && !euGoodsRecipient) {
     html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--amber);margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:8px;">
       ${flag(dest)} <strong>Drittland-Transaktion</strong> — ${cn(dest)} ist kein EU-Mitglied. Keine ig. Lieferung — <strong>Ausfuhrlieferung</strong> nach § 7 UStG AT / Art. 146 MwStSystRL.
     </div>`;
@@ -4537,12 +4542,13 @@ function analyze2() {
 
   // ── AT → EU-Kunde + Drop-Shipment (Reihengeschäft / Dreiecksgeschäft) ──────
   //    EPROHA(AT) = erster Lieferant → Kunde(dest) → Warenempfänger(dropShipDest)
-  } else if (dropShipDest && dropShipDest !== dest && dropShipDest !== 'AT' && !isNonEU(dest)) {
+  } else if (dropShipDest && dropShipDest !== dest && dropShipDest !== 'AT' && (!isNonEU(dest) || euGoodsRecipient)) {
     const bCode = dest;              // Kunde (mittlerer Unternehmer / Erwerber)
     const cCode = dropShipDest;      // Warenempfänger (Endkunde des Kunden)
     const cRate = rate(cCode);
     const cIsNonEU = isNonEU(cCode);
-    const isTriangle = !cIsNonEU;    // AT, bCode, cCode sind drei verschiedene EU-MS
+    const bIsNonEU = isNonEU(bCode);            // Drittland-Kunde (z.B. CH) ohne EU-UID
+    const isTriangle = !cIsNonEU && !bIsNonEU;  // AT, bCode, cCode sind drei verschiedene EU-MS
     const lawTri = 'Art. 25 UStG AT / Art. 141 MwStSystRL';
 
     html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--amber);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">
@@ -4562,6 +4568,33 @@ function analyze2() {
       html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: A0</strong> (Ausfuhr AT 0% — § 7 UStG AT / Art. 146 MwStSystRL)`});
       html += rH({type:'ok', icon:'🇦🇹', text:`Rechnung an ${cn(bCode)}-Kunden: <strong>0% MwSt (Ausfuhrlieferung)</strong>. AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>.`});
       html += rH({type:'warn', icon:'🛃', text:`Ausfuhrnachweis (ATLAS/e-dec) erforderlich — Bestimmungsland ${cn(cCode)} ist Drittland. Zollanmeldung in AT.`});
+    } else if (bIsNonEU) {
+      // ── Drittland-Kunde (z.B. CH), Ware bleibt in der EU (AT → cCode) ───────
+      html += `<div style="padding:12px 16px;background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.25);border-radius:var(--r-md);margin-bottom:14px;font-size:0.78rem;color:var(--tx-2);line-height:1.7;">
+        <strong style="color:var(--teal);">Konstellation:</strong>
+        EPROHA (AT) fakturiert an ${flag(bCode)} <strong>${cn(bCode)}-Kunden (Drittland-Rechnungsempfänger)</strong> · Ware gelangt physisch AT → ${flag(cCode)} <strong>${cn(cCode)}</strong> (Warenempfänger).<br>
+        Die Ware <strong>verlässt die EU nicht</strong> → <strong>keine Ausfuhr</strong>, sondern innergemeinschaftliches Reihengeschäft. Der ${cn(bCode)}-Kunde ist nur mittlerer Unternehmer (Erwerber).
+      </div>`;
+
+      html += `<div style="padding:14px 18px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.35);border-radius:var(--r-md);margin-bottom:14px;line-height:1.7;">
+        <div style="font-size:0.82rem;font-weight:600;color:var(--red);margin-bottom:6px;">🆔 Voraussetzung steuerfreie IG-Lieferung</div>
+        <div style="font-size:0.78rem;color:var(--tx-1);">
+          Der ${cn(bCode)}-Kunde ist ein Drittland-Unternehmer <strong>ohne EU-UID</strong>. Für die steuerfreie ig. Lieferung muss er eine <strong>gültige EU-UID</strong> mitteilen (Registrierung in ${cn(cCode)} oder einem anderen MS) — sonst fakturiert EPROHA <strong>20% AT-MwSt</strong>.<br>
+          <span style="color:var(--tx-2);">Art. 6 Abs. 1 iVm. Art. 7 UStG 1994 / Art. 138 MwStSystRL</span>
+        </div>
+      </div>`;
+
+      html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: AF</strong> (IG-Lieferung AT 0% — Art. 6 Abs. 1 iVm. Art. 7 UStG 1994) · <em>nur mit gültiger EU-UID des ${cn(bCode)}-Kunden</em>`});
+      html += rH({type:'ok', icon:'⚡', text:
+        `<strong>EPROHA = erster Lieferant:</strong> bewegte Lieferung = <strong>steuerfreie ig. Lieferung 0%</strong> (Transport durch EPROHA, Ware AT → ${cn(cCode)}). Rechnung mit AT-UID <strong>${myATVat||'ATU...'}</strong> an die mitgeteilte EU-UID des Kunden.`
+      });
+      html += rH({type:'warn', icon:'📦', text:
+        `<strong>Belegnachweis:</strong> Gelangensbestätigung des Warenempfängers in <strong>${cn(cCode)}</strong> einholen — die Ware kommt dort an, nicht in ${cn(bCode)}! Alternativ CMR mit Empfangsbestätigung.`
+      });
+      html += rH({type:'info', icon:'📝', text:`ZM-Meldung: EPROHA meldet die IG-Lieferung mit der vom ${cn(bCode)}-Kunden mitgeteilten <strong>EU-UID</strong> + Betrag. Frist: 25. des Folgemonats.`});
+      html += rH({type:'warn', icon:'△', text:
+        `<strong>Dreiecksgeschäft NICHT anwendbar:</strong> Art. 141 MwStSystRL verlangt drei verschiedene <strong>EU</strong>-UIDs. Der ${cn(bCode)}-Kunde ist Drittland-Unternehmer → er muss sich im Bestimmungsland <strong>${cn(cCode)}</strong> (oder einem anderen MS) registrieren und dort den <strong>ig. Erwerb (${cRate}%)</strong> erklären sowie die Anschlusslieferung an den ${cn(cCode)}-Empfänger abwickeln.`
+      });
     } else {
       html += `<div style="padding:12px 16px;background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.25);border-radius:var(--r-md);margin-bottom:14px;font-size:0.78rem;color:var(--tx-2);line-height:1.7;">
         <strong style="color:var(--teal);">Konstellation:</strong>
@@ -10991,11 +11024,14 @@ function toggleCtxOpt(k, cb) {
 function renderContextToggles() {
   const el = $('contextToggles');
 
-  // Mode 2 + Kunde = AT → Drop-Shipment-Sektion anzeigen
+  // Mode 2 → Drop-Shipment-Sektion anzeigen.
+  // EU-Kunde: Reihen-/Dreiecksgeschäft. Drittland-Kunde (CH/GB): nur sinnvoll, wenn die
+  // Ware in ein EU-Land geht (Warenempfänger EU) → ig. Reihengeschäft statt Ausfuhr.
   if (currentMode === 2 && currentCompany === 'EPROHA') {
     const cp1 = $('cp-1');
     const kundeCountry = cp1?.value || 'IT';
-    if (!isNonEU(kundeCountry)) {   // EU-Kunde (AT, DE, IT, …) → Drop-Shipment / Reihengeschäft möglich
+    {
+      const kundeNonEU = isNonEU(kundeCountry);
       const activeDS = !!dropShipDest;
       const opts = EU.filter(c => !c.nonEU && c.code !== kundeCountry)
         .map(c => `<option value="${c.code}"${dropShipDest===c.code?' selected':''}>${flag(c.code)} ${cn(c.code)}</option>`)
@@ -11003,7 +11039,9 @@ function renderContextToggles() {
       el.innerHTML = `<div class="sec" style="margin-top:0;border-top:1px solid var(--border-light);">
         <div class="sec-hdr">📦 Drop-Shipment</div>
         <div class="sec-body">
-          <div class="sub" style="margin-bottom:8px;">Ware geht direkt an den Endkunden des Kunden?</div>
+          <div class="sub" style="margin-bottom:8px;">${kundeNonEU
+            ? `Ware geht direkt an einen <strong>EU-Warenempfänger</strong> (statt in die Schweiz/Drittland)?`
+            : `Ware geht direkt an den Endkunden des Kunden?`}</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
             <button class="party-btn${activeDS?' active':''}" onclick="setDropShip(document.getElementById('dsDestPicker').value)">
               Ja · Direktlieferung an Warenempfänger

@@ -48,6 +48,7 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 - **Experten-Modus** — 5 Tabs + Perspektivwechsel
 
 ## Aktueller Fokus
+- **Mode 2 Drop-Shipment für Drittland-Kunde mit EU-Warenempfänger** — Fall EPROHA(AT) → CH-Kunde → Warenempfänger SK: Ware bleibt in der EU → innergemeinschaftliches Reihengeschäft (ig. Lieferung 0% nur mit EU-UID des Kunden) statt Schweiz-Export; Dreiecksgeschäft gesperrt (Drittland-Kunde ohne EU-UID)
 - **Mode 2 Drop-Shipment für EU-Kunden** — EPROHA als erster Lieferant an einen EU-Kunden mit abweichendem Warenempfänger-Land (z.B. DE-Kunde, Ware nach IT) → Dreiecksgeschäft (AF/Reverse Charge) bzw. Ausfuhr bei Drittland-Empfänger (Session 28)
 - **Warenfluss-Diagramme vereinheitlicht** — Transport-Veranlasser-Label + Chip-Stil in 3P/4P/Drop-Shipment, größere SVGs (Session 28)
 - **v4.3 live** — Light Theme, Header-Modus-Tabs, Self-hosted Fonts, PDF-Export (Sessions 22–23)
