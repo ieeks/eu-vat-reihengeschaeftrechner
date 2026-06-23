@@ -75,13 +75,14 @@ Belegt den GB/CH-Export-Fix (`isIExporter` parteibasiert; Eingangs-/Ausgangs-MWS
 | Im anderen MS/Drittland ansässiger Unternehmer muss sich wegen der dort steuerbaren Lieferung registrieren | Abs. 12 Satz 2 |
 
 **Österreich (EPROHA) — § 3 Abs. 15 UStG 1994 + UStR 2000 Abschn. 3.14 (Rz 474g–474j):**
-Inhaltsgleich, da beide Art. 36a MwStSystRL (Quick Fixes, ab 1.1.2020) umsetzen.
+Wörtlich gegengeprüft (UStR Rz 474g/474i + WKO-Leitfaden); inhaltsgleich zu DE, da beide
+Art. 36a MwStSystRL (Quick Fixes, ab 1.1.2020) umsetzen.
 | Aussage | Fundstelle (AT) |
 |---|---|
-| Erster Lieferant befördert → seine Lieferung (L1) ist die bewegte | § 3 Abs. 15 Z 1 UStG 1994 |
-| Lieferort ruhender Lieferungen (vor/nach der Bewegung) | § 3 Abs. 15 Z 3 und Z 4 UStG 1994 |
-| Ausfuhr 0 %: § 7 UStG 1994 / Art. 146 MwStSystRL (nur bewegte Lieferung) | UStR 2000 Rz 474g ff. |
+| „Befördert/versendet der **erste Lieferer** die Gegenstände selbst, gilt **seine** Lieferung als bewegte Lieferung" | § 3 Abs. 15 **Z 1 lit. a** UStG 1994 (UStR Rz 474g) |
+| „nur die bewegte Lieferung … als … Ausfuhrlieferung … steuerfrei"; Drittland-Bsp.: Ausfuhr 0 % nur der bewegten Lieferung, vorgelagerte ruhende Lieferung in AT steuerbar | UStR Rz 474g + **Rz 474i**; § 6 Abs. 1 Z 1 iVm **§ 7 Abs. 1 Z 1** UStG 1994 |
+| Ruhende Lieferung **nach** der Bewegung gilt dort als ausgeführt, „wo die Beförderung/Versendung **endet**" (Bestimmungsland) | § 3 Abs. 15 **Z 4** UStG 1994 (vorgelagert: Z 3) |
 
-> Quelle DE: UStH 2023, Abschn. 3.14 (BMF). Quelle AT: findok.bmf.gv.at (UStR 2000) · RIS § 3 UStG 1994.
+> Quelle DE: UStH 2023, Abschn. 3.14 (BMF). Quelle AT: UStR 2000 Rz 474g–474j (findok.bmf.gv.at / Linde) · WKO „Reihengeschäfte in der Umsatzsteuer" · RIS § 3 Abs. 15 / § 7 UStG 1994. Beide Seiten am 23.06.2026 am Wortlaut verifiziert.
 > Code-agnostisch: bewegte Lieferung kommt aus `determineMovingSupply()` (Art. 36a), Heimat-MWSKZ aus `getSapCode` (EPROHA A0/A2/AF · EPDE G0/DS/VD). Regressions-Tests: `OT-GBX-01`/`OT-GBX-02`.
 
