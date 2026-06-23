@@ -60,3 +60,28 @@ Jedes Ergebnis enthält exakt:
   Beispiel `C037m-ALTB` (HU-UID = dest, ≠ dep IT) → L2 bewegend.
 - Ausnahme Abs. 2 (Abgangsland-UID mitgeteilt): L3 bewegend (`movingIndex = chainIndex = 2`).
   Beispiel `C037m-ALTA` (IT-UID = dep) → L3 bewegend.
+
+## Externe Verifikation — Erlass-Abgleich (Drittland-Export-Reihengeschäft)
+
+Geprüft am 23.06.2026 gegen den amtlichen Wortlaut (EPDE/DE) + EU-/AT-Pendant (EPROHA/AT).
+Belegt den GB/CH-Export-Fix (`isIExporter` parteibasiert; Eingangs-/Ausgangs-MWSKZ je `movingL1`).
+
+**Deutschland (EPDE) — UStAE Abschn. 3.14 (zu § 3 Abs. 6a UStG):**
+| Aussage | Fundstelle |
+|---|---|
+| Erster Lieferant befördert/versendet → Warenbewegung **seiner** Lieferung (L1) zugeordnet → er ist Exporteur | Abs. 8 Satz 1 (§ 3 Abs. 6a Satz 2 UStG) |
+| Nur **eine** Ausfuhrlieferung (§ 6 UStG); Steuerbefreiung **nur** bei der bewegten Lieferung | Abs. 14 Satz 1–2 |
+| Ruhende Lieferung **nach** der Bewegung gilt am **Ende der Beförderung** als ausgeführt (Bestimmungsland/Drittland) | Abs. 6 Satz 2 (§ 3 Abs. 7 Satz 2 Nr. 2 UStG); Türkei-Bsp. „Lieferort … in der Türkei" |
+| Im anderen MS/Drittland ansässiger Unternehmer muss sich wegen der dort steuerbaren Lieferung registrieren | Abs. 12 Satz 2 |
+
+**Österreich (EPROHA) — § 3 Abs. 15 UStG 1994 + UStR 2000 Abschn. 3.14 (Rz 474g–474j):**
+Inhaltsgleich, da beide Art. 36a MwStSystRL (Quick Fixes, ab 1.1.2020) umsetzen.
+| Aussage | Fundstelle (AT) |
+|---|---|
+| Erster Lieferant befördert → seine Lieferung (L1) ist die bewegte | § 3 Abs. 15 Z 1 UStG 1994 |
+| Lieferort ruhender Lieferungen (vor/nach der Bewegung) | § 3 Abs. 15 Z 3 und Z 4 UStG 1994 |
+| Ausfuhr 0 %: § 7 UStG 1994 / Art. 146 MwStSystRL (nur bewegte Lieferung) | UStR 2000 Rz 474g ff. |
+
+> Quelle DE: UStH 2023, Abschn. 3.14 (BMF). Quelle AT: findok.bmf.gv.at (UStR 2000) · RIS § 3 UStG 1994.
+> Code-agnostisch: bewegte Lieferung kommt aus `determineMovingSupply()` (Art. 36a), Heimat-MWSKZ aus `getSapCode` (EPROHA A0/A2/AF · EPDE G0/DS/VD). Regressions-Tests: `OT-GBX-01`/`OT-GBX-02`.
+
