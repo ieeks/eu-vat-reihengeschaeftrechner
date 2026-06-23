@@ -2,6 +2,16 @@
 
 ---
 
+## v4.3 · 23.06.2026 — Fix: GB/CH-Export — Exporteur-Partei + Eingangsrechnung-MWSKZ
+
+P0-Bug im 3P-Drittland-Export (DE→DE→GB/CH), nur bei Vorlieferant im selben Land wie EPDE/EPROHA sichtbar.
+
+- **`isIExporter` parteibasiert** (`!movingL1`) statt Länder-Vergleich (`exporterCode === myCode`) in `buildGBExportResult`, `buildCHExportResult`, `buildThirdExportResult`. Bei `transport=supplier` (L1 bewegt) ist der **Vorlieferant** Exporteur, nicht EPDE — der alte Länder-Vergleich schlug bei DE→DE→GB fälschlich „Du bist Exporteur" an.
+- **Eingangsrechnung-Zeile** in der Einführer-Box ergänzt: `_importerToggle`/`_importerConsequence` bekommen `movingL1`. Im `customer`-Zweig (Export) jetzt beide MWSKZ: `movingL1` → Eingang 0 % (bewegte Ausfuhr) + Ausgang L2 = Drittland-Inland; sonst Eingang L1 ruhend **VD** + Ausgang L2 **G0**. 2P-Aufruf (movingL1 undefined) unverändert. Keine erfundenen Codes (⚠-Hinweis, wo kein Code existiert).
+- Verifikation: neue `OUTPUT_TESTS` `OT-GBX-01`/`OT-GBX-02` (Red vor Fix, Green nach Fix), CH-Gegenprobe; 38 Output-Tests grün. Fachlich gedeckt durch `rules/moving_supply_logic.md` (transport=supplier → L1 bewegt → Vorlieferant = Exporteur).
+
+---
+
 ## v4.3 · 23.06.2026 — Fix: „Eigene UIDs" in Mode 2 zeigte falsche UID
 
 `renderUIDInline()` nutzte die generische 3P-Logik (`destination = Kunde`, `has(destination)`) auch in Mode 2. Bei CH-Kunde zog das die **CH-Registrierung** (CHE-113.857.016 MWST) als eigene UID — falsch, da EPROHA in Mode 2 immer erster Lieferant mit Sitz in AT ist und aus dem AT-Lager liefert.

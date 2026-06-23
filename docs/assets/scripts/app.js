@@ -5193,7 +5193,12 @@ function buildCHExportResult(ctx, eng) {
   const movingL1 = eng.movingIndex === 0;
   const exportLaw = isAT ? '§ 7 UStG AT / Art. 146 MwStSystRL' : '§ 6 UStG / Art. 146 MwStSystRL';
   const exporterCode = movingL1 ? s1 : s2;
-  const isIExporter = exporterCode === myCode;
+  // Exporteur = Partei auf der bewegten Lieferung. In der 3P-Kette bin ich (EPDE/EPROHA)
+  // der Zwischenhändler (s2) → Exporteur bin ich nur, wenn die ZWEITE Lieferung (L2)
+  // bewegt ist. Bei bewegter L1 exportiert der Vorlieferant (s1). Ein Länder-Vergleich
+  // (exporterCode === myCode) wäre falsch, wenn Vorlieferant und ich im selben Land
+  // sitzen (z.B. DE→DE→GB).
+  const isIExporter = !movingL1;
   const myCHVat = COMPANIES[currentCompany].vatIds['CH'];
 
   let html = '';
@@ -5242,7 +5247,7 @@ function buildCHExportResult(ctx, eng) {
   });
 
   html += `</div>`;
-  html += _importerToggle('CH', 'export');
+  html += _importerToggle('CH', 'export', movingL1);
   html += buildLegalRefs(['chain'], true);
   return html;
 }
@@ -5254,7 +5259,12 @@ function buildGBExportResult(ctx, eng) {
   const movingL1 = eng.movingIndex === 0;
   const exportLaw = isAT ? '§ 7 UStG AT / Art. 146 MwStSystRL' : '§ 6 UStG / Art. 146 MwStSystRL';
   const exporterCode = movingL1 ? s1 : s2;
-  const isIExporter = exporterCode === myCode;
+  // Exporteur = Partei auf der bewegten Lieferung. In der 3P-Kette bin ich (EPDE/EPROHA)
+  // der Zwischenhändler (s2) → Exporteur bin ich nur, wenn die ZWEITE Lieferung (L2)
+  // bewegt ist. Bei bewegter L1 exportiert der Vorlieferant (s1). Ein Länder-Vergleich
+  // (exporterCode === myCode) wäre falsch, wenn Vorlieferant und ich im selben Land
+  // sitzen (z.B. DE→DE→GB).
+  const isIExporter = !movingL1;
   const myCHVat = COMPANIES[currentCompany].vatIds['GB']; // EPDE hat keine GB VAT
 
   let html = '';
@@ -5318,7 +5328,7 @@ function buildGBExportResult(ctx, eng) {
   });
 
   html += `</div>`;
-  html += _importerToggle('GB', 'export');
+  html += _importerToggle('GB', 'export', movingL1);
   html += buildLegalRefs(['chain'], true);
   return html;
 }
@@ -5349,7 +5359,7 @@ function _thirdCountryNote(code, direction) {
   return '';
 }
 
-function _importerConsequence(country, direction) {
+function _importerConsequence(country, direction, movingL1) {
   const co = currentCompany;
   const home = COMPANIES[co].home;
   const line = (icon, t) => `<div style="display:flex;gap:6px;align-items:baseline;margin-top:3px;"><span style="flex-shrink:0;">${icon}</span><span>${t}</span></div>`;
@@ -5365,9 +5375,27 @@ function _importerConsequence(country, direction) {
   // ── EXPORT: EU → Drittland `country` ──
   if (direction === 'export') {
     if (importerRole === 'customer') {
+      const importHint = country === 'CH' ? '8,1 % CH-EUSt ans BAZG' : country === 'GB' ? '20 % UK Import VAT an HMRC' : 'die Einfuhrabgaben';
+      const expLaw = home === 'AT' ? '§ 7 UStG AT' : '§ 6 UStG';
+      // 3P-Kette: Einkauf (L1) und Verkauf (L2) hängen davon ab, welche Lieferung bewegt ist.
+      if (movingL1 === true) {
+        // Vorlieferant transportiert → L1 = bewegte Ausfuhr; meine L2 ist Inland im Drittland.
+        return line('🛃', `<strong>Kunde</strong> ist Einführer (DAP/EXW). Bewegte Ausfuhr = <strong>L1 (Vorlieferant)</strong>; deine Weiterlieferung L2 ist Inlandslieferung in ${cn(country)}.`)
+             + stk('Eingangsrechnung (Einkauf L1)', null, '0 % — bewegte Ausfuhr, kein Vorsteuerabzug')
+             + stk('Ausgangsrechnung (Verkauf L2)', sc(country, 'domestic', 'seller'), `${cn(country)}-Inland`)
+             + details(line('ℹ️', `Bei Transport durch den Vorlieferant ist L1 die steuerfreie Ausfuhr — Ausgangsvermerk dort anfordern. Deine L2 ist im Bestimmungsland ${cn(country)} steuerbar → ggf. dortige Registrierung. Kunde trägt ${importHint}.`));
+      }
+      if (movingL1 === false) {
+        // Letzte Stufe transportiert → L2 = bewegte Ausfuhr; L1 ruhend im Heimatland.
+        return line('🛃', `<strong>Kunde</strong> ist Einführer (DAP/EXW) — du lieferst <strong>0 % Ausfuhr</strong> (bewegte L2), „unverzollt".`)
+             + stk('Eingangsrechnung (Einkauf L1)', sc(home, 'domestic', 'buyer'), `Vorsteuer ${cn(home)} ${rate(home)} % (L1 ruhend)`)
+             + stk('Ausgangsrechnung (Ausfuhr L2 0 %)', sc(home, 'export', 'seller'), 'Ausfuhr')
+             + details(line('ℹ️', `0 % Ausfuhr (${expLaw}) — ATLAS/AES-Ausgangsvermerk aufbewahren. Kunde zahlt ${importHint}.`));
+      }
+      // 2P / unbekannte Stufe: eigene Ware, kein Einkauf L1 → nur Ausgangsrechnung.
       return line('🛃', `<strong>Kunde</strong> ist Einführer (DAP/EXW) — du lieferst <strong>0 % Ausfuhr</strong>, „unverzollt".`)
            + stk('Ausgangsrechnung (Ausfuhr 0 %)', sc(home, 'export', 'seller'), 'Ausfuhr')
-           + details(line('ℹ️', `0 % Ausfuhr (${home === 'AT' ? '§ 7 UStG AT' : '§ 6 UStG'}) — ATLAS/AES-Ausgangsvermerk aufbewahren. Kunde zahlt ${country === 'CH' ? '8,1 % CH-EUSt ans BAZG' : country === 'GB' ? '20 % UK Import VAT an HMRC' : 'die Einfuhrabgaben'}.`));
+           + details(line('ℹ️', `0 % Ausfuhr (${expLaw}) — ATLAS/AES-Ausgangsvermerk aufbewahren. Kunde zahlt ${importHint}.`));
     }
     if (importerRole === 'supplier') {
       return line('🛃', `<strong>Lieferant</strong> ist Einführer (DDP) — du erhältst verzollte Ware, nur Belegfluss sicherstellen.`);
@@ -5413,14 +5441,14 @@ function _importerConsequence(country, direction) {
          + line('🧩', `Weiterverkauf mit ${cn(country)}-USt → Buchung im ${cn(country)}-Ledger → dort ein ${cn(country)}-Pendant zu P0 nötig; aktuell nicht in SAP angelegt.`));
 }
 
-function _importerToggle(country, direction) {
+function _importerToggle(country, direction, movingL1) {
   const opts = [{v:'self',l:'Wir (DDP)'},{v:'customer',l:'Kunde (DAP/EXW)'},{v:'supplier',l:'Lieferant (DDP)'}];
   const btns = opts.map(o =>
     `<button class="t-opt${importerRole===o.v?' active':''}" style="display:inline-flex;width:auto;margin:0 6px 6px 0;" onclick="setImporter('${o.v}')"><span class="t-label">${o.l}</span></button>`).join('');
   return `<div class="hint hint-info" data-component="importerToggle" style="flex-direction:column;align-items:flex-start;margin-bottom:12px;">
     <div style="font-weight:700;margin-bottom:6px;">🛃 Wer ist Einführer (Importer of Record)?</div>
     <div style="margin-bottom:8px;">${btns}</div>
-    <div>${_importerConsequence(country, direction)}</div>
+    <div>${_importerConsequence(country, direction, movingL1)}</div>
   </div>`;
 }
 
@@ -5475,7 +5503,8 @@ function buildThirdExportResult(ctx, eng, third) {
   const movingL1 = eng.movingIndex === 0;
   const exportLaw = isAT ? '§ 7 UStG AT / Art. 146 MwStSystRL' : '§ 6 UStG / Art. 146 MwStSystRL';
   const exporterCode = movingL1 ? s1 : s2;
-  const isIExporter = exporterCode === COMPANIES[currentCompany].home;
+  // Exporteur = Partei auf der bewegten Lieferung; ich bin s2 → nur bei bewegter L2 (siehe buildGBExportResult).
+  const isIExporter = !movingL1;
 
   buildResultContextBar(s1, s2, null, s4);
   let html = buildDrittlandStatus(ctx);
@@ -5499,7 +5528,7 @@ function buildThirdExportResult(ctx, eng, third) {
     html += rH({type:'info', icon:'📦', text:`<strong>L1 (ruhend in ${cn(dep)}): ${rate(dep)}% ${cn(dep)}-MwSt</strong> — Lieferort = ${cn(dep)} (vor Transport). Normale Inlandsrechnung.`});
   }
   html += `</div>`;
-  html += _importerToggle(third, 'export');
+  html += _importerToggle(third, 'export', movingL1);
   html += buildLegalRefs(['chain'], true);
   return html;
 }
@@ -9298,6 +9327,62 @@ const OUTPUT_TESTS = [
     run() { analyze2(); },
     expect: [
       { contains: 'Gelangensbestätigung', desc: 'Gelangensbestätigung-Pflicht erwähnt' },
+    ],
+  },
+
+  // ── Mode 3: GB/CH Drittland-Export — Exporteur-Partei + Eingangs-MWSKZ ──
+  // Regression-Schutz für GB/CH-Export-Bug (P0): isIExporter parteibasiert,
+  // Eingangsrechnung-Zeile in der Einführer-Box (movingL1-abhängig).
+
+  {
+    id: 'OT-GBX-01',
+    name: 'DE→DE→GB, Lieferant transportiert (L1 bewegt): Vorlieferant = Exporteur, Eingangsrechnung-Zeile vorhanden',
+    setup() {
+      currentCompany = 'EPDE';
+      MY_VAT_IDS = COMPANIES['EPDE'].vatIds;
+      currentMode = 3; mePosition = 2;
+      selectedTransport = 'supplier'; importerRole = 'customer';
+      const setV = (id, val) => {
+        let el = document.getElementById(id);
+        if (!el) { el = document.createElement('select'); el.id = id; el.style.display='none'; document.body.appendChild(el); }
+        el.innerHTML = `<option value="${val}" selected>${val}</option>`;
+      };
+      setV('cp-0','DE'); setV('cp-1','DE'); setV('cp-2','GB');
+      setV('s1','DE'); setV('s2','DE'); setV('s3','GB'); setV('s4','GB');
+      setV('dep','DE'); setV('dest','GB');
+    },
+    run() { analyze(); },
+    expect: [
+      { contains: 'Vorlieferant', desc: 'Vorlieferant ist Exporteur (L1 bewegt)' },
+      { contains: 'Eingangsrechnung', desc: 'Eingangsrechnung-Zeile in Einführer-Box' },
+    ],
+    notExpect: [
+      { contains: 'Du bist Exporteur', desc: 'NICHT EPDE — Vorlieferant exportiert (parteibasiert, nicht länderbasiert)' },
+    ],
+  },
+
+  {
+    id: 'OT-GBX-02',
+    name: 'DE→DE→GB, Kunde holt ab (L2 bewegt, L1 ruhend): EPDE = Exporteur, Eingangsrechnung L1 = VD',
+    setup() {
+      currentCompany = 'EPDE';
+      MY_VAT_IDS = COMPANIES['EPDE'].vatIds;
+      currentMode = 3; mePosition = 2;
+      selectedTransport = 'customer'; importerRole = 'customer';
+      const setV = (id, val) => {
+        let el = document.getElementById(id);
+        if (!el) { el = document.createElement('select'); el.id = id; el.style.display='none'; document.body.appendChild(el); }
+        el.innerHTML = `<option value="${val}" selected>${val}</option>`;
+      };
+      setV('cp-0','DE'); setV('cp-1','DE'); setV('cp-2','GB');
+      setV('s1','DE'); setV('s2','DE'); setV('s3','GB'); setV('s4','GB');
+      setV('dep','DE'); setV('dest','GB');
+    },
+    run() { analyze(); },
+    expect: [
+      { contains: 'Du bist Exporteur', desc: 'EPDE ist Exporteur (L2 bewegt)' },
+      { contains: 'Eingangsrechnung', desc: 'Eingangsrechnung-Zeile vorhanden' },
+      { contains: 'VD', desc: 'L1 ruhend → Vorsteuer DE 19% (VD)' },
     ],
   },
 
