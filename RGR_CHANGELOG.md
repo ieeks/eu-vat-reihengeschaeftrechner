@@ -2,6 +2,16 @@
 
 ---
 
+## v4.3 · 23.06.2026 — Fix: „Eigene UIDs" in Mode 2 zeigte falsche UID
+
+`renderUIDInline()` nutzte die generische 3P-Logik (`destination = Kunde`, `has(destination)`) auch in Mode 2. Bei CH-Kunde zog das die **CH-Registrierung** (CHE-113.857.016 MWST) als eigene UID — falsch, da EPROHA in Mode 2 immer erster Lieferant mit Sitz in AT ist und aus dem AT-Lager liefert.
+
+- **Mode-2-Kurzschluss in `renderUIDInline()`**: eigene UID = AT-Heimat-UID (`ATU36513402`), bzw. `selectedUidOverride` falls gesetzt. Anzeige als ein Feld „Als Verkäufer (L1)" (EPROHA kauft in Mode 2 nicht).
+- Korrigiert alle Mode-2-Fälle (CH-Kunde mit Drop-Shipment, reiner CH/GB-Export → A0 mit AT-UID, EU-Kunde, Inland). Die abweichende UID liegt beim **Kunden**, nicht bei EPROHA.
+- Verifiziert (JSDOM): 36 Output-Tests grün; CH→BE/IT-UID, CH-Export, DE-Kunde, AT-Inland zeigen jetzt durchgängig ATU36513402.
+
+---
+
 ## v4.3 · 23.06.2026 — UID-Picker für Drittland-Kunde (Mode 2), 4 UID-Fälle
 
 Folge zum Drop-Shipment-Fall CH-Kunde → SK: Die Behandlung hängt davon ab, **welche EU-UID** der Drittland-Kunde vorlegt. Neuer UID-Picker im Drop-Shipment-Panel + dynamische Klassifikation in `analyze2()` statt pauschaler „Dreieck gesperrt".

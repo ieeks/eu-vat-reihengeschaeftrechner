@@ -10913,6 +10913,24 @@ function renderUIDInline() {
   const home         = COMPANIES[currentCompany]?.home || myCountry;
   const has          = c => !!(c && vids[c]);
 
+  // Mode 2: EPROHA ist immer der erste Lieferant (Partei A) mit Sitz in AT und
+  // liefert aus dem AT-Lager/Werk. Seine eigene UID auf der (bewegten) Ausgangs-
+  // lieferung ist daher die AT-Heimat-UID — auch bei CH-Kunde oder abweichendem
+  // EU-Warenempfänger. Die abweichende UID liegt beim KUNDEN, nicht bei EPROHA;
+  // CHE-/DE-Registrierungen sind nur für Sonderfälle (DDP-Einfuhr) relevant.
+  if (currentMode === 2) {
+    const code = (selectedUidOverride && vids[selectedUidOverride]) ? selectedUidOverride
+               : (has(home) ? home : departure);
+    const uid = vids[code] || '';
+    el.innerHTML = `<div class="uid-inline-grid">
+      <div class="uid-inline-field">
+        <div class="uid-inline-label">Als Verkäufer (L1)</div>
+        <div class="uid-inline-val">${uid || '—'}</div>
+      </div>
+    </div>`;
+    return;
+  }
+
   let buyerCode, sellerCode;
 
   if (selectedUidOverride && vids[selectedUidOverride]) {
