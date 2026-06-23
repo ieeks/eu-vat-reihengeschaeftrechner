@@ -35,7 +35,7 @@ Fall aus der Praxis: **EPROHA (AT) → CH-Kunde → Warenempfänger SK**. Die Wa
 - **Routing** (`analyze2`): neues Flag `euGoodsRecipient` (dropShipDest gesetzt, EU, ≠ Kunde). Die Export-Branches `dest==='CH'` / `'GB'` / `isNonEU(dest)` greifen nur noch, wenn **kein** EU-Warenempfänger gesetzt ist. Reines CH-Kunde-ohne-Drop-Ship bleibt unverändert Ausfuhr.
 - **Reihengeschäft-Branch erweitert**: öffnet sich auch für Drittland-Kunde + EU-Warenempfänger (`(!isNonEU(dest) || euGoodsRecipient)`). `isTriangle` zusätzlich an `!bIsNonEU` gekoppelt → **Dreieck gesperrt**, weil der CH-Kunde keine EU-UID aus drittem MS hat. Neuer Sub-Branch `bIsNonEU` rendert: bewegte ig. Lieferung (SAP AF, 0 % nur mit gültiger EU-UID, sonst 20 % AT), Belegnachweis Gelangensbestätigung im Warenempfänger-Land, Hinweis dass der CH-Kunde sich im Bestimmungsland (oder anderem MS) registrieren und den ig. Erwerb erklären muss.
 - **Keine neue Steuerlogik** (Regel 11): alles aus vorhandener IG-/Dreieck-Logik abgeleitet, nur Rendering-Layer in `analyze2`. Engine-IIFE unberührt.
-- Verifiziert (JSDOM): 36 Output-Tests grün; Zusatzprüfung — CH+SK → Reihengeschäft/„verlässt die EU nicht"/Dreieck gesperrt/kein BAZG; CH ohne Drop-Ship → weiterhin Ausfuhr/BAZG; IT+SK → Dreieck weiter intakt. **Visuelle Browserabnahme steht noch aus.**
+- Verifiziert (JSDOM): 36 Output-Tests grün; Zusatzprüfung — CH+SK → Reihengeschäft/„verlässt die EU nicht"/Dreieck gesperrt/kein BAZG; CH ohne Drop-Ship → weiterhin Ausfuhr/BAZG; IT+SK → Dreieck weiter intakt. **Visuelle Browserabnahme abgenommen (Session 28).**
 
 ---
 
