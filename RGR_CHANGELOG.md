@@ -2,6 +2,17 @@
 
 ---
 
+## v4.3 · 24.06.2026 — 2P: Konsilager nur bei DDP · TR/RS/BA auf Konzept 02
+
+Zwei Verfeinerungen am 2P-Drittland-Export:
+
+- **Konsignationslager-CH-Block nur bei DDP prominent.** Der Konsilager-Weg gehört in die DDP-Welt (EPROHA = Einführer + CH-Registrierung). Bei `mode2Incoterm==='ddp'` voller `buildKonsiLagerCH`-Block; bei DAP/EXW nur ein dezenter Verweis („Alternative … für Details auf DDP umschalten").
+- **TR/RS/BA auf Konzept 02 umgestellt** (`buildMode2IncoExport` generalisiert, Config-Fallback). DAP/EXW = Normalfall (0 % `A0`, Kunde verzollt mit lokaler Einfuhr-USt). **DDP zeigt eine ehrliche Warnkarte `.m2i-card.warn` „So nicht möglich"** — EPROHA hat dort keine Registrierung → Hinweis „bräuchte Steuerregistrierung/Fiskalvertreter, bitte DAP/EXW wählen", statt eine Schein-Detailkarte vorzutäuschen. Satz aus `rate(country)` (TR/RS 20 %, BA 17 %).
+- **RU bleibt bewusst beim `_importerToggle`** — dort steht die Sanktionswarnung im Vordergrund, eine DAP/DDP-Karte wäre fast irreführend. `_thirdCountryNote` (Sanktionen/Zollunion/SAA) bleibt überall prominent oben.
+- Verifiziert (JSDOM): TR DAP→A0-Karte, TR/RS DDP→Warnkarte (20 %), BA DDP→Warnkarte (17 %), RU→Toggle + Sanktionsnote, CH DDP→unverändert volle Karte (B5). `npm run check` grün. **Visuelle Browserabnahme offen.**
+
+---
+
 ## v4.3 · 24.06.2026 — 2P CH/GB: Incoterm-Umschalter „Konzept 02"
 
 Aus einem „Claude design"-Vergleich (drei Konzepte) gewählt: Im 2P-Drittland-Export (CH + GB) ersetzt ein **dezenter Segmented-Switch DAP/EXW ↔ DDP** die statischen Doppel-Cards. Default **DAP/EXW** (Normalfall); je Stellung wird **eine** ruhige Detailkarte gezeigt.
