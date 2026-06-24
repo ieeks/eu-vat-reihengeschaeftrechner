@@ -4400,7 +4400,7 @@ function analyze2() {
       🇨🇭 <strong>Drittland-Transaktion</strong> – Schweiz ist kein EU-Mitglied (MWST-Info 22 ESTV). Keine MwStSystRL.
     </div>`;
 
-    html += _importerToggle('CH', 'export');
+    html += _importerToggle('CH', 'export', undefined, true);
 
     html += `<div class="hints">`;
     html += rH({type:'info', icon:'🛃', text:`AT-Ausfuhr: Anmeldung in AT via <strong>e-dec / ATLAS</strong>. Zolltarifnummer (KN-Code) erforderlich. Ausfuhrbestätigung aufbewahren (§ 7 UStG AT).`});
@@ -4561,7 +4561,7 @@ function analyze2() {
     </div>`;
     html += `<div class="mode2-flow">${buildFlowDiagram([{code:'AT',role:'EPROHA (Lager/Werk)'},{code:'GB',role:'Kunde'}], 0, 'AT', 'GB', false, -1, -1)}</div>`;
 
-    html += _importerToggle('GB', 'export');
+    html += _importerToggle('GB', 'export', undefined, true);
 
     html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: A0</strong> (Ausgangssteuer AT 0% Ausfuhr) · Kein ZM-Eintrag — GB ist kein EU-Land`});
     html += rH({type:'ok', icon:'⚡', text:`Ausfuhrlieferung AT → GB: Rechnung <strong>0% MwSt</strong> gem. § 7 UStG AT / Art. 146 MwStSystRL. AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>.`});
@@ -4588,7 +4588,7 @@ function analyze2() {
     html += rH({type:'ok', icon:'⚡', text:`Ausfuhrlieferung AT → ${cn(dest)}: Rechnung <strong>0% MwSt</strong> gem. § 7 UStG AT / Art. 146 MwStSystRL. AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>.`});
     html += rH({type:'warn', icon:'📦', text:`Belegnachweis: <strong>AT-Ausfuhrbestätigung (ATLAS/e-dec)</strong> aufbewahren (§ 7 Abs. 3 UStG AT). Gelangensbestätigung allein reicht nicht für Drittland-Ausfuhr!`});
     html += rH({type:'warn', icon:'🛃', text:`<strong>Zoll AT (Ausfuhr):</strong> Ausfuhranmeldung in AT via ATLAS/e-dec. Zolltarifnummer (KN-Code) + Ursprungsland angeben. Empfehlung: Spediteur mit ATLAS-Zugang beauftragen.`});
-    html += _importerToggle(dest, 'export');
+    html += _importerToggle(dest, 'export', undefined, true);
     if (isAbholung) {
       html += rH({type:'warn', icon:'🚗', text:`<strong>Abholung durch Kunden (EXW):</strong> Lieferort = AT-Lager. EPROHA hat keine Kontrolle über die Ausfuhr — Ausfuhrbestätigung vom Kunden/Spediteur einfordern! Ohne ATLAS-Nachweis → 20% AT-MwSt-Risiko.`});
     }
@@ -5411,9 +5411,11 @@ function _thirdCountryNote(code, direction) {
   return '';
 }
 
-function _importerConsequence(country, direction, movingL1) {
+function _importerConsequence(country, direction, movingL1, roleArg) {
   const co = currentCompany;
   const home = COMPANIES[co].home;
+  // role kann überschrieben werden (z.B. 2P: 'supplier' existiert nicht → auf 'self' geklemmt)
+  const role = roleArg || importerRole;
   const line = (icon, t) => `<div style="display:flex;gap:6px;align-items:baseline;margin-top:3px;"><span style="flex-shrink:0;">${icon}</span><span>${t}</span></div>`;
   // Kompakte SAP-Zeile: zeigt den echten Code oder einen ⚠-Lückenhinweis (keine erfundenen Codes).
   const stk = (label, code, hint) => line('🧾',
@@ -5426,7 +5428,7 @@ function _importerConsequence(country, direction, movingL1) {
 
   // ── EXPORT: EU → Drittland `country` ──
   if (direction === 'export') {
-    if (importerRole === 'customer') {
+    if (role === 'customer') {
       const importHint = country === 'CH' ? '8,1 % CH-EUSt ans BAZG' : country === 'GB' ? '20 % UK Import VAT an HMRC' : 'die Einfuhrabgaben';
       const expLaw = home === 'AT' ? '§ 7 UStG AT' : '§ 6 UStG';
       // 3P-Kette: Einkauf (L1) und Verkauf (L2) hängen davon ab, welche Lieferung bewegt ist.
@@ -5449,7 +5451,7 @@ function _importerConsequence(country, direction, movingL1) {
            + stk('Ausgangsrechnung (Ausfuhr 0 %)', sc(home, 'export', 'seller'), 'Ausfuhr')
            + details(line('ℹ️', `0 % Ausfuhr (${expLaw}) — ATLAS/AES-Ausgangsvermerk aufbewahren. Kunde zahlt ${importHint}.`));
     }
-    if (importerRole === 'supplier') {
+    if (role === 'supplier') {
       return line('🛃', `<strong>Lieferant</strong> ist Einführer (DDP) — du erhältst verzollte Ware, nur Belegfluss sicherstellen.`);
     }
     // self / DDP: (1) EU-Ausfuhr eigener Ware 0%, (2) Inlandslieferung im Drittland
@@ -5467,13 +5469,13 @@ function _importerConsequence(country, direction, movingL1) {
   }
 
   // ── IMPORT: Drittland → EU `country` ──
-  if (importerRole === 'customer') {
+  if (role === 'customer') {
     return line('🛃', `<strong>Kunde</strong> ist Einführer (DAP/EXW) — deine Lieferung <strong>vor der Einfuhr</strong> (außerhalb EU), „unverzollt".`)
          + stk('Ausgangsrechnung', sc(home, 'not-taxable', 'seller'), 'nicht steuerbar')
          + stk('Eingangsrechnung', sc(home, 'rc-purchase', 'buyer'), 'Drittlandseinkauf 0 %, Typ P0')
          + details(line('ℹ️', `Lieferort außerhalb der EU (vor Einfuhr) → nicht steuerbar, kein deutscher Ausgangsumsatz. Der Kunde meldet die Einfuhr an und zahlt Einfuhr-USt ${rate(country)} % in ${cn(country)}.`));
   }
-  if (importerRole === 'supplier') {
+  if (role === 'supplier') {
     return line('🛃', `<strong>Lieferant</strong> ist Einführer (DDP) — du bekommst eine <strong>${cn(country)}-Inlandsrechnung</strong> und verkaufst ${cn(country)}-inländisch weiter.`)
          + stk('Ausgangsrechnung', sc(country, 'domestic', 'seller'), `${cn(country)}-Inland`)
          + stk('Eingangsrechnung', sc(country, 'domestic', 'buyer'), `${cn(country)}-Vorsteuer`)
@@ -5493,14 +5495,19 @@ function _importerConsequence(country, direction, movingL1) {
          + line('🧩', `Weiterverkauf mit ${cn(country)}-USt → Buchung im ${cn(country)}-Ledger → dort ein ${cn(country)}-Pendant zu P0 nötig; aktuell nicht in SAP angelegt.`));
 }
 
-function _importerToggle(country, direction, movingL1) {
-  const opts = [{v:'self',l:'Wir (DDP)'},{v:'customer',l:'Kunde (DAP/EXW)'},{v:'supplier',l:'Lieferant (DDP)'}];
+function _importerToggle(country, direction, movingL1, twoParty) {
+  // 2P (eigene Ware ab Lager, kein Vorlieferant in der Kette): nur Wir/Kunde — keine Lieferant-DDP-Option.
+  const opts = twoParty
+    ? [{v:'self',l:'Wir (DDP)'},{v:'customer',l:'Kunde (DAP/EXW)'}]
+    : [{v:'self',l:'Wir (DDP)'},{v:'customer',l:'Kunde (DAP/EXW)'},{v:'supplier',l:'Lieferant (DDP)'}];
+  // Wenn aus einem 3P-Kontext 'supplier' im State steht, im 2P auf 'self' klemmen (Option wird nicht angezeigt).
+  const effRole = (twoParty && importerRole === 'supplier') ? 'self' : importerRole;
   const btns = opts.map(o =>
-    `<button class="t-opt${importerRole===o.v?' active':''}" style="display:inline-flex;width:auto;margin:0 6px 6px 0;" onclick="setImporter('${o.v}')"><span class="t-label">${o.l}</span></button>`).join('');
+    `<button class="t-opt${effRole===o.v?' active':''}" style="display:inline-flex;width:auto;margin:0 6px 6px 0;" onclick="setImporter('${o.v}')"><span class="t-label">${o.l}</span></button>`).join('');
   return `<div class="hint hint-info" data-component="importerToggle" style="flex-direction:column;align-items:flex-start;margin-bottom:12px;">
     <div style="font-weight:700;margin-bottom:6px;">🛃 Wer ist Einführer (Importer of Record)?</div>
     <div style="margin-bottom:8px;">${btns}</div>
-    <div>${_importerConsequence(country, direction, movingL1)}</div>
+    <div>${_importerConsequence(country, direction, movingL1, effRole)}</div>
   </div>`;
 }
 

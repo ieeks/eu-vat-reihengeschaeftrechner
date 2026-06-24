@@ -2,6 +2,18 @@
 
 ---
 
+## v4.3 · 24.06.2026 — 2P-Einführer-Toggle: „Lieferant (DDP)" entfernt
+
+Folgekorrektur zum 2P-Toggle: Im 2P-Modus liefert EPROHA eigene Ware ab AT-Lager — es gibt keinen Vorlieferanten in der Kette. Die Option **„Lieferant (DDP)"** (nur für das 3P-Reihengeschäft sinnvoll) war im 2P-CH/GB/Drittland-Export dennoch sichtbar und zeigte die unpassende Folge „du erhältst verzollte Ware".
+
+- **`_importerToggle(country, direction, movingL1, twoParty)`** — neuer Parameter `twoParty`. Bei `true` nur **Wir (DDP)** / **Kunde (DAP/EXW)**; die `supplier`-Option entfällt.
+- **Stale-State-Klemmung**: steht aus einem 3P-Kontext `importerRole==='supplier'` im State, wird im 2P auf `self` geklemmt (Anzeige + Konsequenz) — kein verwaister „Lieferant"-Zustand.
+- **`_importerConsequence(..., roleArg)`** — optionaler Rollen-Override (statt direkt globalem `importerRole`), damit die geklemmte Rolle durchschlägt.
+- Aufrufer 2P-Export (`dest==='CH'`/`'GB'`/`isNonEU(dest)` in `analyze2()`) übergeben `twoParty=true`. 3P-Pfade unverändert (alle 3 Optionen).
+- Verifiziert (JSDOM): 2P-CH/GB = 2 Buttons, kein „Lieferant", stale `supplier`→`self` aktiv; 3P-CH-Export weiterhin 3 Buttons. `npm run check` grün.
+
+---
+
 ## v4.3 · 24.06.2026 — 2P-CH/GB-Export: Incoterm-Toggle statt statischer Karten
 
 Folgeschritt zum 3P-Einführer-Toggle: Im 2P-Modus (EPROHA, Kunde im Drittland, Warenempfänger = Kunde) zeigten CH und GB bisher zwei statische DAP/EXW- vs. DDP-Karten nebeneinander. Diese sind jetzt durch den interaktiven `_importerToggle` ersetzt — derselbe Umschalter wie in den 3P-Drittland-Pfaden und im generischen 2P-Drittland-Pfad (TR/RS/BA/RU).
