@@ -4369,35 +4369,54 @@ function analyzeLohn() {
 // ── Mode-2 Drittland-Export: Incoterm-Umschalter (Konzept 02) ──────────────
 //  Dezenter DAP/EXW ↔ DDP Segmented-Switch + EINE Detailkarte (Default DAP/EXW).
 //  State: mode2Incoterm · Setter setMode2Incoterm() → renderResult().
-//  Der Eigenimport (Ausfuhr eigener Ware A0 → Inlandverkauf) erscheint bewusst
-//  nur als dezente Fußnote im DDP-Fall, nicht als gleichwertiger Beleg.
-//  Keine neue Steuerlogik — nur Darstellung der bekannten CH/GB-Export-Fälle.
+//  CH/GB: voller DDP-Fall (EPROHA registrierbar) + Eigenimport-Fußnote.
+//  Generische Drittländer (TR/RS/BA): DAP/EXW als Normalfall; DDP ist OHNE
+//  lokale Registrierung NICHT möglich → ehrliche Warnkarte statt Schein-Detail.
+//  RU läuft NICHT hierüber (behält _importerToggle — Sanktionen im Vordergrund).
+//  Keine neue Steuerlogik — nur Darstellung.
 function buildMode2IncoExport(country) {
   const myATVat = COMPANIES['EPROHA'].vatIds['AT'] || 'ATU...';
   const myCHVat = COMPANIES['EPROHA'].vatIds['CH'];
   const sel = mode2Incoterm === 'ddp' ? 'ddp' : 'dap';
-  const isCH = country === 'CH';
-  const cfg = isCH ? {
-    land:'CH',
-    importLine:'8,1 % Einfuhrsteuer + Zoll ans BAZG',
-    proofShort:'e-dec',
-    custRate:'8,1 %', custDesc:'CH-MWST · Inlandslieferung · Lieferort = CH',
-    custSap:'B5', custUid: myCHVat ? ('CH-UID '+myCHVat) : 'CH-UID', custFlag:'🇨🇭',
-    deduction:'Einfuhr-USt 8,1 % als CH-Vorsteuer abziehbar (Art. 28 MWSTG)',
-    reg0: myCHVat ? ('CH-MWST '+myCHVat) : 'CH-MWST-Registrierung erforderlich',
-    reg1:'Steuervertreter in CH (Art. 67 MWSTG)',
-    foot:'Buchhalterisch intern: Ausfuhr eigener Ware <span class="m2i-sap">A0</span>, danach CH-Inlandverkauf <span class="m2i-sap">B5</span>. Keine zweite Kundenrechnung.'
-  } : {
-    land:'GB',
-    importLine:'20 % UK Import VAT + Zoll ans HMRC',
-    proofShort:'ATLAS',
-    custRate:'20 %', custDesc:'UK VAT · Inlandslieferung · Lieferort = GB',
-    custSap:null, custUid:'GB VAT-Nr.', custFlag:'🇬🇧',
-    deduction:'UK Import VAT als Vorsteuer abziehbar (UK VAT Return)',
-    reg0:'GB EORI + UK VAT-Registrierung (HMRC)',
-    reg1:'Fiscal Representative ggf. erforderlich',
-    foot:'Buchhalterisch intern: Ausfuhr eigener Ware AT→GB <span class="m2i-sap">A0</span>, danach UK-Inlandverkauf (20 % UK VAT). Keine zweite Kundenrechnung.'
+
+  const CFG = {
+    CH: {
+      land:'CH',
+      importLine:'8,1 % Einfuhrsteuer + Zoll ans BAZG',
+      proofShort:'e-dec',
+      custRate:'8,1 %', custDesc:'CH-MWST · Inlandslieferung · Lieferort = CH',
+      custSap:'B5', custUid: myCHVat ? ('CH-UID '+myCHVat) : 'CH-UID', custFlag:'🇨🇭',
+      deduction:'Einfuhr-USt 8,1 % als CH-Vorsteuer abziehbar (Art. 28 MWSTG)',
+      reg0: myCHVat ? ('CH-MWST '+myCHVat) : 'CH-MWST-Registrierung erforderlich',
+      reg1:'Steuervertreter in CH (Art. 67 MWSTG)',
+      foot:'Buchhalterisch intern: Ausfuhr eigener Ware <span class="m2i-sap">A0</span>, danach CH-Inlandverkauf <span class="m2i-sap">B5</span>. Keine zweite Kundenrechnung.'
+    },
+    GB: {
+      land:'GB',
+      importLine:'20 % UK Import VAT + Zoll ans HMRC',
+      proofShort:'ATLAS',
+      custRate:'20 %', custDesc:'UK VAT · Inlandslieferung · Lieferort = GB',
+      custSap:null, custUid:'GB VAT-Nr.', custFlag:'🇬🇧',
+      deduction:'UK Import VAT als Vorsteuer abziehbar (UK VAT Return)',
+      reg0:'GB EORI + UK VAT-Registrierung (HMRC)',
+      reg1:'Fiscal Representative ggf. erforderlich',
+      foot:'Buchhalterisch intern: Ausfuhr eigener Ware AT→GB <span class="m2i-sap">A0</span>, danach UK-Inlandverkauf (20 % UK VAT). Keine zweite Kundenrechnung.'
+    }
   };
+
+  let cfg = CFG[country];
+  if (!cfg) {
+    // Generisches Drittland (TR/RS/BA): keine EPROHA-Registrierung → DDP-Warnung.
+    const rPct = String(rate(country)).replace('.', ',') + ' %';
+    cfg = {
+      land: country,
+      landName: cn(country),
+      importLine: `${rPct} Einfuhr-USt + Zoll (Zollbehörde ${cn(country)})`,
+      proofShort: 'ATLAS/AES',
+      ddpWarn: true,
+      ddpRate: rPct,
+    };
+  }
 
   const seg = `<div class="m2i-switch" role="group" aria-label="Incoterm wählen">
       <div class="m2i-seg">
@@ -4422,6 +4441,19 @@ function buildMode2IncoExport(country) {
       <div class="m2i-rows">
         <div class="m2i-rrow"><span class="m2i-k">Wer verzollt</span><span class="m2i-v">Kunde<small>${cfg.importLine}</small></span></div>
         <div class="m2i-rrow"><span class="m2i-k">Belegnachweis</span><span class="m2i-v">${cfg.proofShort}<small>Gelangensbestätigung reicht nicht</small></span></div>
+      </div>
+    </div>`;
+  } else if (cfg.ddpWarn) {
+    // Generisches Drittland: DDP ohne lokale Registrierung nicht möglich → Warnkarte.
+    card = `<div class="m2i-card warn">
+      <div class="m2i-head">
+        <div class="m2i-toprow"><span class="m2i-inco">DDP</span><span class="m2i-status warn"><span class="m2i-dot"></span>So nicht möglich</span></div>
+        <div class="m2i-who">Einführer in ${cfg.land}: <b>EPROHA</b></div>
+      </div>
+      <div class="m2i-warnbody">
+        <div class="m2i-warntitle">⚠️ DDP setzt eine Steuerregistrierung in ${cfg.landName} voraus</div>
+        <p>Als Einführer müsste sich EPROHA in ${cfg.landName} registrieren (Fiskalvertreter) und ${cfg.ddpRate} lokale USt abführen — diese Registrierung besteht nicht. <strong>So geht das nicht.</strong></p>
+        <p class="m2i-warncta">→ Bitte <b>DAP/EXW</b> wählen: der Kunde ist Einführer, du lieferst <span class="m2i-sap">A0</span> 0 % Ausfuhr.</p>
       </div>
     </div>`;
   } else {
@@ -4490,8 +4522,13 @@ function analyze2() {
     html += rH({type:'info', icon:'△', text:`Dreiecksgeschäft nicht anwendbar – Schweiz ist kein EU-Mitglied.`});
     html += `</div>`;
 
-    // Konsignationslager CH
-    html += buildKonsiLagerCH(myCHVat, 'AT');
+    // Konsignationslager CH — thematisch DDP-Welt (EPROHA = Einführer + CH-Registrierung).
+    // Nur bei DDP prominent; bei DAP/EXW (Kunde = Einführer) nur dezenter Verweis.
+    if (mode2Incoterm === 'ddp') {
+      html += buildKonsiLagerCH(myCHVat, 'AT');
+    } else {
+      html += `<div class="hints">${rH({type:'info', icon:'🏭', text:`<strong>Alternative: Konsignationslager CH</strong> — Ware ins CH-Lager einlagern und erst bei Entnahme inländisch verkaufen (8,1 % CH-MWST). Setzt — wie DDP — eine CH-Registrierung voraus. Für Details auf <strong>DDP</strong> umschalten.`})}</div>`;
+    }
 
   // ── AT → AT + Drop-Shipment (Warenempfänger ≠ AT) ─────────────────────────
   } else if (dest === 'AT' && dropShipDest && dropShipDest !== 'AT') {
@@ -4670,7 +4707,13 @@ function analyze2() {
     html += rH({type:'ok', icon:'⚡', text:`Ausfuhrlieferung AT → ${cn(dest)}: Rechnung <strong>0% MwSt</strong> gem. § 7 UStG AT / Art. 146 MwStSystRL. AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>.`});
     html += rH({type:'warn', icon:'📦', text:`Belegnachweis: <strong>AT-Ausfuhrbestätigung (ATLAS/e-dec)</strong> aufbewahren (§ 7 Abs. 3 UStG AT). Gelangensbestätigung allein reicht nicht für Drittland-Ausfuhr!`});
     html += rH({type:'warn', icon:'🛃', text:`<strong>Zoll AT (Ausfuhr):</strong> Ausfuhranmeldung in AT via ATLAS/e-dec. Zolltarifnummer (KN-Code) + Ursprungsland angeben. Empfehlung: Spediteur mit ATLAS-Zugang beauftragen.`});
-    html += _importerToggle(dest, 'export', undefined, true);
+    // RU behält den schlichten Toggle (Sanktionswarnung steht im Vordergrund);
+    // TR/RS/BA nutzen das Konzept-02-Design (DDP → Warnkarte, keine Registrierung).
+    if (dest === 'RU') {
+      html += _importerToggle(dest, 'export', undefined, true);
+    } else {
+      html += buildMode2IncoExport(dest);
+    }
     if (isAbholung) {
       html += rH({type:'warn', icon:'🚗', text:`<strong>Abholung durch Kunden (EXW):</strong> Lieferort = AT-Lager. EPROHA hat keine Kontrolle über die Ausfuhr — Ausfuhrbestätigung vom Kunden/Spediteur einfordern! Ohne ATLAS-Nachweis → 20% AT-MwSt-Risiko.`});
     }
