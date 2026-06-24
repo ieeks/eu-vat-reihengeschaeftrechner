@@ -4490,8 +4490,13 @@ function analyze2() {
     html += rH({type:'info', icon:'△', text:`Dreiecksgeschäft nicht anwendbar – Schweiz ist kein EU-Mitglied.`});
     html += `</div>`;
 
-    // Konsignationslager CH
-    html += buildKonsiLagerCH(myCHVat, 'AT');
+    // Konsignationslager CH — thematisch DDP-Welt (EPROHA = Einführer + CH-Registrierung).
+    // Nur bei DDP prominent; bei DAP/EXW (Kunde = Einführer) nur dezenter Verweis.
+    if (mode2Incoterm === 'ddp') {
+      html += buildKonsiLagerCH(myCHVat, 'AT');
+    } else {
+      html += `<div class="hints">${rH({type:'info', icon:'🏭', text:`<strong>Alternative: Konsignationslager CH</strong> — Ware ins CH-Lager einlagern und erst bei Entnahme inländisch verkaufen (8,1 % CH-MWST). Setzt — wie DDP — eine CH-Registrierung voraus. Für Details auf <strong>DDP</strong> umschalten.`})}</div>`;
+    }
 
   // ── AT → AT + Drop-Shipment (Warenempfänger ≠ AT) ─────────────────────────
   } else if (dest === 'AT' && dropShipDest && dropShipDest !== 'AT') {
