@@ -204,6 +204,7 @@ let uidPanelOpen      = false;
 let dropShipDest      = null;   // Mode 2: Warenempfänger-Land bei Drop-Shipment (null = kein Drop-Shipment)
 let mode2CustUid      = null;   // Mode 2 Drittland-Kunde: Land der vom Kunden vorgelegten EU-UID (null = keine EU-UID)
 let importerRole      = 'self';  // Drittland-Einfuhr: wer ist Einführer? 'self' (wir/DDP) | 'customer' (DAP/EXW) | 'supplier' (Lieferant DDP)
+let mode2Incoterm     = 'dap';   // Mode 2 Drittland-Export (CH/GB): gewählter Incoterm-Fall 'dap' (DAP/EXW, Normalfall) | 'ddp' (Option)
 
 // Country helpers
 const EU_MAP   = Object.fromEntries(EU.map(c => [c.code, c]));
@@ -4365,6 +4366,87 @@ function analyzeLohn() {
 //
 //  Nur im EPROHA-Reiter sichtbar (EPDE hat kein AT-Lager).
 // ═══════════════════════════════════════════════════════════════════════════════
+// ── Mode-2 Drittland-Export: Incoterm-Umschalter (Konzept 02) ──────────────
+//  Dezenter DAP/EXW ↔ DDP Segmented-Switch + EINE Detailkarte (Default DAP/EXW).
+//  State: mode2Incoterm · Setter setMode2Incoterm() → renderResult().
+//  Der Eigenimport (Ausfuhr eigener Ware A0 → Inlandverkauf) erscheint bewusst
+//  nur als dezente Fußnote im DDP-Fall, nicht als gleichwertiger Beleg.
+//  Keine neue Steuerlogik — nur Darstellung der bekannten CH/GB-Export-Fälle.
+function buildMode2IncoExport(country) {
+  const myATVat = COMPANIES['EPROHA'].vatIds['AT'] || 'ATU...';
+  const myCHVat = COMPANIES['EPROHA'].vatIds['CH'];
+  const sel = mode2Incoterm === 'ddp' ? 'ddp' : 'dap';
+  const isCH = country === 'CH';
+  const cfg = isCH ? {
+    land:'CH',
+    importLine:'8,1 % Einfuhrsteuer + Zoll ans BAZG',
+    proofShort:'e-dec',
+    custRate:'8,1 %', custDesc:'CH-MWST · Inlandslieferung · Lieferort = CH',
+    custSap:'B5', custUid: myCHVat ? ('CH-UID '+myCHVat) : 'CH-UID', custFlag:'🇨🇭',
+    deduction:'Einfuhr-USt 8,1 % als CH-Vorsteuer abziehbar (Art. 28 MWSTG)',
+    reg0: myCHVat ? ('CH-MWST '+myCHVat) : 'CH-MWST-Registrierung erforderlich',
+    reg1:'Steuervertreter in CH (Art. 67 MWSTG)',
+    foot:'Buchhalterisch intern: Ausfuhr eigener Ware <span class="m2i-sap">A0</span>, danach CH-Inlandverkauf <span class="m2i-sap">B5</span>. Keine zweite Kundenrechnung.'
+  } : {
+    land:'GB',
+    importLine:'20 % UK Import VAT + Zoll ans HMRC',
+    proofShort:'ATLAS',
+    custRate:'20 %', custDesc:'UK VAT · Inlandslieferung · Lieferort = GB',
+    custSap:null, custUid:'GB VAT-Nr.', custFlag:'🇬🇧',
+    deduction:'UK Import VAT als Vorsteuer abziehbar (UK VAT Return)',
+    reg0:'GB EORI + UK VAT-Registrierung (HMRC)',
+    reg1:'Fiscal Representative ggf. erforderlich',
+    foot:'Buchhalterisch intern: Ausfuhr eigener Ware AT→GB <span class="m2i-sap">A0</span>, danach UK-Inlandverkauf (20 % UK VAT). Keine zweite Kundenrechnung.'
+  };
+
+  const seg = `<div class="m2i-switch" role="group" aria-label="Incoterm wählen">
+      <div class="m2i-seg">
+        <button type="button" aria-pressed="${sel==='dap'}" onclick="setMode2Incoterm('dap')">DAP / EXW<span>Normalfall</span></button>
+        <button type="button" aria-pressed="${sel==='ddp'}" onclick="setMode2Incoterm('ddp')">DDP<span>Option</span></button>
+      </div>
+      <span class="m2i-single">✅ immer nur eine Kundenrechnung</span>
+    </div>`;
+
+  let card;
+  if (sel === 'dap') {
+    card = `<div class="m2i-card normal">
+      <div class="m2i-head">
+        <div class="m2i-toprow"><span class="m2i-inco">DAP / EXW</span><span class="m2i-status normal"><span class="m2i-dot"></span>Normalfall</span></div>
+        <div class="m2i-who">Einführer in ${cfg.land}: <b>der Kunde</b></div>
+      </div>
+      <div class="m2i-invoice">
+        <div class="m2i-ilab">📄 Rechnung an Kunde</div>
+        <div class="m2i-big"><span class="m2i-rate zero">0 %</span><span class="m2i-desc">steuerfreie Ausfuhrlieferung · § 7 UStG AT</span></div>
+        <div class="m2i-sub"><span class="m2i-sap">A0</span><span class="m2i-uid">🇦🇹 AT-UID ${myATVat}</span></div>
+      </div>
+      <div class="m2i-rows">
+        <div class="m2i-rrow"><span class="m2i-k">Wer verzollt</span><span class="m2i-v">Kunde<small>${cfg.importLine}</small></span></div>
+        <div class="m2i-rrow"><span class="m2i-k">Belegnachweis</span><span class="m2i-v">${cfg.proofShort}<small>Gelangensbestätigung reicht nicht</small></span></div>
+      </div>
+    </div>`;
+  } else {
+    const sapBadge = cfg.custSap ? `<span class="m2i-sap">${cfg.custSap}</span>` : `<span class="m2i-nosap">kein AP-MWSKZ</span>`;
+    card = `<div class="m2i-card option">
+      <div class="m2i-head">
+        <div class="m2i-toprow"><span class="m2i-inco">DDP</span><span class="m2i-status option"><span class="m2i-dot"></span>Aufwändigere Option</span></div>
+        <div class="m2i-who">Einführer in ${cfg.land}: <b>EPROHA</b></div>
+      </div>
+      <div class="m2i-invoice">
+        <div class="m2i-ilab">📄 Rechnung an Kunde</div>
+        <div class="m2i-big"><span class="m2i-rate imp">${cfg.custRate}</span><span class="m2i-desc">${cfg.custDesc}</span></div>
+        <div class="m2i-sub">${sapBadge}<span class="m2i-uid">${cfg.custFlag} ${cfg.custUid}</span></div>
+      </div>
+      <div class="m2i-rows">
+        <div class="m2i-rrow"><span class="m2i-k">Wer verzollt</span><span class="m2i-v">EPROHA<small>${cfg.deduction}</small></span></div>
+        <div class="m2i-rrow"><span class="m2i-k">Voraussetzung</span><span class="m2i-v">${cfg.reg0}<small>${cfg.reg1}</small></span></div>
+      </div>
+      <div class="m2i-foot"><span class="m2i-mk">⌙</span><span>${cfg.foot}</span></div>
+    </div>`;
+  }
+
+  return `<div class="m2i-wrap" data-component="mode2Incoterm">${seg}${card}</div>`;
+}
+
 function analyze2() {
   saveState();
   const dest2el = document.getElementById('dest2');
@@ -4400,40 +4482,7 @@ function analyze2() {
       🇨🇭 <strong>Drittland-Transaktion</strong> – Schweiz ist kein EU-Mitglied (MWST-Info 22 ESTV). Keine MwStSystRL.
     </div>`;
 
-    html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--tx-2);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">
-      Incoterms entscheiden wer Einführer in CH ist
-    </div>`;
-
-    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-
-      <!-- DAP / EXW -->
-      <div style="padding:14px;background:var(--surface-2);border:1px solid var(--border-md);border-radius:10px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;font-weight:700;color:var(--blue);margin-bottom:8px;">DAP / EXW<br><span style="color:var(--tx-2);font-weight:400;">Kunde = Einführer</span></div>
-        <div style="font-size:0.68rem;color:var(--tx-2);font-family:'IBM Plex Mono',monospace;line-height:1.7;">
-          <div>✅ Rechnung: <strong style="color:var(--tx-1);">0% MwSt</strong></div>
-          <div>✅ AT-UID auf Rechnung: <strong style="color:var(--blue);">${myATVat||'ATU...'}</strong></div>
-          <div>✅ Rechnungstext:<br><em style="color:var(--tx-3);">„Steuerfreie Ausfuhrlieferung gem. § 7 UStG AT"</em></div>
-          <div>🛃 Kunde meldet in CH an → zahlt EUSt 8,1% + Zoll ans BAZG</div>
-          <div>📋 Du brauchst: AT-Ausfuhrbestätigung (e-dec) als Belegnachweis</div>
-          <div>⚠️ Gelangensbestätigung reicht NICHT</div>
-        </div>
-      </div>
-
-      <!-- DDP -->
-      <div style="padding:14px;background:var(--surface-2);border:1px solid rgba(45,212,191,0.3);border-radius:10px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;font-weight:700;color:var(--teal);margin-bottom:8px;">DDP<br><span style="color:var(--tx-2);font-weight:400;">EPROHA = Einführer</span></div>
-        <div style="font-size:0.68rem;color:var(--tx-2);font-family:'IBM Plex Mono',monospace;line-height:1.7;">
-          ${myCHVat
-            ? `<div>✅ CH-MWST: <strong style="color:var(--teal);">${myCHVat}</strong></div>`
-            : `<div>⚠️ CH-MWST-Registrierung erforderlich</div>`}
-          <div>✅ EPROHA meldet in CH an → zahlt EUSt + Zoll ans BAZG</div>
-          <div>✅ EUSt als CH-Vorsteuer abziehbar (Art. 28 MWSTG)</div>
-          <div>✅ Rechnung: <strong style="color:var(--teal);">8,1% CH-MWST</strong> + CH-UID</div>
-          <div>✅ Lieferort: CH (nach Einfuhr)</div>
-          <div>⚖️ Steuervertreter in CH erforderlich (Art. 67 MWSTG)</div>
-        </div>
-      </div>
-    </div>`;
+    html += buildMode2IncoExport('CH');
 
     html += `<div class="hints">`;
     html += rH({type:'info', icon:'🛃', text:`AT-Ausfuhr: Anmeldung in AT via <strong>e-dec / ATLAS</strong>. Zolltarifnummer (KN-Code) erforderlich. Ausfuhrbestätigung aufbewahren (§ 7 UStG AT).`});
@@ -4594,32 +4643,7 @@ function analyze2() {
     </div>`;
     html += `<div class="mode2-flow">${buildFlowDiagram([{code:'AT',role:'EPROHA (Lager/Werk)'},{code:'GB',role:'Kunde'}], 0, 'AT', 'GB', false, -1, -1)}</div>`;
 
-    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-      <!-- DAP / EXW: Kunde ist Importeur in GB -->
-      <div style="padding:14px;background:var(--surface-2);border:1px solid var(--border-md);border-radius:10px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;font-weight:700;color:var(--blue);margin-bottom:8px;">DAP / EXW<br><span style="color:var(--tx-2);font-weight:400;">Kunde = Importeur in GB</span></div>
-        <div style="font-size:0.68rem;color:var(--tx-2);font-family:'IBM Plex Mono',monospace;line-height:1.7;">
-          <div>✅ Rechnung: <strong style="color:var(--tx-1);">0% MwSt</strong></div>
-          <div>✅ AT-UID auf Rechnung: <strong style="color:var(--blue);">${myATVat||'ATU...'}</strong></div>
-          <div>✅ Rechnungstext: <em>„Steuerfreie Ausfuhrlieferung gem. § 7 UStG AT"</em></div>
-          <div>🛃 Kunde meldet in GB an → zahlt UK VAT (20%) + Zoll ans HMRC</div>
-          <div>📋 Du brauchst: AT-Ausfuhrbestätigung (ATLAS) als Belegnachweis</div>
-          <div>⚠️ Gelangensbestätigung reicht NICHT — nur ATLAS-Ausfuhrbestätigung!</div>
-        </div>
-      </div>
-      <!-- DDP: EPROHA ist Importeur in GB -->
-      <div style="padding:14px;background:var(--surface-2);border:1px solid rgba(45,212,191,0.3);border-radius:10px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;font-weight:700;color:var(--teal);margin-bottom:8px;">DDP<br><span style="color:var(--tx-2);font-weight:400;">EPROHA = Importeur in GB</span></div>
-        <div style="font-size:0.68rem;color:var(--tx-2);font-family:'IBM Plex Mono',monospace;line-height:1.7;">
-          <div>⚠️ EPROHA benötigt <strong>GB EORI-Nummer</strong> + UK VAT-Registrierung (HMRC)</div>
-          <div>✅ EPROHA meldet in GB an → zahlt UK VAT 20% + Zoll ans HMRC</div>
-          <div>✅ UK VAT als Vorsteuer abziehbar (UK VAT Return)</div>
-          <div>✅ Rechnung an Kunden: <strong>20% UK VAT</strong> + GB VAT-Nr.</div>
-          <div>⚖️ Fiscal Representative in GB ggf. erforderlich</div>
-          <div>📋 AT-Rechnung an sich selbst: 0% Ausfuhr (AT) → Import in GB</div>
-        </div>
-      </div>
-    </div>`;
+    html += buildMode2IncoExport('GB');
 
     html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: A0</strong> (Ausgangssteuer AT 0% Ausfuhr) · Kein ZM-Eintrag — GB ist kein EU-Land`});
     html += rH({type:'ok', icon:'⚡', text:`Ausfuhrlieferung AT → GB: Rechnung <strong>0% MwSt</strong> gem. § 7 UStG AT / Art. 146 MwStSystRL. AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>.`});
@@ -10066,6 +10090,7 @@ function getState() {
     transportLetter: getTransportLetter(),
     uidOverride: selectedUidOverride,
     importerRole: importerRole,
+    mode2Incoterm: mode2Incoterm,
     lang: currentLang,
     theme: document.documentElement.getAttribute('data-theme') || 'light',
   };
@@ -10105,6 +10130,7 @@ function loadState() {
     if (s.theme) document.documentElement.setAttribute('data-theme', s.theme);
     if (s.lang) currentLang = 'de'; // EN nicht implementiert, immer DE erzwingen
     if (['self','customer','supplier'].includes(s.importerRole)) importerRole = s.importerRole;
+    if (['dap','ddp'].includes(s.mode2Incoterm)) mode2Incoterm = s.mode2Incoterm;
     if (s.company && COMPANIES[s.company]) {
       setState({ company: s.company });
       document.querySelectorAll('.co-pill button').forEach(b => {
@@ -11021,6 +11047,12 @@ function setT(t) {
 // Drittland-Einfuhr: Einführer (Importer of Record) umschalten — DDP/DAP-Toggle
 function setImporter(role) {
   if (['self', 'customer', 'supplier'].includes(role)) importerRole = role;
+  saveState();
+  renderResult();
+}
+
+function setMode2Incoterm(v) {
+  if (['dap', 'ddp'].includes(v)) mode2Incoterm = v;
   saveState();
   renderResult();
 }

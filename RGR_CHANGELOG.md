@@ -2,6 +2,24 @@
 
 ---
 
+## v4.3 · 24.06.2026 — 2P CH/GB: Incoterm-Umschalter „Konzept 02"
+
+Aus einem „Claude design"-Vergleich (drei Konzepte) gewählt: Im 2P-Drittland-Export (CH + GB) ersetzt ein **dezenter Segmented-Switch DAP/EXW ↔ DDP** die statischen Doppel-Cards. Default **DAP/EXW** (Normalfall); je Stellung wird **eine** ruhige Detailkarte gezeigt.
+
+- **`buildMode2IncoExport(country)`** — neue Renderer-Funktion (CH/GB). Switch + eine Detailkarte: „Rechnung an Kunde" als Hero (DAP/EXW 0 % `A0` · DDP CH 8,1 % `B5` / GB 20 % „kein AP-MWSKZ"), „Wer verzollt", Pflichten/Voraussetzungen. Fixe Zusicherung **„immer nur eine Kundenrechnung"**.
+- **Eigenimport als dezente Fußnote** nur im DDP-Fall (Ausfuhr eigener Ware A0 → Inlandverkauf), kein gleichwertiger Beleg-Block — adressiert die frühere „zwei Codes auf einer Rechnung?"-Verwirrung.
+- **State `mode2Incoterm`** ('dap'|'ddp') + Setter **`setMode2Incoterm()`**→`renderResult()`, in getState/loadState persistiert.
+- Eigener CSS-Block in `app.css` (Präfix `m2i-`, kollisionsfrei, Tokens aus `:root`). `_importerToggle` für 2P CH/GB damit abgelöst; generischer 2P-Pfad (TR/RS/BA/RU) behält den Toggle.
+- Verifiziert (JSDOM): CH DAP→0 %/A0, CH DDP→8,1 %/B5 + Fußnote, GB DDP→20 %/„kein AP-MWSKZ"; jeweils nur die aktive Karte sichtbar. `npm run check` grün. **Visuelle Browserabnahme offen.**
+
+---
+
+## v4.3 · 24.06.2026 — 2P CH/GB DDP-Card: Eigenimport-Fußnote
+
+Kleine Klarstellung in der DDP-Card (2P CH + GB): dezente Fußnote, dass der DDP-Fall buchhalterisch **zwei getrennte Belege** sind — Ausfuhr eigener Ware (A0) + Einfuhr-USt als Vorsteuer → dann Inlandsverkauf im Drittland (CH: B5 / GB: 20 % UK VAT). **Der Kunde erhält nur die eine Inlandsrechnung.** Bewusst nur als unauffällige Fußnote (kein eigener „Beleg"-Block), da DDP der seltenere Fall ist und der Eigenimport eine FiBu-interne Folge bleibt. Reine Wording-/Rendering-Ergänzung, keine neue Steuerlogik. JSDOM-verifiziert.
+
+---
+
 ## v4.3 · 24.06.2026 — 2P CH/GB zurück zu Cards; Toggle nur noch generisches Drittland
 
 Der am selben Tag eingebaute 2P-Toggle für CH/GB (siehe Eintrag unten) ist **wieder zurückgebaut** — CH und GB zeigen im 2P-Modus erneut die statischen **DAP/EXW-vs-DDP-Karten** nebeneinander. Grund: die Karten stellen den 2P-Eigenware-Fall klarer dar (beide Incoterm-Varianten auf einen Blick, ohne die A0/B5-SAP-Codes). Der Toggle hatte im DDP-Fall **A0 (Eigenimport)** und **B5 (Kundenrechnung)** als zwei SAP-Zeilen gezeigt, was den Eindruck erweckte, beide Codes stünden auf *einer* Kundenrechnung — tatsächlich sind es **zwei getrennte Belege** (Ausfuhr eigener Ware ↔ CH-Inlandsverkauf). Designentscheidung vorerst offen.
