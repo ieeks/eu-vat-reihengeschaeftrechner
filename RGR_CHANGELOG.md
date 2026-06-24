@@ -2,6 +2,17 @@
 
 ---
 
+## v4.3 · 24.06.2026 — 2P-CH/GB-Export: Incoterm-Toggle statt statischer Karten
+
+Folgeschritt zum 3P-Einführer-Toggle: Im 2P-Modus (EPROHA, Kunde im Drittland, Warenempfänger = Kunde) zeigten CH und GB bisher zwei statische DAP/EXW- vs. DDP-Karten nebeneinander. Diese sind jetzt durch den interaktiven `_importerToggle` ersetzt — derselbe Umschalter wie in den 3P-Drittland-Pfaden und im generischen 2P-Drittland-Pfad (TR/RS/BA/RU).
+
+- **`analyze2()` Zweig `dest==='CH' && !euGoodsRecipient`**: statisches Zwei-Karten-Grid → `_importerToggle('CH', 'export')`. Die umgebenden Hinweise (e-dec/ATLAS, FHA 1972/EUR.1, „kein Dreieck") und das CH-Konsignationslager bleiben unverändert.
+- **`analyze2()` Zweig `dest==='GB' && !euGoodsRecipient`**: statisches Zwei-Karten-Grid → `_importerToggle('GB', 'export')`. SAP-Zeile, Ausfuhr-/Zoll-Hinweise und TCA/REX-Hinweis bleiben.
+- `_importerConsequence()` (2P-Zweig, `movingL1` undefined) liefert die Einführer-abhängige Folge: `self`/DDP → Einfuhr im Drittland (CH: Art. 67 Steuervertreter + 8,1 % CH-MWST; GB: UK VAT/HMRC) · `customer`/DAP-EXW → 0 % Ausfuhr „unverzollt" · `supplier`/DDP.
+- Verifiziert (JSDOM): CH-Toggle gerendert, alte statische Karten entfernt, Art. 67/8,1 % vorhanden; GB-Toggle gerendert, `customer`-Folge „0 % Ausfuhr". `npm run check` grün.
+
+---
+
 ## v4.3 · 23.06.2026 — QuickCheck Lohnveredelung (Coming-Soon abgelöst)
 
 Der QuickCheck-Struktur-Tab „🔧 Lohnveredelung" zeigte bisher nur eine Coming-Soon-Box. Jetzt vollwertige Kompakt-Ansicht — gespeist aus derselben Logik wie der volle Mode 5.

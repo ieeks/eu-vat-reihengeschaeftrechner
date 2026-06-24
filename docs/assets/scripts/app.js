@@ -4400,40 +4400,7 @@ function analyze2() {
       🇨🇭 <strong>Drittland-Transaktion</strong> – Schweiz ist kein EU-Mitglied (MWST-Info 22 ESTV). Keine MwStSystRL.
     </div>`;
 
-    html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--tx-2);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">
-      Incoterms entscheiden wer Einführer in CH ist
-    </div>`;
-
-    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-
-      <!-- DAP / EXW -->
-      <div style="padding:14px;background:var(--surface-2);border:1px solid var(--border-md);border-radius:10px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;font-weight:700;color:var(--blue);margin-bottom:8px;">DAP / EXW<br><span style="color:var(--tx-2);font-weight:400;">Kunde = Einführer</span></div>
-        <div style="font-size:0.68rem;color:var(--tx-2);font-family:'IBM Plex Mono',monospace;line-height:1.7;">
-          <div>✅ Rechnung: <strong style="color:var(--tx-1);">0% MwSt</strong></div>
-          <div>✅ AT-UID auf Rechnung: <strong style="color:var(--blue);">${myATVat||'ATU...'}</strong></div>
-          <div>✅ Rechnungstext:<br><em style="color:var(--tx-3);">„Steuerfreie Ausfuhrlieferung gem. § 7 UStG AT"</em></div>
-          <div>🛃 Kunde meldet in CH an → zahlt EUSt 8,1% + Zoll ans BAZG</div>
-          <div>📋 Du brauchst: AT-Ausfuhrbestätigung (e-dec) als Belegnachweis</div>
-          <div>⚠️ Gelangensbestätigung reicht NICHT</div>
-        </div>
-      </div>
-
-      <!-- DDP -->
-      <div style="padding:14px;background:var(--surface-2);border:1px solid rgba(45,212,191,0.3);border-radius:10px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;font-weight:700;color:var(--teal);margin-bottom:8px;">DDP<br><span style="color:var(--tx-2);font-weight:400;">EPROHA = Einführer</span></div>
-        <div style="font-size:0.68rem;color:var(--tx-2);font-family:'IBM Plex Mono',monospace;line-height:1.7;">
-          ${myCHVat
-            ? `<div>✅ CH-MWST: <strong style="color:var(--teal);">${myCHVat}</strong></div>`
-            : `<div>⚠️ CH-MWST-Registrierung erforderlich</div>`}
-          <div>✅ EPROHA meldet in CH an → zahlt EUSt + Zoll ans BAZG</div>
-          <div>✅ EUSt als CH-Vorsteuer abziehbar (Art. 28 MWSTG)</div>
-          <div>✅ Rechnung: <strong style="color:var(--teal);">8,1% CH-MWST</strong> + CH-UID</div>
-          <div>✅ Lieferort: CH (nach Einfuhr)</div>
-          <div>⚖️ Steuervertreter in CH erforderlich (Art. 67 MWSTG)</div>
-        </div>
-      </div>
-    </div>`;
+    html += _importerToggle('CH', 'export');
 
     html += `<div class="hints">`;
     html += rH({type:'info', icon:'🛃', text:`AT-Ausfuhr: Anmeldung in AT via <strong>e-dec / ATLAS</strong>. Zolltarifnummer (KN-Code) erforderlich. Ausfuhrbestätigung aufbewahren (§ 7 UStG AT).`});
@@ -4594,32 +4561,7 @@ function analyze2() {
     </div>`;
     html += `<div class="mode2-flow">${buildFlowDiagram([{code:'AT',role:'EPROHA (Lager/Werk)'},{code:'GB',role:'Kunde'}], 0, 'AT', 'GB', false, -1, -1)}</div>`;
 
-    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-      <!-- DAP / EXW: Kunde ist Importeur in GB -->
-      <div style="padding:14px;background:var(--surface-2);border:1px solid var(--border-md);border-radius:10px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;font-weight:700;color:var(--blue);margin-bottom:8px;">DAP / EXW<br><span style="color:var(--tx-2);font-weight:400;">Kunde = Importeur in GB</span></div>
-        <div style="font-size:0.68rem;color:var(--tx-2);font-family:'IBM Plex Mono',monospace;line-height:1.7;">
-          <div>✅ Rechnung: <strong style="color:var(--tx-1);">0% MwSt</strong></div>
-          <div>✅ AT-UID auf Rechnung: <strong style="color:var(--blue);">${myATVat||'ATU...'}</strong></div>
-          <div>✅ Rechnungstext: <em>„Steuerfreie Ausfuhrlieferung gem. § 7 UStG AT"</em></div>
-          <div>🛃 Kunde meldet in GB an → zahlt UK VAT (20%) + Zoll ans HMRC</div>
-          <div>📋 Du brauchst: AT-Ausfuhrbestätigung (ATLAS) als Belegnachweis</div>
-          <div>⚠️ Gelangensbestätigung reicht NICHT — nur ATLAS-Ausfuhrbestätigung!</div>
-        </div>
-      </div>
-      <!-- DDP: EPROHA ist Importeur in GB -->
-      <div style="padding:14px;background:var(--surface-2);border:1px solid rgba(45,212,191,0.3);border-radius:10px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;font-weight:700;color:var(--teal);margin-bottom:8px;">DDP<br><span style="color:var(--tx-2);font-weight:400;">EPROHA = Importeur in GB</span></div>
-        <div style="font-size:0.68rem;color:var(--tx-2);font-family:'IBM Plex Mono',monospace;line-height:1.7;">
-          <div>⚠️ EPROHA benötigt <strong>GB EORI-Nummer</strong> + UK VAT-Registrierung (HMRC)</div>
-          <div>✅ EPROHA meldet in GB an → zahlt UK VAT 20% + Zoll ans HMRC</div>
-          <div>✅ UK VAT als Vorsteuer abziehbar (UK VAT Return)</div>
-          <div>✅ Rechnung an Kunden: <strong>20% UK VAT</strong> + GB VAT-Nr.</div>
-          <div>⚖️ Fiscal Representative in GB ggf. erforderlich</div>
-          <div>📋 AT-Rechnung an sich selbst: 0% Ausfuhr (AT) → Import in GB</div>
-        </div>
-      </div>
-    </div>`;
+    html += _importerToggle('GB', 'export');
 
     html += rH({type:'info', icon:'🏷️', text:`SAP Stkz.: <strong style="color:var(--sap-badge-color);">Ausg: A0</strong> (Ausgangssteuer AT 0% Ausfuhr) · Kein ZM-Eintrag — GB ist kein EU-Land`});
     html += rH({type:'ok', icon:'⚡', text:`Ausfuhrlieferung AT → GB: Rechnung <strong>0% MwSt</strong> gem. § 7 UStG AT / Art. 146 MwStSystRL. AT-UID auf Rechnung: <strong>${myATVat||'ATU...'}</strong>.`});
