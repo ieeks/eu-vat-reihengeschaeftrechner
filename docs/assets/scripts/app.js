@@ -4431,6 +4431,7 @@ function analyze2() {
           <div>✅ Rechnung: <strong style="color:var(--teal);">8,1% CH-MWST</strong> + CH-UID</div>
           <div>✅ Lieferort: CH (nach Einfuhr)</div>
           <div>⚖️ Steuervertreter in CH erforderlich (Art. 67 MWSTG)</div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-lo);color:var(--tx-3);font-size:0.62rem;line-height:1.6;">ℹ️ Buchhalterisch zwei Belege: Ausfuhr eigene Ware (A0) + Einfuhr-USt als CH-Vorsteuer → dann CH-Inlandsverkauf (B5). Der Kunde erhält nur die 8,1%-Rechnung.</div>
         </div>
       </div>
     </div>`;
@@ -4616,7 +4617,7 @@ function analyze2() {
           <div>✅ UK VAT als Vorsteuer abziehbar (UK VAT Return)</div>
           <div>✅ Rechnung an Kunden: <strong>20% UK VAT</strong> + GB VAT-Nr.</div>
           <div>⚖️ Fiscal Representative in GB ggf. erforderlich</div>
-          <div>📋 AT-Rechnung an sich selbst: 0% Ausfuhr (AT) → Import in GB</div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-lo);color:var(--tx-3);font-size:0.62rem;line-height:1.6;">ℹ️ Buchhalterisch zwei Belege: Ausfuhr eigene Ware AT→GB (A0) + UK Import VAT als Vorsteuer → dann UK-Inlandsverkauf (20% UK VAT). Der Kunde erhält nur die UK-VAT-Rechnung.</div>
         </div>
       </div>
     </div>`;
