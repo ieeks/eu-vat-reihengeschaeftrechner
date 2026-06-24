@@ -2,6 +2,17 @@
 
 ---
 
+## v4.3 · 24.06.2026 — 2P CH/GB zurück zu Cards; Toggle nur noch generisches Drittland
+
+Der am selben Tag eingebaute 2P-Toggle für CH/GB (siehe Eintrag unten) ist **wieder zurückgebaut** — CH und GB zeigen im 2P-Modus erneut die statischen **DAP/EXW-vs-DDP-Karten** nebeneinander. Grund: die Karten stellen den 2P-Eigenware-Fall klarer dar (beide Incoterm-Varianten auf einen Blick, ohne die A0/B5-SAP-Codes). Der Toggle hatte im DDP-Fall **A0 (Eigenimport)** und **B5 (Kundenrechnung)** als zwei SAP-Zeilen gezeigt, was den Eindruck erweckte, beide Codes stünden auf *einer* Kundenrechnung — tatsächlich sind es **zwei getrennte Belege** (Ausfuhr eigener Ware ↔ CH-Inlandsverkauf). Designentscheidung vorerst offen.
+
+- **`analyze2()` Zweige `dest==='CH'`/`'GB'` (`!euGoodsRecipient`)**: `_importerToggle(...)` → wieder die ursprünglichen statischen Karten (1:1 Revert).
+- **Nur der generische 2P-Drittland-Pfad (TR/RS/BA/RU)** behält den Toggle: `_importerToggle(dest, 'export', undefined, true)`.
+- **`_importerToggle(country, direction, movingL1, twoParty)`** — Param `twoParty` bleibt: bei `true` nur **Wir (DDP)** / **Kunde (DAP/EXW)**, keine `supplier`-Option (eigene Ware ab Lager, kein Vorlieferant). Stale `importerRole==='supplier'` → auf `self` geklemmt. `_importerConsequence(..., roleArg)` nimmt die effektive Rolle als Override.
+- Verifiziert (JSDOM): 2P CH/GB = Karten (kein Toggle); 2P TR = Toggle mit 2 Buttons (kein „Lieferant"); 3P unverändert (alle 3 Optionen). `npm run check` grün.
+
+---
+
 ## v4.3 · 24.06.2026 — 2P-CH/GB-Export: Incoterm-Toggle statt statischer Karten
 
 Folgeschritt zum 3P-Einführer-Toggle: Im 2P-Modus (EPROHA, Kunde im Drittland, Warenempfänger = Kunde) zeigten CH und GB bisher zwei statische DAP/EXW- vs. DDP-Karten nebeneinander. Diese sind jetzt durch den interaktiven `_importerToggle` ersetzt — derselbe Umschalter wie in den 3P-Drittland-Pfaden und im generischen 2P-Drittland-Pfad (TR/RS/BA/RU).
