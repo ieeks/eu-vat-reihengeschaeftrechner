@@ -2,6 +2,17 @@
 
 ---
 
+## v4.3 · 25.06.2026 — Warenfluss-Diagramm: Drittland-Ausfuhr korrekt beschriftet
+
+Fix im 2P-Diagramm (`buildFlowDiagram`, horizontaler Fallback):
+
+- **Bewegter Pfeil bei Drittland-Zielen** zeigte fälschlich „⚡ IG · 0%" — eine innergemeinschaftliche Lieferung gibt es bei CH/GB/TR/RS/BA/RU aber nicht. Jetzt `isNonEU(destination) ? '⚡ Ausfuhr · 0%' : '⚡ IG · 0%'` (analog zu `buildChainSVG4`).
+- **Steuersatz bei Drittland-Knoten ausgeblendet:** der Inlandssatz (z. B. „20 %" unter Türkei) ist im Ausfuhr-Kontext irreführend → `fn-rate` nur noch für EU-Knoten gerendert.
+- Betrifft alle 2P-Drittland-Diagramme (GB, TR, RS, BA, RU). EU-Fälle unverändert (IG · 0% + Satz).
+- Verifiziert (JSDOM): TR/GB → „Ausfuhr · 0%", kein Drittland-Satz; DE → „IG · 0%" + 19 %. `npm run check` grün.
+
+---
+
 ## v4.3 · 24.06.2026 — 2P: Konsilager nur bei DDP · TR/RS/BA auf Konzept 02
 
 Zwei Verfeinerungen am 2P-Drittland-Export:

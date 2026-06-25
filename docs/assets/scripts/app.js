@@ -1337,13 +1337,13 @@ function buildFlowDiagram(parties, movingDeliveryIdx, departure, destination, is
       <div class="fn-role">${p.role}</div>
       <div class="fn-flag">${flag(p.code)}</div>
       <div class="fn-name">${cn(p.code)}</div>
-      <div class="fn-rate">${rate(p.code)}%</div>
+      ${isNonEU(p.code) ? '' : `<div class="fn-rate">${rate(p.code)}%</div>`}
       ${vatId ? `<div class="fn-vat">${vatId}</div>` : ''}
     </div>`;
     if (i < n - 1) {
       const isMovingArrow = i === movingDeliveryIdx;
       let cls = isMovingArrow ? 'moving' : 'invoice';
-      let label = isMovingArrow ? '⚡ IG · 0%' : `L${i+1}`;
+      let label = isMovingArrow ? (isNonEU(destination) ? '⚡ Ausfuhr · 0%' : '⚡ IG · 0%') : `L${i+1}`;
       invoiceRow += `<div class="flow-arrow ${cls} ${is2P ? 'flow-arrow-2p' : ''}">
         <div class="arr-label">${label}</div>
         <div class="arr-line"></div>
