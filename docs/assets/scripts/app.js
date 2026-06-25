@@ -1337,13 +1337,13 @@ function buildFlowDiagram(parties, movingDeliveryIdx, departure, destination, is
       <div class="fn-role">${p.role}</div>
       <div class="fn-flag">${flag(p.code)}</div>
       <div class="fn-name">${cn(p.code)}</div>
-      <div class="fn-rate">${rate(p.code)}%</div>
+      ${isNonEU(p.code) ? '' : `<div class="fn-rate">${rate(p.code)}%</div>`}
       ${vatId ? `<div class="fn-vat">${vatId}</div>` : ''}
     </div>`;
     if (i < n - 1) {
       const isMovingArrow = i === movingDeliveryIdx;
       let cls = isMovingArrow ? 'moving' : 'invoice';
-      let label = isMovingArrow ? '⚡ IG · 0%' : `L${i+1}`;
+      let label = isMovingArrow ? (isNonEU(destination) ? '⚡ Ausfuhr · 0%' : '⚡ IG · 0%') : `L${i+1}`;
       invoiceRow += `<div class="flow-arrow ${cls} ${is2P ? 'flow-arrow-2p' : ''}">
         <div class="arr-label">${label}</div>
         <div class="arr-line"></div>
@@ -4678,7 +4678,6 @@ function analyze2() {
     html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--amber);margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:8px;">
       🇬🇧 <strong>Drittland-Transaktion</strong> — Großbritannien ist seit 01.01.2021 kein EU-Mitglied mehr (Brexit). Keine ig. Lieferung — Ausfuhrlieferung nach § 7 UStG AT / Art. 146 MwStSystRL.
     </div>`;
-    html += `<div class="mode2-flow">${buildFlowDiagram([{code:'AT',role:'EPROHA (Lager/Werk)'},{code:'GB',role:'Kunde'}], 0, 'AT', 'GB', false, -1, -1)}</div>`;
 
     html += buildMode2IncoExport('GB');
 
@@ -4698,7 +4697,6 @@ function analyze2() {
     html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--amber);margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:8px;">
       ${flag(dest)} <strong>Drittland-Transaktion</strong> — ${cn(dest)} ist kein EU-Mitglied. Keine ig. Lieferung — <strong>Ausfuhrlieferung</strong> nach § 7 UStG AT / Art. 146 MwStSystRL.
     </div>`;
-    html += `<div class="mode2-flow">${buildFlowDiagram([{code:'AT',role:'EPROHA (Lager/Werk)'},{code:dest,role:'Kunde'}], 0, 'AT', dest, false, -1, -1)}</div>`;
 
     const _tnote = _thirdCountryNote(dest, 'export');
     if (_tnote) html += _tnote;
