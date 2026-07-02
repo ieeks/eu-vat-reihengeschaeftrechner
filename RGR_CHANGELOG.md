@@ -2,6 +2,23 @@
 
 ---
 
+## v4.3 · 02.07.2026 — Session 29
+
+### Code-Review Sofortmaßnahmen (K1, H1, H2, H3, H5, M5 aus `CODE_REVIEW_2026-06.md`)
+
+- **K1 · Quick Check übergab Buchstaben statt kanonischer Transport-Werte** — `buildQuickCheck()` mappte `transport` auf `A/B/C` und übergab den Buchstaben an `VATEngine.run()`; die Engine vergleicht nur gegen Wörter → jeder QC fiel in den Default `movingIndex: 0`. „Kunde holt ab" zeigte fälschlich L1 als bewegte Lieferung, die Dreiecks-Sperre Art. 141 lit. e griff nie. **Fix:** `transport` direkt durchreichen (qcState ist bereits kanonisch). Zusätzlich erwartete die Engine für `uidOverride` ein Länderkürzel, bekam aber die volle UID → Override wurde ignoriert. **Fix:** `_triUid.country` übergeben — mit Guard: Wenn wir als B ohne dep-UID/dep-Sitz transportieren, kein Override (Standardregel Art. 36a Abs. 1 → L1 bewegt; sonst würde der bekannte K2-Engine-Bug den Fall fälschlich auf L2 kippen — K2 selbst ist Never-Touch und wartet auf Referenzfall-Freigabe).
+- **H1 · Undefinierte Variable `dep` in `buildDeliveryBox()`** — `pos` griff auf das implizite Window-Global des `<select id="dep">` zu (HTMLSelectElement statt Ländercode) → SAP-Badge-Berechnung in CH/GB-Pfaden falsch. **Fix:** Fallback auf `from` (Abgangsland der Strecke).
+- **H2 · Share-Link-Roundtrip** — `shareLink()` schrieb `countries=…`, `handleURLParams()` las den Parameter nie → geteilte Links reproduzierten die Länderkette nicht. **Fix:** Parameter parsen (Whitelist gegen `EU`-Codes, max. 4). Dabei zweiten Boot-Bug gefixt: Der Länder-Restore (localStorage **und** URL) lief **vor** `renderAll()` — die `cp-*`-Selects existieren dort noch gar nicht (werden erst von `renderPickers()` aufgebaut). Restore läuft jetzt nach dem ersten `renderAll()` + einmaliges Re-Render; URL gewinnt gegen gespeicherten State.
+- **H3 · `['A','B','C','D'].indexOf(selectedTransport)` ergab immer -1** — `renderExpertLegal()` zeigte `Transporteur: undefined` und immer den Zwischenhändler-Text. **Fix:** `getTransportLetter()` (bestehender UI-Helper) statt Roh-State.
+- **H5 · Company-abhängige TRANSLATIONS beim Laden eingefroren** — `header.sub`, `dreiecks.title`, `eug.subtitle` evaluierten `currentCompany` einmalig beim Parsen (Startwert EPDE) → EPROHA sah dauerhaft „§ 25b UStG" statt „Art. 25 UStG AT" (Verstoß gegen Regel 2). **Fix:** Die drei Keys sind jetzt Funktionen; `T()` löst Funktionswerte zur Renderzeit auf.
+- **M5 · `natLaw('vat')` Key fehlte** — Output zeigte „Vorsteuerabzug gem. vat." (Key-Selbst-Fallback). **Fix:** Key ergänzt (AT: § 12 UStG AT, DE: § 15 UStG, sonst Art. 168 MwStSystRL); Call-Site in `analyzeLohn()` übergibt jetzt das Lieferland (`natLaw('vat', sup)`).
+
+### Neu: QC-Tests (4. Test-Suite)
+
+- **`QC_TESTS` + `runQuickCheckTests()`** — Regressionstests direkt gegen `buildQuickCheck()` (DOM-frei): bewegte Lieferung je Transport-Variante (Lieferant/Kunde/Zwischenhändler) + Dreiecksstatus + Inland-Kurzschluss. Buttons in beiden Test-Panels (`docs/index.html`). Alle Suiten grün: 44 Smoke + 13 Render + 8 Output + 4 QC.
+
+---
+
 ## v4.3 · 26.05.2026 — Session 28
 
 ### Fix · Vergleich-Tab „lädt nicht" außerhalb 3P-grenzüberschreitend

@@ -4,6 +4,8 @@
 
 Die drei kritischsten Befunde (K1, K2, H1) wurden direkt am Code gegenverifiziert.
 
+> **Status 02.07.2026 (Session 29):** Stufe 1 umgesetzt — ✅ K1, ✅ H1, ✅ H2 (inkl. Boot-Restore-Fix), ✅ H3, ✅ H5, ✅ M5; neue QC-Test-Suite (`QC_TESTS`/`runQuickCheckTests()`). Offen: Stufe 2 (K2/H6/H4/M3, Never-Touch-Freigabe), Stufe 3 (K3/I2/H7/I1/I3), Aufräumen (H8/I5), Rest.
+
 ---
 
 ## Zusammenfassung

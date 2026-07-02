@@ -75,6 +75,10 @@ Reihengeschaeftsrechner_22.html
   Legacy-Referenz, nicht wieder zur Hauptquelle machen
 
 Tests
+  SMOKE_TESTS (Engine) · RENDER_TESTS (computeTax) · OUTPUT_TESTS (DOM-Output)
+  QC_TESTS / runQuickCheckTests() ← Quick-Check-Regressionen gegen buildQuickCheck()
+    (bewegte Lieferung je Transport-Variante + Dreiecksstatus, DOM-frei; Session 29)
+
 v4 UI Layer
   toggleDevMode() ← Dev-Overlay mit JS-Tooltip (v4.2)
   toggleQuickCheck(btn) ← QC Header-Button Toggle; Exit via basisBtn aus #tabBar (v4.2 Session 21)
@@ -90,6 +94,7 @@ v4.3 Header/Nav (Session 22)
 
 ## Aktuelle P0-Baustelle
 
+- Code-Review `CODE_REVIEW_2026-06.md`: Stufe 1 (K1/H1/H2/H3/H5/M5) umgesetzt (Session 29); Stufe 2 (K2/H6/H4/M3) braucht Never-Touch-Freigabe + Referenzfälle; Stufe 3 (K3-Escaping/CSP/CI) offen
 - v4.3 Redesign live auf `manuel-app.dev` (Session 22–23) — Light Theme, Header-Tabs, 4P-Diamond
 - v1/v2-Toggle im ⋯-Menü: `docs/index.html` = v2, `docs/v1/` = eingefrorener Production-Stand
 - Fonts self-hosted: `docs/assets/fonts/` + `docs/v1/assets/fonts/` — kein Google Fonts (Session 23)

@@ -571,7 +571,7 @@ function _v32_updateStepUI() {
 var TRANSLATIONS = {
   de: {
     'header.title': 'EU <span>MwSt</span> Reihengeschäft',
-    'header.sub': currentCompany === 'EPROHA' ? 'B2B · Innergemeinschaftlich · inkl. Dreiecksgeschäft Art. 25 UStG AT' : 'B2B · Innergemeinschaftlich · inkl. Dreiecksgeschäft § 25b UStG',
+    'header.sub': () => currentCompany === 'EPROHA' ? 'B2B · Innergemeinschaftlich · inkl. Dreiecksgeschäft Art. 25 UStG AT' : 'B2B · Innergemeinschaftlich · inkl. Dreiecksgeschäft § 25b UStG',
     'card.buchungskreis': 'Buchungskreis','card.vatids': 'Meine USt-IDs','card.modus': 'Modus',
     'card.parteien': 'Beteiligte Parteien','card.warenfluss': 'Warenfluss',
     'card.transport': 'Transportorganisation','card.ergebnis': 'Ergebnis',
@@ -599,13 +599,13 @@ var TRANSLATIONS = {
     'inv.net': 'Nettobetrag ohne MwSt (0%)',
     'inv.triangle.hint': '„Innergemeinschaftliches Dreiecksgeschäft gemäß Art. 42 MwStSystRL"',
     'inv.triangle.rc': '„Steuerschuldner ist der Leistungsempfänger"',
-    'dreiecks.title': currentCompany === 'EPROHA' ? 'Dreiecksgeschäft – Art. 25 UStG AT / Art. 141 MwStSystRL' : 'Dreiecksgeschäft – § 25b UStG / Art. 141 MwStSystRL',
+    'dreiecks.title': () => currentCompany === 'EPROHA' ? 'Dreiecksgeschäft – Art. 25 UStG AT / Art. 141 MwStSystRL' : 'Dreiecksgeschäft – § 25b UStG / Art. 141 MwStSystRL',
     'dreiecks.subtitle': 'Vereinfachungsregelung anwendbar',
     'dreiecks.opportunity.title': 'Dreiecksgeschäft möglich – USt-ID wählen',
     'dreiecks.opportunity.sub': 'Art. 141 MwStSystRL · Keine Registrierung nötig',
     'dreiecks.apply': 'Analyse mit gewählter USt-ID →',
     'eug.title': '4-Parteien Dreiecksgeschäft – EuG T-646/24 vom 03.12.2025',
-    'eug.subtitle': currentCompany === 'EPROHA' ? 'Art. 25 UStG AT / Art. 141 MwStSystRL anwendbar' : '§ 25b UStG / Art. 141 MwStSystRL anwendbar',
+    'eug.subtitle': () => currentCompany === 'EPROHA' ? 'Art. 25 UStG AT / Art. 141 MwStSystRL anwendbar' : '§ 25b UStG / Art. 141 MwStSystRL anwendbar',
     'noneu': 'Drittland','vatid.gegenüber': 'USt-ID gegenüber Lieferant',
     'vatid.ausweisen': 'USt-ID auf Rechnung ausweisen','goods.direct': 'direkt',
     'invoice.items': 'Pflichtangaben auf dieser Rechnung',
@@ -659,7 +659,10 @@ var TRANSLATIONS = {
 
 function T(key) {
   if (!TRANSLATIONS || !TRANSLATIONS[currentLang]) return key;
-  return TRANSLATIONS[currentLang][key] || (TRANSLATIONS['de'] && TRANSLATIONS['de'][key]) || key;
+  const v = TRANSLATIONS[currentLang][key] || (TRANSLATIONS['de'] && TRANSLATIONS['de'][key]) || key;
+  // Company-abhängige Texte sind Funktionen — erst zur Renderzeit auflösen,
+  // damit ein Company-Wechsel (EPDE ↔ EPROHA) den Rechtsbezug aktualisiert
+  return typeof v === 'function' ? v() : v;
 }
 
 function _v32_setLang(btn) {
@@ -1815,6 +1818,10 @@ function natLaw(key, countryOverride) {
     'ig.exempt':   igExemptText,
     // Ausfuhr steuerfrei
     'export':      isAT ? '§ 7 UStG AT / Art. 146 MwStSystRL'  : '§ 6 UStG / Art. 146 MwStSystRL',
+    // Vorsteuerabzug
+    'vat':         isAT ? '§ 12 UStG AT / Art. 168 MwStSystRL'
+                 : isDE ? '§ 15 UStG / Art. 168 MwStSystRL'
+                 : 'Art. 168 MwStSystRL',
     // Rechnungspflichtangaben
     'invoice':     isAT ? '§ 11 UStG AT'                        : '§ 14 UStG',
     // ZM-Meldung
@@ -3306,8 +3313,8 @@ function buildDeliveryBox(num, from, to, isMoving, tax, myCode, dest, iAmBuyer, 
           const iAmBuyerHere = to === myHome;
           if (!iAmSeller && !iAmBuyerHere) return '';
           const role = iAmSeller ? 'seller' : 'buyer';
-          // Lieferort bestimmen
-          const pos = placeOfSupply || (isMoving ? dep : dest) || dest;
+          // Lieferort bestimmen — bewegte Lieferung: Abgangsland der Strecke (from)
+          const pos = placeOfSupply || (isMoving ? from : dest) || dest;
           // Treatment aus badgeClass ableiten — Käufer auf IG-Lieferung → ic-acquisition
           const isExportDelivery = tax.badgeClass === 'badge-export';
           const isIGDelivery = !isExportDelivery && (
@@ -3999,7 +4006,7 @@ function analyzeLohn() {
         </div>
       </div>
       <div class="hints" style="margin-top:10px;">
-        ${rH({type:'info',icon:'📋',text:`${cn(sup)}-Eingangsrechnung: ${supConRate}% MwSt ausgewiesen. Vorsteuerabzug gem. ${natLaw('vat')}.`})}
+        ${rH({type:'info',icon:'📋',text:`${cn(sup)}-Eingangsrechnung: ${supConRate}% MwSt ausgewiesen. Vorsteuerabzug gem. ${natLaw('vat', sup)}.`})}
       </div>
     </div>`;
 
@@ -9102,6 +9109,92 @@ function runOutputTests() {
     : `❌ ${failed} von ${OUTPUT_TESTS.length} Output-Tests fehlgeschlagen`;
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+//  QC_TESTS — Quick-Check-Regressionen: bewegte Lieferung je Transport-
+//  Variante + Dreiecksstatus, direkt gegen buildQuickCheck() (DOM-frei).
+// ═══════════════════════════════════════════════════════════════════════
+const QC_TESTS = [
+  {
+    id: 'QC-01',
+    name: 'EPDE DE→PL, Lieferant transportiert → L1 bewegt, kein Dreieck (PL-UID vorhanden)',
+    state: { company: 'EPDE', dep: 'DE', dest: 'PL', transport: 'supplier' },
+    expect: { movingL1: true, triangle: false },
+  },
+  {
+    id: 'QC-02',
+    name: 'EPDE FR→PL, Kunde holt ab → L2 bewegt, kein Dreieck (Art. 141 lit. e)',
+    state: { company: 'EPDE', dep: 'FR', dest: 'PL', transport: 'customer' },
+    expect: { movingL1: false, triangle: false },
+  },
+  {
+    id: 'QC-03',
+    name: 'EPROHA FR→IT, EPROHA transportiert ohne FR-UID → L1 bewegt (Standardregel), Dreieck möglich',
+    state: { company: 'EPROHA', dep: 'FR', dest: 'IT', transport: 'middle' },
+    expect: { movingL1: true, triangle: true },
+  },
+  {
+    id: 'QC-04',
+    name: 'EPDE DE→DE Inland-Kurzschluss → L1 bewegt, kein Dreieck',
+    state: { company: 'EPDE', dep: 'DE', dest: 'DE', transport: 'supplier' },
+    expect: { movingL1: true, triangle: false },
+  },
+];
+
+function runQuickCheckTests() {
+  const resultsEl = document.getElementById('testResults');
+  const summaryEl = document.getElementById('testSummary');
+  resultsEl.innerHTML = '';
+  summaryEl.style.display = 'none';
+
+  const savedQcState = { ...qcState };
+  let passed = 0, failed = 0;
+
+  QC_TESTS.forEach(test => {
+    const errors = [];
+    try {
+      qcState = { ...savedQcState, ...test.state };
+      const r = buildQuickCheck();
+      if (test.expect.movingL1 !== undefined && r.movingL1 !== test.expect.movingL1)
+        errors.push(`movingL1: erwartet ${test.expect.movingL1}, erhalten ${r.movingL1}`);
+      if (test.expect.triangle !== undefined && !!r.triangle !== test.expect.triangle)
+        errors.push(`triangle: erwartet ${test.expect.triangle}, erhalten ${!!r.triangle}`);
+    } catch(e) {
+      errors.push(`Exception: ${e.message}`);
+    }
+
+    const ok = errors.length === 0;
+    if (ok) passed++; else failed++;
+
+    const card = document.createElement('div');
+    card.style.cssText = `background:#0c1222; border:1px solid ${ok ? '#1e3a2e' : '#3d1515'};
+      border-radius:8px; padding:12px 16px;`;
+    card.innerHTML = `
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span>${ok ? '✅' : '❌'}</span>
+        <div>
+          <span style="color:#64748b; font-size:0.7rem; font-family:var(--mono);">${test.id}</span>
+          <span style="margin-left:8px; color:#e2e8f0; font-size:0.82rem; font-weight:600;">${test.name}</span>
+        </div>
+      </div>
+      ${errors.length > 0 ? `
+        <div style="margin-top:8px; padding-top:8px; border-top:1px solid #1e293b;">
+          ${errors.map(e => `<div style="font-size:0.72rem; color:#f87171; padding:2px 0;">↳ ${e}</div>`).join('')}
+        </div>` : ''}
+    `;
+    resultsEl.appendChild(card);
+  });
+
+  qcState = savedQcState;
+
+  summaryEl.style.display = 'block';
+  summaryEl.style.background = failed === 0 ? '#052e16' : '#2d1515';
+  summaryEl.style.border = '1px solid ' + (failed === 0 ? '#16a34a' : '#dc2626');
+  summaryEl.style.color = failed === 0 ? '#4ade80' : '#f87171';
+  summaryEl.innerHTML = failed === 0
+    ? `✅ Alle ${passed} QC-Tests bestanden`
+    : `❌ ${failed} von ${QC_TESTS.length} QC-Tests fehlgeschlagen`;
+}
+
 function toggleTestPanel() {
   const panel = document.getElementById('testPanel');
   panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
@@ -11299,7 +11392,7 @@ function renderExpertLegal() {
   let supplies = [];
   try { const _ctx=buildCtx(); const _eng=VATEngine.run(_ctx); supplies = classifySuppliesNorm(_ctx, _eng.movingIndex); } catch(e) {}
   const countries = getSelectedCountries();
-  const transIdx = ['A','B','C','D'].indexOf(selectedTransport);
+  const transIdx = ['A','B','C','D'].indexOf(getTransportLetter());
 
   let h = `<div class="legal-block fade">
     <div class="legal-hdr">⚖️ Rechtsgrundlagen pro Lieferung</div>
@@ -11563,6 +11656,9 @@ function renderAll() {
 }
 
 // URL param handling (?co=EPDE, ?countries=DE,AT,IT, etc.)
+// Länderkette aus ?countries= — wird in init() NACH dem localStorage-Restore
+// in die cp-*-Selects geschrieben (URL-Params überschreiben gespeicherten State)
+let _urlCountries = null;
 function handleURLParams() {
   const p = new URLSearchParams(location.search);
   if (p.get('co')) {
@@ -11580,6 +11676,14 @@ function handleURLParams() {
     mePos: parseInt(p.get('mePos')) || mePosition,
     uidOverride: p.get('uid') || selectedUidOverride,
   });
+  const countriesParam = p.get('countries');
+  if (countriesParam) {
+    const codes = countriesParam.split(',')
+      .map(c => c.trim().toUpperCase())
+      .filter(c => EU.some(x => x.code === c))
+      .slice(0, 4);
+    if (codes.length >= 2) _urlCountries = codes;
+  }
   if (p.get('theme')) document.documentElement.setAttribute('data-theme', p.get('theme'));
 }
 
@@ -11677,11 +11781,18 @@ function buildQuickCheck() {
   }
 
   // ── Engine-Kontext aufbauen ───────────────────────────────────────────
-  const transportMap = { supplier: 'A', middle: 'B', customer: 'C' };
+  // transport ist im qcState bereits kanonisch ('supplier'/'middle'/'customer').
+  // uidOverride erwartet das Länderkürzel der UID (vatIds-Key), nicht die UID selbst.
+  // Kein Override, wenn wir als B ohne dep-UID und ohne dep-Sitz transportieren:
+  // dann gilt die Standardregel (Art. 36a Abs. 1 — Eingangslieferung bewegt);
+  // die Dreieckserkennung fällt in dem Fall auf companyHome zurück.
+  const qcUidOverride = (transport === 'middle' && dep !== home && !vatIds[dep])
+    ? null
+    : _triUid.country;
   const ctx = Object.freeze({
     mode: 3, s1: dep, s2: home, s3: dest, s4: dest, dep, dest,
-    transport: transportMap[transport],
-    uidOverride: _triUid.uid,
+    transport,
+    uidOverride: qcUidOverride,
     vatIds:         Object.freeze({ ...vatIds }),
     company, companyHome: home,
     establishments: Object.freeze([...(co.establishments || [])]),
@@ -12089,14 +12200,6 @@ document.addEventListener('DOMContentLoaded', function init() {
   // URL params override saved state
   handleURLParams();
 
-  // Restore country pickers from saved state (must happen before renderAll)
-  if (saved && saved.countries) {
-    saved.countries.forEach((c, i) => {
-      const el = $(`cp-${i}`);
-      if (el) el.value = c;
-    });
-  }
-
   // Party buttons sync — use explicit IDs, not index (btn2 may be hidden)
   const modeToId = { 2:'partyBtn2', 3:'partyBtn3', 4:'partyBtn4', 5:'partyBtn5' };
   document.querySelectorAll('#partyTopRow .party-btn, #partyBtn5').forEach(b => b.classList.remove('active'));
@@ -12109,6 +12212,19 @@ document.addEventListener('DOMContentLoaded', function init() {
 
   $('versionBadge').textContent = `v${TOOL_VERSION}`;
   renderAll();
+
+  // Länderkette anwenden — erst NACH dem ersten renderAll(), weil die
+  // cp-*-Selects von renderPickers() aufgebaut werden und vorher nicht
+  // existieren. ?countries= (Share-Link) überschreibt den gespeicherten State.
+  const bootCountries = _urlCountries || (saved && saved.countries) || null;
+  if (bootCountries) {
+    bootCountries.forEach((c, i) => {
+      const el = $(`cp-${i}`);
+      if (el) el.value = c;
+    });
+    renderAll();
+  }
+
   showChangelogBanner();
   renderBMFBanner();
   initKeyboardNavigation();

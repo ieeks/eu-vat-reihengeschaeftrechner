@@ -27,6 +27,9 @@ Stand: 20.05.2026
 - [x] **vat-knowledge NL-Länderdatei** — `nl/wet_ob_nl_reihengeschaeft.md` (Art. 5/12/37a/37c Wet OB, RC-Sonderfall trotz Direktregistrierung, EPDE NL-UID); Index in `CLAUDE-vat-knowledge.md` + `CLAUDE.md` (16 → 17 Dateien) aktualisiert (Session 27)
 - [x] **Mode 2 Drop-Shipment für EU-Kunden** — neuer `analyze2()`-Branch: EPROHA(AT) = erster Lieferant → EU-Kunde (z.B. DE) → abweichender Warenempfänger (z.B. IT) = Reihengeschäft/Dreiecksgeschäft (AF/Reverse Charge), Drittland-Empfänger = Ausfuhr (A0); `renderContextToggles()` zeigt Drop-Shipment nun für jeden EU-Kunden (Session 28)
 - [x] **Warenfluss-Diagramme vereinheitlicht** — Transport-Veranlasser in 4P-Dreieck + 3P + Normalfall; 4P-SVG `max-width` 1100px, 3P 715px; 3P-Labels auf Chip-Stil (Box + Rahmen) wie 4P umgestellt (Session 28)
+- [x] **Code-Review Sofortmaßnahmen (Stufe 1)** — K1 (QC-Transport kanonisch + UID-Länderkürzel, mit K2-Guard), H1 (`from` statt undefiniertem `dep`), H2 (`?countries=`-Parsing + Boot-Restore nach `renderAll()`), H3 (`getTransportLetter()`), H5 (TRANSLATIONS zur Renderzeit), M5 (`natLaw('vat')`); neue QC-Test-Suite (Session 29)
+- [ ] **Code-Review Stufe 2 — Never-Touch-Freigabe nötig** — K2 (`_applyQuickFix` lit.-a-Zweig tot / Override-Logik), H6 (lit.-b-Rationale), H4 (4P-dtype aus Engine), M3 (Result-Shape) — zuerst gegen `vat-knowledge/reference-cases.md` verifizieren
+- [ ] **Code-Review Stufe 3 — Sicherheit/Infra** — K3 (`esc()`-HTML-Escaping + UID-Whitelist), I2 (CSP), H7 (Dev-Server-Verzeichnisse), I1 (CI-Checks vor Deploy), I3 (SHA-Pinning)
 
 ---
 

@@ -248,6 +248,7 @@
       <button class="h-btn" onclick="runSmokeTests()">▶ Smoke Tests</button>
       <button class="h-btn" onclick="runRenderTests()">▶ Render Tests</button>
       <button class="h-btn" onclick="runOutputTests()">▶ Output Tests</button>
+      <button class="h-btn" onclick="runQuickCheckTests()">▶ QC Tests</button>
       <button class="h-btn" onclick="runInvariantTests()">▶ Invarianten</button>
     </div>
     <div id="testOutput" style="font-family:var(--mono);font-size:0.72rem;color:var(--tx-2);max-height:500px;overflow-y:auto;"></div>
@@ -319,6 +320,11 @@
         style="background:#065f46; border:none; color:#fff; padding:10px 16px;
         border-radius:6px; cursor:pointer; font-family:inherit; font-size:0.8rem; font-weight:600;">
         🧩 Output-Tests
+      </button>
+      <button onclick="runQuickCheckTests()"
+        style="background:#9a3412; border:none; color:#fff; padding:10px 16px;
+        border-radius:6px; cursor:pointer; font-family:inherit; font-size:0.8rem; font-weight:600;">
+        ⚡ QC-Tests
       </button>
       <div id="testProgress" style="display:none; align-items:center; gap:10px; color:#64748b; font-size:0.78rem;">
         <div id="testProgressBar" style="width:200px; height:6px; background:#1e293b; border-radius:3px; overflow:hidden;">
