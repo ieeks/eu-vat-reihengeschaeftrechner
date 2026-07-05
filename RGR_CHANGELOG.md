@@ -2,6 +2,26 @@
 
 ---
 
+## v4.3 · 05.07.2026 — SAP-Eingabe-Hint (Kunden-Steuerklasse), Experten-Prototyp
+
+Neuer **Umkehr-Lookup**: zeigt, welche **abweichende Steuerklasse (Kunde) + Zielland**
+in SAP gesetzt werden muss, damit das gewünschte **Steuerkennzeichen** herauskommt.
+Schließt die Lücke „ich weiß *was* rauskommen soll, aber nicht *wie* in SAP".
+
+- **Datenquelle:** `SAP_CUSTTAX_MAP` — generiert aus den echten SAP-Konditionssätzen
+  (VK12: A002/A011 → KONP → T007A), Material-Steuerklasse 1. Abgangsland: AT=EPROHA ·
+  DE=EPDE 1701 · PL=EPDE 1702 · CZ=EPDE 1703. 125 Zielland-Einträge.
+- **Generator:** `scripts/gen-custtax-map.mjs` (Node, ohne Dependency, quote-aware CSV) —
+  schreibt den Block zwischen den Markern `// <<GEN:SAP_CUSTTAX_MAP>>` in `app.js`.
+  CSV-Exporte liegen bewusst **nicht** im Repo; bei Satz-/Registrierungsänderung neu ziehen.
+- **UI:** `buildSapInputHint(dep, dest)` — eigenes, **nur im Experten-Modus** sichtbares
+  `<details>`-Panel unter dem Perspektivwechsel (Haupt-Render). Klasse (Standard) + Alternativen,
+  Satz, Empfangsland, T007A-Text. Fallback-Hinweis wenn kein Satz hinterlegt.
+- **Keine Engine-Änderung** — reine Anzeige. `node --check` + `npm run check` grün, Funktions-Smoke ok.
+- Auflösungspriorität bei mehreren Klassen je Kennzeichen: `1 > 2 > 4 > 5 > 6 > 3 > 0` (Rest als „alt.").
+
+---
+
 ## v4.3 · 05.07.2026 — SAP_TAX_MAP: Produktiv-Abgleich VK12 + EE-Satz 22 %→24 %
 
 Erster Abgleich der `SAP_TAX_MAP` gegen das **Produktivsystem** (VK12: Konditionstabellen

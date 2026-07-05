@@ -138,6 +138,16 @@ const SAP_TAX_MAP = {
   },
 };
 
+// ─────────────────────────────────────────────────────────────────────────
+// SAP_CUSTTAX_MAP — Umkehr-Lookup: gewünschtes Steuerkennzeichen → welche
+// abweichende Steuerklasse (Kunde) + Zielland in SAP gesetzt werden muss.
+// Quelle: SAP VK12 (A002/A011 → KONP → T007A), Material-Steuerklasse 1.
+// Abgangsland: AT=EPROHA · DE=EPDE 1701 · PL=EPDE 1702 · CZ=EPDE 1703.
+// GENERIERT via `node scripts/gen-custtax-map.mjs <A002> <A011> <KONP> <T007A>`.
+// <<GEN:SAP_CUSTTAX_MAP>>  (generiert via scripts/gen-custtax-map.mjs — NICHT von Hand editieren)
+const SAP_CUSTTAX_MAP = {"_meta":{"src":"SAP VK12: A002/A011 -> KONP -> T007A","mat":"1 (volle Steuer)","stand":"2026-07-05","deps":{"AT":"EPROHA","DE":"EPDE Werk 1701","PL":"EPDE Werk 1702","CZ":"EPDE Werk 1703 (coming soon)"}},"AT":{"AL":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"}},"AT":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"},"A2":{"cls":"1","rate":"20","txt":"Ausgangssteuer 20%","alt":["0"],"empf":"AT"},"AF":{"cls":"2","rate":"0","txt":"Erwerbsteuer 0%"},"AI":{"cls":"6","rate":"0","txt":"⚠ Sonderfall – prüfen"},"DS":{"cls":"4","rate":"19","txt":"Ausgangssteuer Deutschland 19%","empf":"AT"},"IC":{"cls":"5","rate":"0","txt":"Reverse charge 0% Italien"},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"BA":{"A0":{"cls":"1","rate":"0","txt":"Ausgangssteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"BE":{"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"BS":{"cls":"2","rate":"21","txt":"Ausgangssteuer Belgien 21%","empf":"BE"},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"BG":{"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"CH":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"},"B5":{"cls":"1","rate":"8.1","txt":"Ausgangssteuer 8,1% (Schweiz)","empf":"CH"},"D0":{"cls":"4","rate":"0","txt":"Ausgangssteuer 0% Abgangsland DE empf. Land CH"},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"CY":{"AF":{"cls":"0","rate":"0","txt":"Erwerbsteuer 0%"}},"CZ":{"AE":{"cls":"2","rate":"21","txt":"Ausgangssteuer Tschechien 21%","empf":"CZ"},"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"DE":{"AF":{"cls":"0","rate":"0","txt":"Erwerbsteuer 0%"},"DS":{"cls":"1","rate":"19","txt":"Ausgangssteuer Deutschland 19%","empf":"DE"},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"DK":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"}},"EE":{"AF":{"cls":"0","rate":"0","txt":"Erwerbsteuer 0%"},"ES":{"cls":"2","rate":"24","txt":"Ausgangssteuer Estland 24%","empf":"EE"}},"ES":{"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"FI":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"}},"FR":{"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"GB":{"A0":{"cls":"1","rate":"0","txt":"Ausgangssteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"HK":{"A0":{"cls":"3","rate":"0","txt":"Ausgangssteuer 0%","alt":["0"]}},"HR":{"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"HU":{"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0","6"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"IN":{"A0":{"cls":"1","rate":"0","txt":"Ausgangssteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"IQ":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"}},"IT":{"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"IC":{"cls":"5","rate":"0","txt":"Reverse charge 0% Italien"},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"KO":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"}},"LI":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"},"B5":{"cls":"1","rate":"8.1","txt":"Ausgangssteuer 8,1% (Schweiz)","empf":"LI"},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"LT":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"},"TS":{"cls":"2","rate":"21","txt":"Ausgangssteuer Litauen 21%","empf":"LT"}},"LV":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"},"LS":{"cls":"2","rate":"21","txt":"Ausgangssteuer Lettland 21%","empf":"LV"}},"MK":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"}},"MT":{"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"NL":{"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"PA":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"}},"PL":{"A4":{"cls":"2","rate":"23","txt":"Ausgangssteuer Polen 23%","empf":"PL"},"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"PT":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"}},"RO":{"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"RS":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"RU":{"A0":{"cls":"1","rate":"0","txt":"Ausgangssteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"SC":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"}},"SG":{"A0":{"cls":"1","rate":"0","txt":"Ausgangssteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"SI":{"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"CB":{"cls":"2","rate":"22","txt":"Ausgangssteuer Slowenien 22%","empf":"SI"},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"SK":{"AF":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"UA":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"US":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"}},"YU":{"A0":{"cls":"1","rate":"0","txt":"Ausgangssteuer 0%","alt":["0"]},"X0":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"ZA":{"A0":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"}}},"DE":{"AT":{"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]}},"BA":{"G0":{"cls":"0","rate":"0","txt":"Kein Steuervorgang"}},"BE":{"BS":{"cls":"2","rate":"21","txt":"Ausgangssteuer Belgien 21%","empf":"BE"},"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]}},"BG":{"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]}},"CH":{"G0":{"cls":"0","rate":"0","txt":"Kein Steuervorgang"}},"CZ":{"AE":{"cls":"2","rate":"21","txt":"Ausgangssteuer Tschechien 21%","alt":["0"],"empf":"CZ"},"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%"},"OB":{"cls":"3","rate":"0","txt":"Erwerbsteuer Tschechien 0%"}},"DE":{"DH":{"cls":"2","rate":"0","txt":"Erwerbsteuer 0%"},"DS":{"cls":"1","rate":"19","txt":"Ausgangssteuer Deutschland 19%","empf":"DE"},"G0":{"cls":"0","rate":"0","txt":"Kein Steuervorgang"},"OB":{"cls":"4","rate":"0","txt":"Erwerbsteuer Tschechien 0%"},"XD":{"cls":"3","rate":"0","txt":"nicht steuerbar"}},"DK":{"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]}},"EE":{"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"ES":{"cls":"2","rate":"24","txt":"Ausgangssteuer Estland 24%","empf":"EE"}},"ES":{"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]}},"FR":{"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]}},"GB":{"G0":{"cls":"0","rate":"0","txt":"Kein Steuervorgang"}},"HR":{"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]}},"HU":{"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]}},"IT":{"C1":{"cls":"4","rate":"0","txt":"Export EU - 0%"},"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"IC":{"cls":"5","rate":"0","txt":"Reverse charge 0% Italien"},"OB":{"cls":"6","rate":"0","txt":"Erwerbsteuer Tschechien 0%"}},"LI":{"G0":{"cls":"0","rate":"0","txt":"Kein Steuervorgang"}},"LT":{"TS":{"cls":"2","rate":"21","txt":"Ausgangssteuer Litauen 21%","empf":"LT"}},"LV":{"DH":{"cls":"0","rate":"0","txt":"Erwerbsteuer 0%"},"LS":{"cls":"2","rate":"21","txt":"Ausgangssteuer Lettland 21%","empf":"LV"}},"NL":{"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"NC":{"cls":"2","rate":"0","txt":"Reverse Charge Niederlande 0%","alt":["6"]}},"PL":{"A4":{"cls":"2","rate":"23","txt":"Ausgangssteuer Polen 23%","empf":"PL"},"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]},"T1":{"cls":"3","rate":"0","txt":"Erwerbsteuer Polen 0%"}},"RO":{"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]}},"SI":{"CB":{"cls":"2","rate":"22","txt":"Ausgangssteuer Slowenien 22%","empf":"SI"},"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]}},"SK":{"DH":{"cls":"1","rate":"0","txt":"Erwerbsteuer 0%","alt":["0"]}}},"PL":{"AT":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"BA":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"BE":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"BG":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"BR":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"CH":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"CY":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"CZ":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"DE":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"DZ":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"EE":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"ES":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"FR":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"GB":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"HK":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"HR":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"HU":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"ID":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"IE":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"IS":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"IT":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"KZ":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"LT":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"LV":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"NL":{"T1":{"cls":"1","rate":"0","txt":"Export 0% within EU","alt":["0"]}},"PA":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"PL":{"A4":{"cls":"1","rate":"23","txt":"Ausgangssteuer 23%","empf":"PL"}},"PT":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"RO":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"RS":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"RU":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"SC":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"SE":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"SG":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"SI":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"SK":{"T1":{"cls":"0","rate":"0","txt":"Export 0% within EU"}},"UA":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}},"US":{"EA":{"cls":"0","rate":"0","txt":"Export not EU"}}},"CZ":{"AT":{"OB":{"cls":"3","rate":"0","txt":"EU-Export to EU 0%","alt":["0"]}},"BE":{"OB":{"cls":"3","rate":"0","txt":"EU-Export to EU 0%","alt":["0"]}},"BG":{"OB":{"cls":"3","rate":"0","txt":"EU-Export to EU 0%","alt":["0"]}},"CH":{"OB":{"cls":"0","rate":"0","txt":"EU-Export to EU 0%"},"OC":{"cls":"3","rate":"0","txt":"Outside EU-tax immunity export of goods 0%"}},"CZ":{"AN":{"cls":"0","rate":"0","txt":"Ausgangssteuer 0%"},"AV":{"cls":"1","rate":"21","txt":"Ausgangssteuer 21%","empf":"CZ"},"B2":{"cls":"2","rate":"19","txt":"⚠ Sonderfall – prüfen","empf":"CZ"}},"DE":{"OB":{"cls":"3","rate":"0","txt":"EU-Export to EU 0%","alt":["0"]}},"ES":{"OB":{"cls":"3","rate":"0","txt":"EU-Export to EU 0%","alt":["0"]}},"FR":{"OB":{"cls":"3","rate":"0","txt":"EU-Export to EU 0%","alt":["0"]}},"GB":{"OB":{"cls":"3","rate":"0","txt":"EU-Export to EU 0%","alt":["0"]}},"HK":{"OC":{"cls":"0","rate":"0","txt":"Outside EU-tax immunity export of goods 0%"}},"HR":{"OB":{"cls":"0","rate":"0","txt":"EU-Export to EU 0%"}},"HU":{"OB":{"cls":"3","rate":"0","txt":"EU-Export to EU 0%","alt":["0"]}},"IE":{"OB":{"cls":"0","rate":"0","txt":"EU-Export to EU 0%"},"OC":{"cls":"3","rate":"0","txt":"Outside EU-tax immunity export of goods 0%"}},"IT":{"OB":{"cls":"3","rate":"0","txt":"EU-Export to EU 0%","alt":["0"]}},"NL":{"OB":{"cls":"3","rate":"0","txt":"EU-Export to EU 0%","alt":["0"]}},"PL":{"OB":{"cls":"3","rate":"0","txt":"EU-Export to EU 0%","alt":["0"]}},"RO":{"OB":{"cls":"0","rate":"0","txt":"EU-Export to EU 0%"},"OC":{"cls":"3","rate":"0","txt":"Outside EU-tax immunity export of goods 0%"}},"RS":{"OB":{"cls":"0","rate":"0","txt":"EU-Export to EU 0%"}},"RU":{"OC":{"cls":"0","rate":"0","txt":"Outside EU-tax immunity export of goods 0%"}},"SI":{"OB":{"cls":"0","rate":"0","txt":"EU-Export to EU 0%"},"OC":{"cls":"3","rate":"0","txt":"Outside EU-tax immunity export of goods 0%"}},"SK":{"OB":{"cls":"0","rate":"0","txt":"EU-Export to EU 0%"},"OC":{"cls":"3","rate":"0","txt":"Outside EU-tax immunity export of goods 0%"}},"UA":{"OC":{"cls":"0","rate":"0","txt":"Outside EU-tax immunity export of goods 0%"}}}};
+// <<END:SAP_CUSTTAX_MAP>>
+
 // FLAGS + EU Countries
 const FLAGS = {
   AT:'🇦🇹',BE:'🇧🇪',BG:'🇧🇬',CY:'🇨🇾',CZ:'🇨🇿',DE:'🇩🇪',DK:'🇩🇰',EE:'🇪🇪',
@@ -300,6 +310,62 @@ function sapBadgeBoth(country, treatment, uidCountry) {
   if (!parts.length) return '';
   const desc = map.desc || '';
   return ` <span class="badge badge-sap" style="vertical-align:middle;cursor:help;" title="SAP Stkz. ${desc}">SAP&nbsp;Stkz.:&nbsp;${parts.join('&nbsp;·&nbsp;')}</span>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// buildSapInputHint() — Experten-Modus-Prototyp (v4.3)
+// Zeigt, welche abweichende Steuerklasse (Kunde) + Zielland in SAP gesetzt
+// werden muss, damit das gewünschte Steuerkennzeichen herauskommt.
+// Reine Anzeige aus SAP_CUSTTAX_MAP (generiert aus VK12) — KEINE Steuerlogik.
+// Abgangsland: EPROHA→AT · EPDE→DE (bzw. PL/CZ bei Werk 1702/1703).
+// ─────────────────────────────────────────────────────────────────────────
+function buildSapInputHint(dep, dest) {
+  if (typeof SAP_CUSTTAX_MAP === 'undefined' || !dest) return '';
+  const home = COMPANIES[currentCompany]?.home || 'DE';
+  let ourDep = home;
+  if (currentCompany === 'EPDE' && (dep === 'PL' || dep === 'CZ')) ourDep = dep;
+  const meta = SAP_CUSTTAX_MAP._meta || {};
+  const coLabel = (meta.deps && meta.deps[ourDep]) || currentCompany;
+  const col = SAP_CUSTTAX_MAP[ourDep] && SAP_CUSTTAX_MAP[ourDep][dest];
+  const bd = '1px solid var(--border,#d9d9d9)';
+
+  const head = `<summary style="cursor:pointer;font-weight:700;color:var(--accent,#1f4e79);">`
+    + `🧾 SAP-Eingabe · Kunden-Steuerklasse <span style="font-weight:400;opacity:0.7;">(Experten-Prototyp)</span></summary>`;
+  const note = `<div style="font-size:0.72rem;opacity:0.7;margin:6px 0 10px;">`
+    + `Damit in SAP das gewünschte Steuerkennzeichen entsteht. `
+    + `Abgang <b>${flag(ourDep)} ${ourDep}</b> (${coLabel}) → Zielland <b>${flag(dest)} ${dest}</b>. `
+    + `Standardprodukt (Material-Steuerklasse 1) · Stand ${meta.stand || '—'} · Quelle: ${meta.src || 'SAP VK12'}.</div>`;
+
+  let body;
+  if (!col || !Object.keys(col).length) {
+    body = `<div style="font-size:0.78rem;padding:8px 10px;background:rgba(191,144,0,0.10);`
+      + `border-left:4px solid #bf9000;border-radius:4px;">Für Abgang <b>${ourDep}</b> → <b>${dest}</b> `
+      + `ist kein Konditionssatz hinterlegt (anderes Abgangsland oder Sonderware). `
+      + `Bitte Steuerkompass-Handbuch prüfen.</div>`;
+  } else {
+    const rows = Object.keys(col).map(code => ({ code, ...col[code] }))
+      .sort((a, b) => (parseFloat(b.rate) || 0) - (parseFloat(a.rate) || 0) || a.code.localeCompare(b.code));
+    const cells = rows.map(r => {
+      const alt = r.alt && r.alt.length ? ` <span style="opacity:0.55;">(alt. ${r.alt.join('/')})</span>` : '';
+      const empf = r.empf ? `${flag(r.empf)} ${r.empf}` : '—';
+      const rate = (r.rate === '0' || r.rate === '') ? '0 %' : `${r.rate} %`;
+      return `<tr><td style="padding:4px 8px;border:${bd};font-family:var(--mono,monospace);font-weight:700;">${r.code}</td>`
+        + `<td style="padding:4px 8px;border:${bd};">${rate}</td>`
+        + `<td style="padding:4px 8px;border:${bd};font-weight:700;">${r.cls}${alt}</td>`
+        + `<td style="padding:4px 8px;border:${bd};">${empf}</td>`
+        + `<td style="padding:4px 8px;border:${bd};opacity:0.8;">${r.txt || ''}</td></tr>`;
+    }).join('');
+    body = `<table style="border-collapse:collapse;width:100%;font-size:0.75rem;">`
+      + `<tr><th style="padding:4px 8px;border:${bd};text-align:left;">Kennzeichen</th>`
+      + `<th style="padding:4px 8px;border:${bd};text-align:left;">Satz</th>`
+      + `<th style="padding:4px 8px;border:${bd};text-align:left;">abw. Steuerkl. Kunde</th>`
+      + `<th style="padding:4px 8px;border:${bd};text-align:left;">steuerl. Empfangsland</th>`
+      + `<th style="padding:4px 8px;border:${bd};text-align:left;">Bedeutung (T007A)</th></tr>`
+      + cells + `</table>`;
+  }
+  return `<details data-component="buildSapInputHint" style="margin:14px 0;padding:10px 12px;`
+    + `border:${bd};border-radius:6px;background:var(--panel,#f8fbfd);">`
+    + head + note + body + `</details>`;
 }
 
 // ── Globale Laufzeit-Zustände ────────────────────────────────────────────────
@@ -7127,6 +7193,11 @@ function analyze() {
   // ── Perspektivwechsel (nur Experten-Modus) ──────────────────────────────
   if (dep !== dest && expertMode) {
     html += buildPerspektivwechsel(ctx, eng);
+  }
+
+  // ── SAP-Eingabe-Hint · Kunden-Steuerklasse (nur Experten-Modus, Prototyp v4.3) ──
+  if (expertMode) {
+    html += buildSapInputHint(dep, dest);
   }
 
   // ── CH-Export-Banner (wird jetzt durch buildCHExportResult() im Routing erledigt) ──
