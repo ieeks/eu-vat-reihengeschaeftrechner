@@ -88,6 +88,7 @@ docs/assets/scripts/app.js
   buildNormal3Result() ← _uidOverride für myCode
   buildDeliveryBox() ← Seller ruhend zeigt UID
   buildPerspektivwechsel() ← nur wenn expertMode
+  buildSapInputHint(dep,dest) ← Experten-Prototyp (v4.3): Umkehr-Lookup „gewünschtes Steuerkennzeichen → welche abweichende Steuerklasse (Kunde) + Zielland in SAP". Reine Anzeige aus SAP_CUSTTAX_MAP (generiert via scripts/gen-custtax-map.mjs aus VK12: A002/A011→KONP→T007A, Material-Stkl. 1; Abgang AT=EPROHA·DE/PL/CZ=EPDE 1701/1702/1703). KEINE Steuerlogik. Nur Haupt-Render-Pfad, expert-gated. Marker in app.js: // <<GEN:SAP_CUSTTAX_MAP>>
   analyzeInland() ← mit Warenfluss-Diagramm (movingIdx=-1)
   buildCHExportResult() ← EU→CH 3P: Diagramm + Kurzbeschreibung + Delivery-Boxen
   buildGBExportResult() ← EU→GB 3P: Diagramm + Kurzbeschreibung + Delivery-Boxen
@@ -273,7 +274,8 @@ _devTipShow() → composedPath() + instanceof Element + parentElement-Fallback
 Getaggte Komponenten: data-component="..."
   Output: buildFlowDiagram, buildKurzbeschreibung, buildDeliveryBox,
           buildLegalRefs, buildPerspektivwechsel, buildMeldepflichten,
-          buildVergleichTab, reg-warnings, resultContextBar, quickFix (Art. 36a)
+          buildVergleichTab, reg-warnings, resultContextBar, quickFix (Art. 36a),
+          buildSapInputHint (Experten-Prototyp SAP-Eingabe/Kunden-Steuerklasse)
   Input:  input.Structur, input.Warenkette, input.Transport, input.UidOverride,
           input.AnalyseOptionen, input.Lohnveredelung, input.UidStatus
 ```

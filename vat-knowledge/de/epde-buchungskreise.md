@@ -98,8 +98,8 @@ Tritt dieser Fall ein, muss zuerst ein neues SAP-Stkz. angelegt werden.
 |---|---|---|---|
 | IG-Lieferung aus EE | ⚠️ kein Stkz. | — | Stkz. neu anlegen |
 | IG-Erwerb in EE | — | **EP** | EE-UStVA |
-| Inlandslieferung EE (22%) | **ES** | **EI** | EE-UStVA |
-| RC EE (blockiert → EPDE weist 22% aus) | **ES** | **EI** | EE-UStVA (kein RC) |
+| Inlandslieferung EE (24%) | **ES** | **EI** | EE-UStVA |
+| RC EE (blockiert → EPDE weist 24% aus) | **ES** | **EI** | EE-UStVA (kein RC) |
 
 ---
 
@@ -188,6 +188,60 @@ auftritt. Bei IG-Lieferungen ab DE bleibt der DE-Buchungskreis (DH) der Standard
 | EPDE kauft in PL (ruhend, IG-Erwerb PL) | PL | — | **W5** |
 | EPDE liefert NL-Kunde, NL-Lieferort, RC | NL | **NC** | — |
 | EPDE liefert BE-Kunde, BE-Lieferort | BE | **BS** (21%, RC blockiert) | — |
+
+---
+
+## Produktiv-Abgleich SAP VK12 — 05.07.2026
+
+Erster Abgleich der `SAP_TAX_MAP` gegen das **Produktivsystem** (bisherige Quelle: Excel
+`2026_EPCA_Tax_Account_determination_S4P.xlsx`). Herangezogen: Konditionstabellen
+**A002** (Inland: Abgangsland × Steuerklasse Kunde/Material) und **A011** (Export: + Zielland),
+aufgelöst über **KONP** (Satz) und **T007A** (Kennzeichen-Text je Kalkulationsschema).
+
+Scope: Abgang **DE** (Werk 1701) · **PL** (Werk 1702) · **CZ** (Werk 1703, coming soon).
+Kalkulationsschema pro Abgangsland: DE = `TAXD`, PL = `TAXPL`, CZ = `TAXCZ` (gleiches Kennzeichen
+kann je Schema andere Bedeutung haben, z. B. `OB` = „Erwerbsteuer CZ" in `TAXD`, aber „EU-Export 0 %" in `TAXCZ`).
+
+**Bestätigt (deckungsgleich mit `SAP_TAX_MAP`):**
+`DH` · `DS` · `G0` · `C1`/`EC` (SI) · `OB`/`UR` (CZ) · `T1`/`W5` (PL) · `A4` (PL-Inland 23 %) ·
+`AE` (CZ-Inland 21 %) · `CB` (SI-Inland 22 %) · `BS` (BE 21 %) · `LS` (LV 21 %) · `NC` (NL-RC) ·
+`IC` (IT inversione) · `XD` (nicht steuerbar).
+
+**Korrigiert:** EE-Inlandssatz **22 % → 24 %** (T007A `ES` = „Ausgangssteuer Estland 24%",
+Estland-Erhöhung 01.07.2025) — in `SAP_TAX_MAP` (`EE.domestic`/`ic-acquisition`/`rc`) und obiger EE-Tabelle.
+
+**Geklärt — LT NICHT ins Tool aufnehmen:** In den Konditionssätzen erscheint zwar **LT → `TS`
+„Ausgangssteuer Litauen 21%"** (lokaler Ausgangscode), aber **EPDE ist in Litauen nicht registriert**
+(eine LT-Registrierung stand einmal im Raum, wurde jedoch nie umgesetzt — Stand 05.07.2026).
+Der `TS`-Konditionssatz ist damit ein **vorsorglicher/ungenutzter Altsatz** und darf **nicht** als
+Grund dienen, LT in `COMPANIES.EPDE.vatIds` oder `SAP_TAX_MAP` aufzunehmen. Erst bei tatsächlicher
+LT-Registrierung ergänzen (LT-UID + `TS` domestic, Pendant zu `LS`/`ES`).
+
+## Zweitquelle „EPDE_Steuerbuch.xlsx" — 05.07.2026 gegengeprüft
+
+Zusätzlicher Abgleich gegen ein internes Referenz-Workbook (13 Sheets: AT_IT, AT_DE, PL, CZ, BE,
+LV, LT, EE, SI, IT, DE, NL, UID-Nr.) mit je 4 Standardfällen pro Land (Lager · Strecke DE/EU→Land ·
+Strecke Land→Land · Strecke Drittland→Land, mit Ein- und Ausgangsrechnung).
+
+- **Bestätigt:** EE-Satz 24 % (Kopf-Sheet „UID-Nr." listet Normalsteuersätze — deckt sich mit dem
+  Fix oben). Codes BE/LV/EE/SI/CZ/NL (`BP`/`BS`/`BI` · `LP`/`LS`/`LI` · `EP`/`ES`/`EI` ·
+  `EC`/`CB`/`SI` · `UR`/`AE`/`VC` · `NP`/`NC`/`NI`) — deckungsgleich.
+- **Bestätigt LT/IT-Dummy-UIDs:** `LT999999999999` und `IT99999999999` (Neunerketten-Platzhalter)
+  im Workbook — belegt zusätzlich, dass **keine** LT- und **keine** IT-Registrierung existiert
+  (IT läuft bewusst über Reverse Charge statt eigener UID, siehe oben „IT-Sonderfall").
+- **Fehler im Excel gefunden, NICHT übernommen:** Sheet `PL`, Fall „Lagerauftrag Warenempfänger:
+  EU (Werk 1702)" zeigt für die Ausgangsrechnung (IG-Lieferung ab PL an EU-Kunde) das Kennzeichen
+  **`W5`** — das ist laut VK12/`SAP_TAX_MAP` der *Eingangscode* (IG-Erwerb PL), nicht der
+  Ausgangscode. Der korrekte Ausgangscode ist **`T1`** (aus A011, direkt aus der Live-Konditions-
+  tabelle gezogen); `T1` kommt im gesamten Excel kein einziges Mal vor — Indiz für einen
+  Copy-Paste-Fehler im Referenzblatt. **Entscheidung (User, 05.07.2026): VK12/`T1` ist maßgeblich,
+  Excel-Eintrag ist falsch.** `SAP_TAX_MAP`/`SAP_CUSTTAX_MAP` bleiben unverändert (`T1` korrekt).
+- **Nebenbefund AT_DE (EPROHA, informativ):** Sheet zeigt für „Strecke Lieferant DE—WE DE" das
+  Legacy-Kennzeichen `D1` (19 %), für „Strecke Lieferant EU≠DE—WE DE" dagegen `DS`. `D1` ist bereits
+  an anderer Stelle als von `DS` abgelöster Altcode dokumentiert — keine Handlung nötig, nur Hinweis.
+- **Nicht ausgewertet (mögliche Erweiterung):** Sheet „UID-Nr." enthält Zahlungs-/Meldefristen je
+  Land (z. B. DE 10., IT 16., BE/EE 20., LV 23., LT/CZ/PL 25., SI letzter Werktag, NL letzter Werktag
+  des 2. Folgemonats) — könnte `buildMeldepflichten()` künftig anreichern, bisher nicht umgesetzt.
 
 ---
 
