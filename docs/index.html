@@ -183,6 +183,14 @@
               <button id="lohnRueckJaBtn" class="party-btn active" onclick="setLohnRueck(true)" style="font-size:0.78rem;padding:9px 8px;white-space:normal;line-height:1.3;">Ja · Ware kommt zurück</button>
               <button id="lohnRueckNeinBtn" class="party-btn" onclick="setLohnRueck(false)" style="font-size:0.78rem;padding:9px 8px;white-space:normal;line-height:1.3;">Nein · Ware geht direkt zum Kunden</button>
             </div>
+            <!-- Verfügungsmacht-Schalter: nur wenn Lieferant im eigenen Heimatland (Inlandskauf + EU-Veredelung) -->
+            <div id="lohnHomeBlock" style="display:none;margin-top:10px;">
+              <div class="sub" style="margin-bottom:6px;">Lieferant sitzt im Heimatland — wo geht die Verfügungsmacht über?</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <button id="lohnHomeInlandBtn" class="party-btn active" onclick="setLohnHome(true)" style="font-size:0.78rem;padding:9px 8px;white-space:normal;line-height:1.3;">Im Heimatland · Inlandskauf (Regelsatz + lit. f)</button>
+                <button id="lohnHomeDapBtn" class="party-btn" onclick="setLohnHome(false)" style="font-size:0.78rem;padding:9px 8px;white-space:normal;line-height:1.3;">Im Bestimmungsland · DAP → ig. Lieferung</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

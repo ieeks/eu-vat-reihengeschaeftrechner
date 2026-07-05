@@ -2,6 +2,32 @@
 
 ---
 
+## v4.3 · 05.07.2026 — Lohnveredelung: Inlandskauf-Fall (sup = Heimatland) + Verfügungsmacht-Schalter
+
+Schließt eine Lücke in Mode 5 (Lohnveredelung): Der Fall **Rohmaterial-Lieferant im eigenen
+Heimatland → Veredelung im EU-Ausland → Rückkehr** (realer PapTrade→EPROHA-Fall: AT-Lieferant,
+DE-Converter, Rückkehr AT-Lager) wurde bisher **zwangsweise als ig. Erwerb im Veredelungsland**
+modelliert. Die korrekte **Inlandskauf-Lesart (Regelsatz + Art. 17 Abs. 2 lit. f)** war nicht
+darstellbar.
+
+- **`computeLohn` — neuer Zweig `sup === myHome`** (`supIsHome`): Inlandskauf statt ig. Erwerb.
+  Neuer Parameter **`homeHandover`** (Default `true`) bildet die entscheidende Frage ab,
+  **wo die Verfügungsmacht übergeht**:
+  - `true` (Heimatland): **Inlandslieferung Regelsatz** (SAP V2), das anschließende
+    Verbringen Heimat→Converter→Heimat ist bei Rückkehr **kein ig. Verbringen (Art. 17 Abs. 2
+    lit. f)** → **keine Registrierung im Veredelungsland**.
+  - `false` (Bestimmungsland, z.B. DAP): Hinlieferung = **steuerfreie ig. Lieferung** des
+    Lieferanten, du tätigst **ig. Erwerb im Converter-Land** (SAP über con-UID, DE=VH) → dort
+    **UID/Registrierung nötig**; lit. f schützt die Hinlieferung **nicht**.
+- **UI:** Neuer Segment-Schalter **„Verfügungsmacht: Heimatland ↔ Bestimmungsland (DAP)"** im
+  Mode-5-Panel + QuickCheck — **nur sichtbar, wenn Lieferant im Heimatland** (`syncLohnHomeVisibility`).
+  Eigener Render-Zweig in `analyzeLohn` mit Kontext-Banner je Lesart + DAP-Warnhinweis.
+- **Tests:** LV-06…LV-09 (AT→DE→AT, AT→PL→AT · beide Lesarten) + `s1kind`/`supIsHome`-Assertions.
+  `npm run test` → **47/47 grün**, `node --check` ok, DOM-Render beider Lesarten verifiziert.
+- **Keine Engine-Änderung** — `VATEngine`/`analyze()`/`analyze2()` unberührt.
+
+---
+
 ## v4.3 · 05.07.2026 — SAP-Eingabe-Hint (Kunden-Steuerklasse), Experten-Prototyp
 
 Neuer **Umkehr-Lookup**: zeigt, welche **abweichende Steuerklasse (Kunde) + Zielland**

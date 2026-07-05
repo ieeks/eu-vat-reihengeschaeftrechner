@@ -4,6 +4,19 @@ Stand: 20.05.2026
 
 ---
 
+## Lohnveredelung: Inlandskauf-Fall (sup = Heimatland) — live (05.07.2026)
+
+Realer PapTrade→EPROHA-Fall (AT-Lieferant, DE-Veredelung, Rückkehr AT) war bisher nicht abbildbar.
+
+- [x] `computeLohn`-Zweig `supIsHome` + Parameter `homeHandover` (Inlandskauf vs. DAP/ig. Lieferung)
+- [x] Verfügungsmacht-Schalter Mode 5 + QuickCheck (nur wenn Lieferant im Heimatland)
+- [x] Render-Zweig in `analyzeLohn` mit Lesart-Banner + DAP-Warnung, Tests LV-06…LV-09
+- [ ] **Begründungs-Prosa-Tab** (`ctx.mode===5`, app.js ~12350) auf die `homeHandover`-Lesart
+      eingehen lassen (aktuell generischer lit.-f-Satz, unabhängig von Verfügungsmacht)
+- [ ] Prüfen, ob der Schalter auch **Vergleich-/Meldepflichten-Tab** braucht
+
+---
+
 ## SAP-Eingabe-Hint (Kunden-Steuerklasse) — Prototyp live, Ausbau offen
 
 Experten-Prototyp (v4.3) zeigt je Fall die nötige abweichende Steuerklasse (Kunde) →
