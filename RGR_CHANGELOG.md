@@ -12,7 +12,7 @@ A002/A011 → KONP → T007A; bisherige Quelle war nur eine Excel).
   und in `vat-knowledge/de/epde-buchungskreise.md`.
 - **Bestätigt:** Kern-Kennzeichen deckungsgleich (`AF`/`A0`/`A2`/`B5`/`D0`/`DS`/`DH`/`G0`/`C1`/`OB`/`T1`/`AE`/`CB`/`BS`/`LS`/`NC`/`IC`/`X0`/`XD`).
 - **Doku:** Abgleich-Vermerk in `vat-knowledge/at/eproha-buchungskreise.md` + `de/epde-buchungskreise.md`.
-- **Offen (Geschäftsfrage):** mögliche **LT-Registrierung** (Code `TS` „Ausgangssteuer Litauen 21%") fehlt im Tool — zu prüfen.
+- **Geklärt:** LT (Code `TS` „Ausgangssteuer Litauen 21%") bleibt **draußen** — EPDE ist in Litauen nicht registriert (LT-Registrierung war angedacht, nie umgesetzt); der `TS`-Konditionssatz ist ein vorsorglicher Altsatz.
 - Keine Engine-/Logikänderung, nur Datentexte + Doku. `npm run check` grün.
 
 ## v4.3 · 25.06.2026 — 2P-Drittland-Export: Warenfluss-Diagramm entfernt (Variante B)

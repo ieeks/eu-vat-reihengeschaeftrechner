@@ -210,10 +210,12 @@ kann je Schema andere Bedeutung haben, z. B. `OB` = „Erwerbsteuer CZ" in `TAXD
 **Korrigiert:** EE-Inlandssatz **22 % → 24 %** (T007A `ES` = „Ausgangssteuer Estland 24%",
 Estland-Erhöhung 01.07.2025) — in `SAP_TAX_MAP` (`EE.domestic`/`ic-acquisition`/`rc`) und obiger EE-Tabelle.
 
-**Offen (Geschäftsfrage, siehe unten):** In den Konditionssätzen erscheint **LT → `TS`
-„Ausgangssteuer Litauen 21%"** (lokaler Ausgangscode). Das setzt eine **LT-Registrierung** voraus,
-die im Tool fehlt (`COMPANIES.EPDE.vatIds` ohne LT, Code `TS` nirgends). → Prüfen, ob EPDE in
-Litauen registriert ist; falls ja: LT-UID + SAP-Einträge (`TS` domestic, Pendant zu `LS`/`ES`) ergänzen.
+**Geklärt — LT NICHT ins Tool aufnehmen:** In den Konditionssätzen erscheint zwar **LT → `TS`
+„Ausgangssteuer Litauen 21%"** (lokaler Ausgangscode), aber **EPDE ist in Litauen nicht registriert**
+(eine LT-Registrierung stand einmal im Raum, wurde jedoch nie umgesetzt — Stand 05.07.2026).
+Der `TS`-Konditionssatz ist damit ein **vorsorglicher/ungenutzter Altsatz** und darf **nicht** als
+Grund dienen, LT in `COMPANIES.EPDE.vatIds` oder `SAP_TAX_MAP` aufzunehmen. Erst bei tatsächlicher
+LT-Registrierung ergänzen (LT-UID + `TS` domestic, Pendant zu `LS`/`ES`).
 
 ---
 
