@@ -217,6 +217,32 @@ Der `TS`-Konditionssatz ist damit ein **vorsorglicher/ungenutzter Altsatz** und 
 Grund dienen, LT in `COMPANIES.EPDE.vatIds` oder `SAP_TAX_MAP` aufzunehmen. Erst bei tatsächlicher
 LT-Registrierung ergänzen (LT-UID + `TS` domestic, Pendant zu `LS`/`ES`).
 
+## Zweitquelle „EPDE_Steuerbuch.xlsx" — 05.07.2026 gegengeprüft
+
+Zusätzlicher Abgleich gegen ein internes Referenz-Workbook (13 Sheets: AT_IT, AT_DE, PL, CZ, BE,
+LV, LT, EE, SI, IT, DE, NL, UID-Nr.) mit je 4 Standardfällen pro Land (Lager · Strecke DE/EU→Land ·
+Strecke Land→Land · Strecke Drittland→Land, mit Ein- und Ausgangsrechnung).
+
+- **Bestätigt:** EE-Satz 24 % (Kopf-Sheet „UID-Nr." listet Normalsteuersätze — deckt sich mit dem
+  Fix oben). Codes BE/LV/EE/SI/CZ/NL (`BP`/`BS`/`BI` · `LP`/`LS`/`LI` · `EP`/`ES`/`EI` ·
+  `EC`/`CB`/`SI` · `UR`/`AE`/`VC` · `NP`/`NC`/`NI`) — deckungsgleich.
+- **Bestätigt LT/IT-Dummy-UIDs:** `LT999999999999` und `IT99999999999` (Neunerketten-Platzhalter)
+  im Workbook — belegt zusätzlich, dass **keine** LT- und **keine** IT-Registrierung existiert
+  (IT läuft bewusst über Reverse Charge statt eigener UID, siehe oben „IT-Sonderfall").
+- **Fehler im Excel gefunden, NICHT übernommen:** Sheet `PL`, Fall „Lagerauftrag Warenempfänger:
+  EU (Werk 1702)" zeigt für die Ausgangsrechnung (IG-Lieferung ab PL an EU-Kunde) das Kennzeichen
+  **`W5`** — das ist laut VK12/`SAP_TAX_MAP` der *Eingangscode* (IG-Erwerb PL), nicht der
+  Ausgangscode. Der korrekte Ausgangscode ist **`T1`** (aus A011, direkt aus der Live-Konditions-
+  tabelle gezogen); `T1` kommt im gesamten Excel kein einziges Mal vor — Indiz für einen
+  Copy-Paste-Fehler im Referenzblatt. **Entscheidung (User, 05.07.2026): VK12/`T1` ist maßgeblich,
+  Excel-Eintrag ist falsch.** `SAP_TAX_MAP`/`SAP_CUSTTAX_MAP` bleiben unverändert (`T1` korrekt).
+- **Nebenbefund AT_DE (EPROHA, informativ):** Sheet zeigt für „Strecke Lieferant DE—WE DE" das
+  Legacy-Kennzeichen `D1` (19 %), für „Strecke Lieferant EU≠DE—WE DE" dagegen `DS`. `D1` ist bereits
+  an anderer Stelle als von `DS` abgelöster Altcode dokumentiert — keine Handlung nötig, nur Hinweis.
+- **Nicht ausgewertet (mögliche Erweiterung):** Sheet „UID-Nr." enthält Zahlungs-/Meldefristen je
+  Land (z. B. DE 10., IT 16., BE/EE 20., LV 23., LT/CZ/PL 25., SI letzter Werktag, NL letzter Werktag
+  des 2. Folgemonats) — könnte `buildMeldepflichten()` künftig anreichern, bisher nicht umgesetzt.
+
 ---
 
 *Verwandte Dateien:* `rules/uid_usage_rules.md` · `rules/rc_country_rules.md` · `de/ustg_de_3_6a.md` · `reference-cases.md`

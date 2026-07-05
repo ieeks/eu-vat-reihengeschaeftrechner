@@ -15,6 +15,7 @@ Experten-Prototyp (v4.3) zeigt je Fall die nötige abweichende Steuerklasse (Kun
 - [ ] **Im Ergebnis tatsächlich genutztes Kennzeichen** in der Tabelle hervorheben (aktuell wird die ganze Spalte gezeigt)
 - [ ] **Nicht-Standard-Materialklassen** (0/3/R=RC §19/L=Leistung …) optional ergänzen
 - [ ] **CH: importerRole-Kopplung** — Klasse je „wer importiert" (0 Ausfuhr vs. 1 CH-Inland) explizit erläutern
+- [ ] **Meldefristen je Land** (aus `EPDE_Steuerbuch.xlsx`, Sheet „UID-Nr.": DE 10., IT 16., BE/EE 20., LV 23., LT/CZ/PL 25., SI/NL letzter Werktag) optional in `buildMeldepflichten()` einpflegen
 - [ ] Bei **Werk 1703 (CZ) Live** + evtl. LT-Registrierung: CSVs neu ziehen, Generator laufen lassen (Edge-Codes `AI`/`B2` dann klären)
 
 ---
