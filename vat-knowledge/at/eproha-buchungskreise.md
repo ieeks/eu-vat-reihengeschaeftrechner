@@ -165,6 +165,14 @@ wird automatisch der DE-Buchungskreis für die IG-Buchung verwendet.
   aber kein SAP_TAX_MAP-Eintrag für `EPROHA DE dreiecks` — würde auf AT-Buchungskreis
   zurückfallen. Bisher kein Praxisfall bekannt.
 
+## Produktiv-Abgleich SAP VK12 — 05.07.2026
+
+Abgang **AT** (Schema `TAXAT`), Konditionstabellen A002/A011 → KONP → T007A.
+**Bestätigt (deckungsgleich):** `A2` (AT-Inland 20 %) · `AF` (IG-Lieferung/Dreieck 0 %) ·
+`A0` (Ausfuhr Drittland 0 %) · `DS` (Strecke DE 19 %) · `B5` (CH-Inland 8,1 %, EPROHA Importeur) ·
+`D0` (Ausfuhr über DE-UID) · `IC` (IT inversione) · `X0` (nicht steuerbar).
+Steuerklasse Kunde (SAP TAXK1) 1 + Zielland DE → **`DS` 19 %** (Strecke DE). Details + LT-Offenpunkt: `de/epde-buchungskreise.md`.
+
 ---
 
 *Verwandte Dateien:* `rules/uid_usage_rules.md` · `reference-cases.md` · `at/ustg_at_reihengeschaeft.md`

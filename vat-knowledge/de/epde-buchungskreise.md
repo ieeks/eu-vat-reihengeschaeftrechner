@@ -98,8 +98,8 @@ Tritt dieser Fall ein, muss zuerst ein neues SAP-Stkz. angelegt werden.
 |---|---|---|---|
 | IG-Lieferung aus EE | ⚠️ kein Stkz. | — | Stkz. neu anlegen |
 | IG-Erwerb in EE | — | **EP** | EE-UStVA |
-| Inlandslieferung EE (22%) | **ES** | **EI** | EE-UStVA |
-| RC EE (blockiert → EPDE weist 22% aus) | **ES** | **EI** | EE-UStVA (kein RC) |
+| Inlandslieferung EE (24%) | **ES** | **EI** | EE-UStVA |
+| RC EE (blockiert → EPDE weist 24% aus) | **ES** | **EI** | EE-UStVA (kein RC) |
 
 ---
 
@@ -188,6 +188,32 @@ auftritt. Bei IG-Lieferungen ab DE bleibt der DE-Buchungskreis (DH) der Standard
 | EPDE kauft in PL (ruhend, IG-Erwerb PL) | PL | — | **W5** |
 | EPDE liefert NL-Kunde, NL-Lieferort, RC | NL | **NC** | — |
 | EPDE liefert BE-Kunde, BE-Lieferort | BE | **BS** (21%, RC blockiert) | — |
+
+---
+
+## Produktiv-Abgleich SAP VK12 — 05.07.2026
+
+Erster Abgleich der `SAP_TAX_MAP` gegen das **Produktivsystem** (bisherige Quelle: Excel
+`2026_EPCA_Tax_Account_determination_S4P.xlsx`). Herangezogen: Konditionstabellen
+**A002** (Inland: Abgangsland × Steuerklasse Kunde/Material) und **A011** (Export: + Zielland),
+aufgelöst über **KONP** (Satz) und **T007A** (Kennzeichen-Text je Kalkulationsschema).
+
+Scope: Abgang **DE** (Werk 1701) · **PL** (Werk 1702) · **CZ** (Werk 1703, coming soon).
+Kalkulationsschema pro Abgangsland: DE = `TAXD`, PL = `TAXPL`, CZ = `TAXCZ` (gleiches Kennzeichen
+kann je Schema andere Bedeutung haben, z. B. `OB` = „Erwerbsteuer CZ" in `TAXD`, aber „EU-Export 0 %" in `TAXCZ`).
+
+**Bestätigt (deckungsgleich mit `SAP_TAX_MAP`):**
+`DH` · `DS` · `G0` · `C1`/`EC` (SI) · `OB`/`UR` (CZ) · `T1`/`W5` (PL) · `A4` (PL-Inland 23 %) ·
+`AE` (CZ-Inland 21 %) · `CB` (SI-Inland 22 %) · `BS` (BE 21 %) · `LS` (LV 21 %) · `NC` (NL-RC) ·
+`IC` (IT inversione) · `XD` (nicht steuerbar).
+
+**Korrigiert:** EE-Inlandssatz **22 % → 24 %** (T007A `ES` = „Ausgangssteuer Estland 24%",
+Estland-Erhöhung 01.07.2025) — in `SAP_TAX_MAP` (`EE.domestic`/`ic-acquisition`/`rc`) und obiger EE-Tabelle.
+
+**Offen (Geschäftsfrage, siehe unten):** In den Konditionssätzen erscheint **LT → `TS`
+„Ausgangssteuer Litauen 21%"** (lokaler Ausgangscode). Das setzt eine **LT-Registrierung** voraus,
+die im Tool fehlt (`COMPANIES.EPDE.vatIds` ohne LT, Code `TS` nirgends). → Prüfen, ob EPDE in
+Litauen registriert ist; falls ja: LT-UID + SAP-Einträge (`TS` domestic, Pendant zu `LS`/`ES`) ergänzen.
 
 ---
 

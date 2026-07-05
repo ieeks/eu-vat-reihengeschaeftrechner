@@ -71,10 +71,10 @@ const SAP_TAX_MAP = {
       'rc':                   { out:'AE', in:'VC',  desc:'RC CZ: Lieferant muss 21% ausweisen (§ 92a ZDPH)' },
     },
     EE: {
-      'domestic':             { out:'ES', in:'EI',  desc:'Ausgangssteuer EE 22% / Vorsteuer EE 22%' },
+      'domestic':             { out:'ES', in:'EI',  desc:'Ausgangssteuer EE 24% / Vorsteuer EE 24%' },
       'ic-exempt':            { out:null, in:null,  desc:'⚠ Kein SAP-Stkz vorhanden — IG-Lieferung mit EE-UID als Verkäufer bisher nicht in SAP angelegt. Neues Kennzeichen erforderlich (Pendant zu C1/OB/T1, aber für EE-Meldung).' },
-      'ic-acquisition':       { out:'EP', in:'EP',  desc:'IG-Erwerb EE 22% — OUT+IN gleich, Netto 0' },
-      'rc':                   { out:'ES', in:'EI',  desc:'RC EE: Lieferant muss 22% ausweisen (KMSS § 41¹)' },
+      'ic-acquisition':       { out:'EP', in:'EP',  desc:'IG-Erwerb EE 24% — OUT+IN gleich, Netto 0' },
+      'rc':                   { out:'ES', in:'EI',  desc:'RC EE: Lieferant muss 24% ausweisen (KMSS § 41¹)' },
     },
     LV: {
       'domestic':             { out:'LS', in:'LI',  desc:'Ausgangssteuer LV 21% / Vorsteuer LV 21%' },
