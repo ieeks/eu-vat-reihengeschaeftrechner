@@ -2,6 +2,22 @@
 
 ---
 
+## v4.3 · 06.07.2026 — Bugfix: Mode-5-Selects wurden bei „Ergebnis berechnen" zurückgesetzt
+
+`renderAll()` (ausgelöst u.a. vom Button „Ergebnis berechnen" und beim Gesellschaftswechsel)
+rief `initLohnPanel()`, das die Länder-Selects **bei jedem Aufruf** hart auf FI/PL/Heimat
+zurücksetzte — die vom Nutzer gewählten Länder (z.B. AT/DE) sprangen nach dem Klick zurück, der
+Verfügungsmacht-Schalter verschwand. **Vorbestehender Bug**, durch den neuen Schalter sichtbar
+geworden.
+
+- `initLohnPanel()` ist jetzt **idempotent**: Options + Defaults werden nur bei der **ersten**
+  Initialisierung gesetzt (Guard `alreadyInit` via `options.length`), danach bleibt die
+  User-Auswahl erhalten. Share-Link-/localStorage-Restore (einmalig beim Laden) unberührt.
+- Verifiziert im DOM: Auswahl AT/DE bleibt über `renderAll()` erhalten, Toggle bleibt sichtbar;
+  Erst-Init weiterhin FI/PL. `npm run test` 47/47, `node --check` ok.
+
+---
+
 ## v4.3 · 05.07.2026 — Lohnveredelung: Inlandskauf-Fall (sup = Heimatland) + Verfügungsmacht-Schalter
 
 Schließt eine Lücke in Mode 5 (Lohnveredelung): Der Fall **Rohmaterial-Lieferant im eigenen

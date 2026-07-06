@@ -11587,16 +11587,22 @@ function onLohnChange() {
 }
 
 function initLohnPanel() {
-  const euOpts = EU.map(c => `<option value="${c.code}">${flag(c.code)} ${cn(c.code)}</option>`).join('');
-  const home = COMPANIES[currentCompany].home;
-  ['lohnSup','lohnCon','lohnCus'].forEach(id => {
-    const el = $(id);
-    if (el) el.innerHTML = euOpts;
-  });
-  // Defaults: Sup=FI, Con=PL, Cus=home
-  if ($('lohnSup')) $('lohnSup').value = 'FI';
-  if ($('lohnCon')) $('lohnCon').value = 'PL';
-  if ($('lohnCus')) $('lohnCus').value = home;
+  // Options + Defaults NUR bei der ersten Initialisierung setzen. Bei jedem weiteren
+  // renderAll() (z.B. „Ergebnis berechnen", Gesellschaftswechsel) sonst würden die
+  // vom Nutzer gewählten Länder auf FI/PL/Heimat zurückgesetzt (Reset-Bug).
+  const alreadyInit = $('lohnSup') && $('lohnSup').options.length > 0;
+  if (!alreadyInit) {
+    const euOpts = EU.map(c => `<option value="${c.code}">${flag(c.code)} ${cn(c.code)}</option>`).join('');
+    const home = COMPANIES[currentCompany].home;
+    ['lohnSup','lohnCon','lohnCus'].forEach(id => {
+      const el = $(id);
+      if (el) el.innerHTML = euOpts;
+    });
+    // Defaults: Sup=FI, Con=PL, Cus=home
+    if ($('lohnSup')) $('lohnSup').value = 'FI';
+    if ($('lohnCon')) $('lohnCon').value = 'PL';
+    if ($('lohnCus')) $('lohnCus').value = home;
+  }
   onLohnChange();
   // Sync Verkaufsland visibility
   const cusBlock = $('lohnCusBlock');
