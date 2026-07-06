@@ -4055,12 +4055,14 @@ function buildVATContext() {
 function computeLohn(opts) {
   const { company, sup, con, cus, lvDirect } = opts;
   const litF = opts.litF !== false; // default: Ware kommt zurück (lit. f greift)
+  const homeHandover = opts.homeHandover !== false; // default: Verfügungsmacht im Heimatland → Inlandskauf (nur relevant wenn sup === myHome)
   const C = COMPANIES[company];
   const myHome = C.home;
   const vat = (c) => C.vatIds[c] || null;
   const sap = (c, treatment, role) => getSapCode(company, c, treatment, role) || null;
 
   const inland     = sup === con;
+  const supIsHome  = sup === myHome;   // Rohmaterial-Lieferant im eigenen Heimatland (Inlandskauf möglich)
   const sameConCus = con === cus;
   const myConVat = vat(con), myHomVat = vat(myHome), mySupVat = vat(sup);
   const conRate = rate(con), cusRate = rate(cus), homeRate = rate(myHome), supRate = rate(sup);
@@ -4090,7 +4092,71 @@ function computeLohn(opts) {
         sap: sap(con, 'ic-exempt', 'seller'), regRisk: myConVat ? null : con });
       if (!myConVat) regRisks.push(con);
     }
-    return { company, myHome, sup, con, cus, inland, sameConCus, lvDirect, litF,
+    return { company, myHome, sup, con, cus, inland, supIsHome, sameConCus, lvDirect, litF, homeHandover,
+             myConVat, myHomVat, mySupVat, conRate, cusRate, homeRate, supRate, steps, regRisks };
+  }
+
+  // ── Sonderfall sup === myHome (con ≠ home): Inlandskauf + Veredelung im EU-Ausland ──
+  // Der Rohmaterial-Lieferant sitzt im eigenen Heimatland (z.B. PapTrade AT → EPROHA AT),
+  // die Ware geht zur Lohnveredelung ins EU-Ausland und kommt zurück. Zwei Lesarten je
+  // nachdem, WO der Lieferant die Verfügungsmacht verschafft:
+  //   homeHandover=true : Verfügungsmacht in myHome → Inlandslieferung (Regelsatz, Vorsteuer);
+  //                       die anschließende Bewegung myHome→con→myHome ist EIGENES Verbringen
+  //                       und bei Rückkehr durch Art. 17 Abs. 2 lit. f gedeckt → KEINE con-Registrierung.
+  //   homeHandover=false: Verfügungsmacht erst im con-Land (z.B. DAP Bestimmungsort) → die
+  //                       Hinlieferung ist die steuerfreie ig. Lieferung des Lieferanten, du
+  //                       tätigst ig. Erwerb in con (con-UID/Registrierung nötig). lit. f schützt
+  //                       die Hinlieferung NICHT (sie ist die fremde Lieferung, kein Eigen-Verbringen).
+  if (supIsHome) {
+    if (homeHandover) {
+      steps.push({ key:'einkauf', kind:'home-purchase',
+        title:`Einkauf Rohmaterial · ${cn(sup)} (Inland — Verfügungsmacht in ${cn(myHome)})`,
+        taxInfo:`Inlandslieferung ${homeRate}% ${cn(myHome)}-MwSt · Vorsteuerabzug`,
+        sap: sap(myHome, 'domestic', 'buyer'),
+        note: litF
+          ? `Anschließendes Verbringen eigener Ware ${cn(myHome)} → ${cn(con)} (Veredelung) + Rücksendung = kein ig. Verbringen (Art. 17 Abs. 2 lit. f) → keine Registrierung in ${cn(con)}`
+          : `Ware kommt nicht zurück → ig. Verbringen ${cn(myHome)} → ${cn(con)} meldepflichtig (Art. 17 MwStSystRL) — lit. f greift nicht`,
+        regRisk: (!myConVat && !litF) ? con : null });
+      if (!myConVat && !litF) regRisks.push(con);
+    } else {
+      steps.push({ key:'einkauf', kind:'ig-acquisition',
+        title:`Einkauf · IG-Lieferung ${cn(sup)} → ${cn(con)} (Verfügungsmacht in ${cn(con)}, z.B. DAP)`,
+        taxInfo:`${cn(sup)} fakturiert 0% (steuerfreie ig. Lieferung) · du tätigst ig. Erwerb in ${cn(con)} (${conRate}%, Saldo 0)`,
+        // ig. Erwerb wird im con-Land unter der dortigen UID gebucht (nicht Heimat-UID) → con-Code (DE=VH), sonst kein Code (deckt Reg-Risiko)
+        sap: getSapCode(company, con, 'ic-acquisition', 'buyer', con),
+        note: litF
+          ? `Rücksendung ${cn(con)} → ${cn(myHome)} nach Veredelung = eigenes Verbringen; lit. f deckt hier NICHT die Hinlieferung (das ist die ig. Lieferung des Lieferanten)`
+          : `Fertigprodukt geht ab ${cn(con)} weiter (Schritt 3)`,
+        regRisk: myConVat ? null : con });
+      if (!myConVat) regRisks.push(con);
+    }
+
+    // Schritt 2: Veredelungsleistung — grenzüberschreitende Werkleistung, immer Reverse Charge
+    steps.push({ key:'veredelung', kind:'rc', rc:true,
+      title:`Lohnveredelung · ${cn(con)} Converter → ${cn(myHome)} (du)`,
+      taxInfo:`Werkleistung · Leistungsort Art. 44 = ${cn(myHome)} · Reverse Charge (Art. 196) · Converter 0% · du ${homeRate}% RC (Saldo 0)`,
+      sap: sap(myHome, 'rc', 'buyer'),
+      note: `Converter-Rechnung mit deiner ${cn(myHome)}-UID${myHomVat ? ` (${myHomVat})` : ''} + Pflichttext „Steuerschuldnerschaft des Leistungsempfängers"` });
+
+    // Schritt 3: Verkauf Fertigprodukt
+    if (litF) {
+      steps.push({ key:'verkauf', kind:'separate',
+        title:`Verkauf — separater Vorgang`,
+        taxInfo:`Ware kommt zurück nach ${cn(myHome)} → späterer Verkauf ist eigenständiger Liefervorgang (im 3-Parteien-Modus analysieren)` });
+    } else if (sameConCus) {
+      steps.push({ key:'verkauf', kind:'inland-sale',
+        title:`Verkauf · Inland ${cn(con)}`,
+        taxInfo:`Inlandslieferung ${conRate}% ${cn(con)}-MwSt`,
+        sap: sap(con, 'domestic', 'seller') });
+    } else {
+      steps.push({ key:'verkauf', kind:'ig-sale',
+        title:`Verkauf · IG-Lieferung ${cn(con)} → ${cn(cus)}`,
+        taxInfo:`IG-Lieferung 0% · Kunde tätigt ig. Erwerb in ${cn(cus)} (${cusRate}%)`,
+        sap: sap(con, 'ic-exempt', 'seller'), regRisk: myConVat ? null : con });
+      if (!myConVat) regRisks.push(con);
+    }
+
+    return { company, myHome, sup, con, cus, inland, supIsHome, sameConCus, lvDirect, litF, homeHandover,
              myConVat, myHomVat, mySupVat, conRate, cusRate, homeRate, supRate, steps, regRisks };
   }
 
@@ -4141,7 +4207,7 @@ function computeLohn(opts) {
     if (!myConVat) regRisks.push(con);
   }
 
-  return { company, myHome, sup, con, cus, inland, sameConCus, lvDirect, litF,
+  return { company, myHome, sup, con, cus, inland, supIsHome, sameConCus, lvDirect, litF, homeHandover,
            myConVat, myHomVat, mySupVat, conRate, cusRate, homeRate, supRate, steps, regRisks };
 }
 
@@ -4162,7 +4228,8 @@ function analyzeLohn() {
 
   // Gemeinsame Entscheidungslogik (siehe computeLohn) — hält Mode 5 + QuickCheck konsistent.
   const litF = (typeof lvRueck !== 'undefined') ? lvRueck : true;
-  const L = computeLohn({ company: currentCompany, sup, con, cus, lvDirect, litF });
+  const homeHandover = (typeof lvHomeHandover !== 'undefined') ? lvHomeHandover : true;
+  const L = computeLohn({ company: currentCompany, sup, con, cus, lvDirect, litF, homeHandover });
 
   const el = document.getElementById('result');
   el.classList.add('show');
@@ -4250,6 +4317,62 @@ function analyzeLohn() {
     </div>`;
 
     document.getElementById('resultContent').innerHTML = ihml;
+    el.scrollIntoView({ behavior:'smooth', block:'start' });
+    setVergleichBtnVisible(false);
+    return;
+  }
+
+  // ── SONDERFALL: sup === myHome → Inlandskauf + Veredelung im EU-Ausland ─────
+  // Rohmaterial-Lieferant im eigenen Heimatland (z.B. PapTrade AT → EPROHA AT),
+  // Ware zur Lohnveredelung ins Ausland und zurück. Zwei Lesarten je nach
+  // Verschaffung der Verfügungsmacht (homeHandover) — rendert aus L.steps.
+  if (L.supIsHome) {
+    const stepColor = { einkauf:'var(--blue)', veredelung:'var(--violet)', verkauf:'var(--teal)' };
+    const stepIcon  = { einkauf:'⚡', veredelung:'🔧', verkauf:'📦' };
+    const stepNo    = { einkauf:'Schritt 1', veredelung:'Schritt 2', verkauf:'Schritt 3' };
+
+    let shtml = `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--tx-2);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;">
+      🔧 Lohnveredelung · ${flag(myHome)} ${cn(sup)} (Inland) → ${flag(con)} ${cn(con)} (Veredelung) → ${flag(myHome)} ${cn(myHome)}
+    </div>`;
+
+    // Kontext-Banner: welche Lesart ist aktiv + Hinweis auf die jeweils andere
+    if (homeHandover) {
+      shtml += `<div style="padding:10px 14px;background:rgba(45,212,191,0.08);border:1px solid rgba(45,212,191,0.3);border-radius:8px;margin-bottom:12px;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--teal);">
+        ℹ️ <strong>Inlandskauf-Lesart:</strong> Verfügungsmacht geht in ${flag(myHome)} <strong>${cn(myHome)}</strong> über → ${cn(sup)}-Lieferant fakturiert <strong>${L.homeRate}% Inlands-MwSt</strong>.<br>
+        <span style="color:var(--tx-2);font-size:0.68rem;">Die Fahrt ${cn(myHome)}→${cn(con)} zur Veredelung ist dein <strong>eigenes Verbringen</strong>; bei Rückkehr durch <strong>Art. 17 Abs. 2 lit. f</strong> gedeckt → keine ${cn(con)}-Registrierung.</span>
+      </div>`;
+    } else {
+      shtml += `<div style="padding:10px 14px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.35);border-radius:8px;margin-bottom:12px;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--amber);">
+        ⚠️ <strong>DAP-/Bestimmungsland-Lesart:</strong> Verfügungsmacht geht erst in ${flag(con)} <strong>${cn(con)}</strong> über → die Hinlieferung ist die <strong>steuerfreie ig. Lieferung (0%)</strong> des Lieferanten, du tätigst <strong>ig. Erwerb in ${cn(con)}</strong>.<br>
+        <span style="color:var(--tx-2);font-size:0.68rem;">Art. 17 Abs. 2 lit. f schützt hier NICHT — eine ${cn(con)}-UID/Registrierung ist nötig. Prüfe den tatsächlichen Verfügungsmacht-Übergang (Incoterm).</span>
+      </div>`;
+    }
+
+    L.steps.forEach(s => {
+      const col = stepColor[s.key] || 'var(--blue)';
+      shtml += `<div style="background:var(--surface-2);border:1px solid var(--border-md);border-radius:10px;padding:14px;margin-bottom:10px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:700;color:${col};margin-bottom:10px;">
+          ${stepIcon[s.key] || '▶'} ${stepNo[s.key] || ''} · ${s.title}
+        </div>
+        <div style="font-size:0.72rem;color:var(--tx-2);font-family:'IBM Plex Mono',monospace;line-height:1.7;">
+          <div>${s.taxInfo}</div>
+          ${s.sap ? `<div style="margin-top:4px;">🏷️ SAP-Steuerkennzeichen: <strong style="color:var(--teal);">${s.sap}</strong></div>` : ''}
+          ${s.note ? `<div style="margin-top:6px;padding:6px 8px;background:rgba(129,140,248,0.08);border-left:3px solid ${col};border-radius:4px;font-size:0.68rem;">${s.note}</div>` : ''}
+          ${s.regRisk ? `<div style="margin-top:6px;padding:6px 8px;background:rgba(248,81,73,0.08);border-left:3px solid var(--red);border-radius:4px;font-size:0.68rem;">🚨 Registrierung in ${cn(s.regRisk)} erforderlich (keine ${cn(s.regRisk)}-UID vorhanden)</div>` : ''}
+        </div>
+      </div>`;
+    });
+
+    // Reg-Zusammenfassung
+    const uniqReg = [...new Set(L.regRisks)];
+    shtml += `<div class="hints" style="margin-top:10px;">
+      ${uniqReg.length === 0
+        ? rH({type:'ok',icon:'✅',text:`Kein Registrierungsrisiko — benötigte UIDs vorhanden${homeHandover ? ' (lit. f vermeidet die Registrierung im Veredelungsland)' : ''}.`})
+        : uniqReg.map(c => rH({type:'warn',icon:'📋',text:`Registrierung in <strong>${cn(c)}</strong> beantragen oder Steuerberater konsultieren.`})).join('')}
+      ${rH({type:'info',icon:'⚖️',text:`Voraussetzung Art. 17 Abs. 2 lit. f: Ware muss tatsächlich nach ${cn(myHome)} zurückkommen + Lohnveredelungsvertrag + Verbringungsregister dokumentiert.`})}
+    </div>`;
+
+    document.getElementById('resultContent').innerHTML = shtml;
     el.scrollIntoView({ behavior:'smooth', block:'start' });
     setVergleichBtnVisible(false);
     return;
@@ -10082,13 +10205,28 @@ function runOutputTests() {
     { id:'LV-05', name:'FI→PL→PL EPDE, Ware bleibt: Verkauf Inland PL',
       o:{company:'EPDE',sup:'FI',con:'PL',cus:'PL',lvDirect:true,litF:false},
       exp:{ s3kind:'inland-sale' } },
+    // ── sup === myHome: Inlandskauf + EU-Veredelung (PapTrade-Fall) ──
+    { id:'LV-06', name:'AT→DE→AT EPROHA, Verfügungsmacht AT + Rückkehr: Inlandskauf 20% + lit. f, keine DE-Reg',
+      o:{company:'EPROHA',sup:'AT',con:'DE',cus:'AT',lvDirect:true,litF:true,homeHandover:true},
+      exp:{ inland:false, supIsHome:true, s1kind:'home-purchase', s2kind:'rc', s3kind:'separate', reg:[] } },
+    { id:'LV-07', name:'AT→DE→AT EPROHA, Verfügungsmacht DE (DAP): ig. Erwerb DE (EPROHA hat DE-UID)',
+      o:{company:'EPROHA',sup:'AT',con:'DE',cus:'AT',lvDirect:true,litF:true,homeHandover:false},
+      exp:{ supIsHome:true, s1kind:'ig-acquisition', reg:[] } },
+    { id:'LV-08', name:'AT→PL→AT EPROHA, Verfügungsmacht AT + Rückkehr: lit. f vermeidet PL-Registrierung',
+      o:{company:'EPROHA',sup:'AT',con:'PL',cus:'AT',lvDirect:true,litF:true,homeHandover:true},
+      exp:{ supIsHome:true, s1kind:'home-purchase', reg:[] } },
+    { id:'LV-09', name:'AT→PL→AT EPROHA, Verfügungsmacht PL (DAP): ig. Erwerb PL → Registrierung PL nötig',
+      o:{company:'EPROHA',sup:'AT',con:'PL',cus:'AT',lvDirect:true,litF:true,homeHandover:false},
+      exp:{ supIsHome:true, s1kind:'ig-acquisition', reg:['PL'] } },
   ];
   LOHN_TESTS.forEach(t => {
     const errs = [];
     try {
       const L = computeLohn(t.o); const e = t.exp;
-      const s2 = L.steps.find(s => s.key === 'veredelung'), s3 = L.steps.find(s => s.key === 'verkauf');
+      const s1 = L.steps.find(s => s.key === 'einkauf'), s2 = L.steps.find(s => s.key === 'veredelung'), s3 = L.steps.find(s => s.key === 'verkauf');
       if ('inland' in e && L.inland !== e.inland) errs.push(`inland: erwartet ${e.inland}, erhalten ${L.inland}`);
+      if ('supIsHome' in e && L.supIsHome !== e.supIsHome) errs.push(`supIsHome: erwartet ${e.supIsHome}, erhalten ${L.supIsHome}`);
+      if (e.s1kind && (!s1 || s1.kind !== e.s1kind)) errs.push(`Schritt1.kind: erwartet ${e.s1kind}, erhalten ${s1 && s1.kind}`);
       if (e.s2kind && (!s2 || s2.kind !== e.s2kind)) errs.push(`Schritt2.kind: erwartet ${e.s2kind}, erhalten ${s2 && s2.kind}`);
       if ('s2rc' in e && (!s2 || s2.rc !== e.s2rc)) errs.push(`Schritt2.rc: erwartet ${e.s2rc}, erhalten ${s2 && s2.rc}`);
       if (e.s3kind && (!s3 || s3.kind !== e.s3kind)) errs.push(`Schritt3.kind: erwartet ${e.s3kind}, erhalten ${s3 && s3.kind}`);
@@ -11398,11 +11536,31 @@ let lohnDirekt = true; // true=Direktlieferung Lieferant→Converter, false=Ware
 
 let lohnRueck = true; // true=Ware kommt nach Veredelung zurück (Art. 17 Abs. 2 lit. f), false=geht direkt zum Kunden
 
+let lohnHome = true; // true=Verfügungsmacht im Heimatland → Inlandskauf; false=erst im Bestimmungsland (DAP) → ig. Lieferung. Nur relevant wenn Lieferant im Heimatland
+
 function setLohnDirekt(val) {
   lohnDirekt = val;
   $('lohnDirektBtn')?.classList.toggle('active', val);
   $('lohnUeberMichBtn')?.classList.toggle('active', !val);
   renderResult();
+}
+
+function setLohnHome(val) {
+  lohnHome = val;
+  $('lohnHomeInlandBtn')?.classList.toggle('active', val);
+  $('lohnHomeDapBtn')?.classList.toggle('active', !val);
+  renderResult();
+}
+
+// Verfügungsmacht-Schalter nur zeigen, wenn Lieferant im eigenen Heimatland sitzt
+// (Inlandskauf + EU-Veredelung); sonst irrelevant.
+function syncLohnHomeVisibility() {
+  const home = COMPANIES[currentCompany].home;
+  const supEl = $('lohnSup'), conEl = $('lohnCon');
+  const block = $('lohnHomeBlock');
+  if (!block) return;
+  const show = supEl && conEl && supEl.value === home && conEl.value !== home;
+  block.style.display = show ? '' : 'none';
 }
 
 function setLohnRueck(val) {
@@ -11424,6 +11582,7 @@ function onLohnChange() {
   upd('lohnSup','lohn-flag-sup');
   upd('lohnCon','lohn-flag-con');
   upd('lohnCus','lohn-flag-cus');
+  syncLohnHomeVisibility();
   renderResult();
 }
 
@@ -11442,6 +11601,7 @@ function initLohnPanel() {
   // Sync Verkaufsland visibility
   const cusBlock = $('lohnCusBlock');
   if (cusBlock) cusBlock.style.display = lohnRueck ? 'none' : '';
+  syncLohnHomeVisibility();
 }
 
 function toggleCtxOpt(k, cb) {
@@ -11882,9 +12042,10 @@ function renderResult() {
     setLV('lv_converter', conEl.value);
     setLV('lv_customer', cusEl.value);
 
-    // Set global lvDirect + lvRueck for analyzeLohn()
+    // Set global lvDirect + lvRueck + lvHomeHandover for analyzeLohn()
     window.lvDirect = lohnDirekt;
     window.lvRueck  = lohnRueck;
+    window.lvHomeHandover = lohnHome;
 
     const rc = $('resultContent');
     if (rc) rc.innerHTML = '';
@@ -12678,7 +12839,7 @@ function handleURLParams() {
 
 let qcState = { company: 'EPDE', dep: 'DE', dest: 'PL', transport: 'supplier', mode: '3p',
                 q4: ['FR', 'DE', 'NL', 'IT'], mePos: 2,
-                lohnSup: 'FI', lohnCon: 'PL', lohnCus: 'DE', lohnDirect: true, lohnRueck: true };
+                lohnSup: 'FI', lohnCon: 'PL', lohnCus: 'DE', lohnDirect: true, lohnRueck: true, lohnHome: true };
 
 // Länder alphabetisch sortiert (EU-27 + CH + GB)
 const QC_COUNTRIES = EU.slice().sort((a, b) => a.name.localeCompare(b.name, 'de'));
@@ -13402,7 +13563,8 @@ function renderQuickCheck() {
     if (mode !== 'lohn') return '';
     const co = qcState.company;
     const Lq = computeLohn({ company: co, sup: qcState.lohnSup, con: qcState.lohnCon,
-                             cus: qcState.lohnCus, lvDirect: qcState.lohnDirect, litF: qcState.lohnRueck });
+                             cus: qcState.lohnCus, lvDirect: qcState.lohnDirect, litF: qcState.lohnRueck,
+                             homeHandover: qcState.lohnHome });
     const sel = (val, attr) => QC_COUNTRIES.map(c =>
       `<option value="${c.code}" ${c.code === val ? 'selected' : ''}>${FLAGS[c.code] || ''} ${c.name}</option>`).join('');
     const regBanner = [...new Set(Lq.regRisks)].map(c => `
@@ -13457,6 +13619,13 @@ function renderQuickCheck() {
               <button class="qc-co-btn ${!Lq.litF ? 'active' : ''}" onclick="qcState.lohnRueck=false;renderQuickCheck()">Nein</button>
             </div>
           </div>
+          ${Lq.supIsHome ? `<div style="display:flex;align-items:center;gap:8px;">
+            <span class="qc-label" style="margin:0;">Verfügungsmacht:</span>
+            <div class="qc-co-btns">
+              <button class="qc-co-btn ${Lq.homeHandover ? 'active' : ''}" onclick="qcState.lohnHome=true;renderQuickCheck()">Heimatland · Inland</button>
+              <button class="qc-co-btn ${!Lq.homeHandover ? 'active' : ''}" onclick="qcState.lohnHome=false;renderQuickCheck()">Bestimmungsland · DAP</button>
+            </div>
+          </div>` : ''}
         </div>
       </div>
 
