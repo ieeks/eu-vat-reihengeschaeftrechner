@@ -103,6 +103,10 @@ const SAP_TAX_MAP = {
     CH: {
       'export':               { out:'G0', in:null,  desc:'Ausfuhr DE→CH 0% (§ 6 UStG)' },
     },
+    LI: {
+      // Liechtenstein = gemeinsamer Schweizer MWST-Raum (Zollvertrag 1923) → wie CH behandeln.
+      'export':               { out:'G0', in:null,  desc:'Ausfuhr DE→LI 0% (Schweizer MWST-Raum, § 6 UStG)' },
+    },
     IT: {
       'rc':                   { out:'IC', in:'VI',  desc:'Inversione contabile IT 0% (Art. 17 DPR 633)' },
       'ic-acquisition':       { out:'IP', in:'IP',  desc:'IG-Erwerb IT 22% — OUT+IN gleich, Netto 0' },
@@ -130,6 +134,12 @@ const SAP_TAX_MAP = {
       'export':               { out:'A0', in:null,  desc:'Ausfuhr AT→CH 0%' },
       'domestic':             { out:'B5', in:'IB',  desc:'CH-MWST 8,1% Ausgang / Vorsteuer CH 8,1%' },
     },
+    LI: {
+      // Liechtenstein = gemeinsamer Schweizer MWST-Raum (Zollvertrag 1923); EPROHAs
+      // CH-Registrierung deckt LI mit ab → gleiche Kennzeichen wie CH.
+      'export':               { out:'A0', in:null,  desc:'Ausfuhr AT→LI 0% (Schweizer MWST-Raum)' },
+      'domestic':             { out:'B5', in:'IB',  desc:'LI-MWST 8,1% (Schweizer MWST-Recht) Ausgang / Vorsteuer 8,1%' },
+    },
     IT: {
       'rc':                   { out:'IC', in:null,  desc:'Reverse charge IT 0% (inversione contabile)' },
       'domestic-input':       { out:null, in:'VT',  desc:'Vorsteuer IT 22%' },
@@ -153,11 +163,12 @@ const FLAGS = {
   AT:'🇦🇹',BE:'🇧🇪',BG:'🇧🇬',CY:'🇨🇾',CZ:'🇨🇿',DE:'🇩🇪',DK:'🇩🇰',EE:'🇪🇪',
   ES:'🇪🇸',FI:'🇫🇮',FR:'🇫🇷',GR:'🇬🇷',HR:'🇭🇷',HU:'🇭🇺',IE:'🇮🇪',IT:'🇮🇹',
   LT:'🇱🇹',LU:'🇱🇺',LV:'🇱🇻',MT:'🇲🇹',NL:'🇳🇱',PL:'🇵🇱',PT:'🇵🇹',RO:'🇷🇴',
-  SE:'🇸🇪',SI:'🇸🇮',SK:'🇸🇰',CH:'🇨🇭',GB:'🇬🇧',TR:'🇹🇷',RS:'🇷🇸',BA:'🇧🇦',RU:'🇷🇺'
+  SE:'🇸🇪',SI:'🇸🇮',SK:'🇸🇰',CH:'🇨🇭',LI:'🇱🇮',GB:'🇬🇧',TR:'🇹🇷',RS:'🇷🇸',BA:'🇧🇦',RU:'🇷🇺'
 };
 
 const EU = [
-  {code:'CH',name:'Schweiz',          en:'Switzerland',     std:8.1,  nonEU:true},
+  {code:'CH',name:'Schweiz',          en:'Switzerland',     std:8.1,  nonEU:true, swissVatArea:true},
+  {code:'LI',name:'Liechtenstein',    en:'Liechtenstein',   std:8.1,  nonEU:true, swissVatArea:true},
   {code:'GB',name:'Großbritannien',   en:'United Kingdom',  std:20,   nonEU:true},
   {code:'TR',name:'Türkei',           en:'Türkiye',         std:20,   nonEU:true, customsUnion:true},
   {code:'RS',name:'Serbien',          en:'Serbia',          std:20,   nonEU:true, saa:true},
@@ -234,7 +245,9 @@ const legalForm = c => ({
   EE:'OÜ',LV:'SIA',LT:'UAB',IE:'Ltd.',GB:'Ltd.',CY:'Ltd.',MT:'Ltd.',
 })[c] || 'Ltd.';
 const customerName = c => `${cn(c)}-Kunde ${legalForm(c)}`;
-const isCH = c => c === 'CH';
+// LI (Liechtenstein) bildet mit CH einen gemeinsamen MWST-Raum (Zollvertrag 1923) →
+// wird steuerlich/­beim Routing wie die Schweiz behandelt.
+const isCH = c => c === 'CH' || c === 'LI';
 const isGB = c => c === 'GB';
 const getCountries = () => EU; // show all
 
@@ -4580,6 +4593,19 @@ function buildMode2IncoExport(country) {
       reg1:'Steuervertreter in CH (Art. 67 MWSTG)',
       foot:'Buchhalterisch intern: Ausfuhr eigener Ware <span class="m2i-sap">A0</span>, danach CH-Inlandverkauf <span class="m2i-sap">B5</span>. Keine zweite Kundenrechnung.'
     },
+    LI: {
+      // Liechtenstein = gemeinsamer Schweizer MWST-Raum (Zollvertrag 1923); die
+      // CH-Registrierung von EPROHA deckt LI mit ab → gleiche Kennzeichen wie CH.
+      land:'LI',
+      importLine:'8,1 % Einfuhrsteuer + Zoll (BAZG – Schweizer MWST-Raum CH+LI)',
+      proofShort:'e-dec',
+      custRate:'8,1 %', custDesc:'LI-MWST (Schweizer MWST-Recht) · Inlandslieferung · Lieferort = LI',
+      custSap:'B5', custUid: myCHVat ? ('CH/LI-UID '+myCHVat) : 'CH-UID', custFlag:'🇱🇮',
+      deduction:'Einfuhr-USt 8,1 % als Vorsteuer abziehbar (Art. 28 MWSTG, gilt für LI)',
+      reg0: myCHVat ? ('CH-MWST '+myCHVat+' (deckt LI mit ab)') : 'CH/LI-MWST-Registrierung erforderlich',
+      reg1:'Gemeinsamer MWST-Raum CH+LI (Zollvertrag 1923)',
+      foot:'Buchhalterisch intern: Ausfuhr eigener Ware AT→LI <span class="m2i-sap">A0</span>, danach LI-Inlandverkauf <span class="m2i-sap">B5</span>. Keine zweite Kundenrechnung.'
+    },
     GB: {
       land:'GB',
       importLine:'20 % UK Import VAT + Zoll ans HMRC',
@@ -4717,6 +4743,27 @@ function analyze2() {
       html += buildKonsiLagerCH(myCHVat, 'AT');
     } else {
       html += `<div class="hints">${rH({type:'info', icon:'🏭', text:`<strong>Alternative: Konsignationslager CH</strong> — Ware ins CH-Lager einlagern und erst bei Entnahme inländisch verkaufen (8,1 % CH-MWST). Setzt — wie DDP — eine CH-Registrierung voraus. Für Details auf <strong>DDP</strong> umschalten.`})}</div>`;
+    }
+
+  // ── AT → LI (Liechtenstein = gemeinsamer Schweizer MWST-Raum, wie CH) ───────
+  } else if (dest === 'LI' && !euGoodsRecipient) {
+    html += `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--amber);margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:8px;">
+      🇱🇮 <strong>Drittland-Transaktion</strong> – Liechtenstein bildet mit der Schweiz einen <strong>gemeinsamen MWST-Raum</strong> (Zollvertrag 1923; Schweizer MWSTG gilt in LI). EPROHAs CH-Registrierung deckt LI mit ab. Keine MwStSystRL.
+    </div>`;
+
+    html += buildMode2IncoExport('LI');
+
+    html += `<div class="hints">`;
+    html += rH({type:'info', icon:'🛃', text:`AT-Ausfuhr: Anmeldung in AT via <strong>e-dec / ATLAS</strong>. Zolltarifnummer (KN-Code) erforderlich. Ausfuhrbestätigung aufbewahren (§ 7 UStG AT). Verzollung an der Grenze zum Schweizer MWST-Raum (BAZG).`});
+    html += rH({type:'info', icon:'📄', text:`CH/LI-EU Freihandelsabkommen (FHA 1972): Bei EU-Ursprungsware kann Zoll entfallen – Ursprungsnachweis <strong>EUR.1</strong> oder Lieferantenerklärung erforderlich.`});
+    html += rH({type:'info', icon:'△', text:`Dreiecksgeschäft nicht anwendbar – Liechtenstein ist kein EU-Mitglied.`});
+    html += `</div>`;
+
+    // Konsignationslager im Schweizer MWST-Raum — wie CH nur bei DDP prominent.
+    if (mode2Incoterm === 'ddp') {
+      html += buildKonsiLagerCH(myCHVat, 'AT');
+    } else {
+      html += `<div class="hints">${rH({type:'info', icon:'🏭', text:`<strong>Alternative: Konsignationslager CH/LI</strong> — Ware ins CH/LI-Lager einlagern und erst bei Entnahme inländisch verkaufen (8,1 % MWST). Setzt — wie DDP — die CH-Registrierung voraus (deckt LI mit ab). Für Details auf <strong>DDP</strong> umschalten.`})}</div>`;
     }
 
   // ── AT → AT + Drop-Shipment (Warenempfänger ≠ AT) ─────────────────────────
@@ -6193,14 +6240,16 @@ function drittlandRegCountry(ctx) {
   // Kunde ist Einführer (DAP/EXW): unsere Lieferung ist 0% Ausfuhr bzw. liegt vor der
   // Einfuhr (nicht steuerbar) → nie ein Registrierungsproblem für uns.
   if (importerRole === 'customer') return null;
+  // LI wird über die CH-Registrierung abgedeckt (gemeinsamer Schweizer MWST-Raum).
+  const hasReg = c => !!myVat(c) || (isCH(c) && !!myVat('CH'));
   if (depNonEU) {
     // IMPORT Drittland→EU: wir (self) bzw. der DDP-Lieferant (supplier) machen die
     // Anschluss-Inlandslieferung im EU-Bestimmungsland → dort registriert sein müssen.
-    return myVat(ctx.dest) ? null : ctx.dest;
+    return hasReg(ctx.dest) ? null : ctx.dest;
   }
   // EXPORT EU→Drittland: nur als eigener Einführer (self/DDP) entsteht im Drittland
   // eine Inlandslieferung → dortige Registrierung/Steuervertreter nötig.
-  if (importerRole === 'self') return myVat(ctx.dest) ? null : ctx.dest;
+  if (importerRole === 'self') return hasReg(ctx.dest) ? null : ctx.dest;
   return null;  // supplier-DDP-Export: keine eigene Auslandslieferung durch uns
 }
 
@@ -6884,25 +6933,26 @@ function analyze() {
 
   // CH / GB / Drittland: bypass engine ONLY for NonEU→EU (import) or NonEU inland
   // For EU→NonEU (export chain): let engine analyze, add export banner after
-  const hasCH = [ctx.s1, ctx.s2, ctx.s4, ctx.dep, ctx.dest].some(c => c === 'CH');
+  // isCH() erfasst CH + LI (gemeinsamer Schweizer MWST-Raum) → LI läuft durch die CH-Renderer.
+  const hasCH = [ctx.s1, ctx.s2, ctx.s4, ctx.dep, ctx.dest].some(isCH);
   const hasGB = [ctx.s1, ctx.s2, ctx.s4, ctx.dep, ctx.dest].some(c => c === 'GB');
   if (hasCH) {
-    if (ctx.dep === 'CH' && ctx.dest === 'CH' && currentCompany === 'EPROHA') {
+    if (isCH(ctx.dep) && isCH(ctx.dest) && currentCompany === 'EPROHA') {
       document.getElementById('resultContent').innerHTML = analyzeCHInland(ctx);
       el.scrollIntoView({ behavior:'smooth', block:'start' });
       setTimeout(() => { const b = document.getElementById('stickyResultBtn'); if (b) b.classList.add('visible'); }, 600);
       hideVergleichTab();
       return;
     }
-    if (ctx.dep === 'CH' && ctx.dest !== 'CH') {
+    if (isCH(ctx.dep) && !isCH(ctx.dest)) {
       html = analyzeCH(ctx.s1, ctx.s2, ctx.s4, ctx.dep, ctx.dest);
       document.getElementById('resultContent').innerHTML = html;
       el.scrollIntoView({ behavior:'smooth', block:'start' });
       hideVergleichTab();
       return;
     }
-    // EU→CH (Export-Reihengeschäft): Engine für Transportzuordnung, dann CH-Export-Renderer
-    if (ctx.dest === 'CH' && ctx.dep !== 'CH') {
+    // EU→CH/LI (Export-Reihengeschäft): Engine für Transportzuordnung, dann CH-Export-Renderer
+    if (isCH(ctx.dest) && !isCH(ctx.dep)) {
       const engCH = VATEngine.run(ctx);
       html = buildCHExportResult(ctx, engCH);
       document.getElementById('resultContent').innerHTML = html;
