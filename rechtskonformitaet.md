@@ -34,6 +34,7 @@ Quellen:
 | EuGH C-247/21 Luxury Trust: Pflichtangaben materiell | Warnung in Output vorhanden | EuGH C-247/21 |
 | EuGH C-430/09 Euro Tyre: UID-Zeitpunkt entscheidend | Hinweis in Quick-Fix-Output | EuGH C-430/09 |
 | EuGH C-628/16 Kreuzmayr: mitgeteilte UID entscheidet | Hinweis in Quick-Fix-Output | EuGH C-628/16 |
+| Liechtenstein = Schweizer MWST-Raum → Behandlung wie CH (Ausfuhr A0/G0 · CH/LI-Inland B5 8,1 %; CH-Registrierung deckt LI ab) | `isCH()` erfasst LI; `SAP_TAX_MAP.*.LI` spiegelt CH; Mode-2-LI-Branch | Zollvertrag CH-LI 1923 (LGBl. 1923 Nr. 24) · Schweizer MWSTG (in LI anwendbar) · § 6/§ 7 UStG (Ausfuhr) |
 
 ---
 

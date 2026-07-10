@@ -2,6 +2,29 @@
 
 ---
 
+## v4.3 · 10.07.2026 — Liechtenstein (LI) als eigenes Zielland (Schweizer MWST-Raum)
+
+Liechtenstein war bisher **gar nicht im Rechner** vorhanden (Länderliste kannte nur
+CH/GB/TR/RS/BA/RU). LI bildet mit der Schweiz einen **gemeinsamen MWST-Raum** (Zollvertrag 1923;
+Schweizer MWSTG gilt in LI), EPROHAs CH-Registrierung (`CHE-113.857.016 MWST`) deckt LI mit ab.
+LI wird jetzt durchgehend **wie CH** behandelt und ist als Zielland wählbar.
+
+- **Länderliste (`EU`):** neuer Eintrag `LI` (`nonEU:true`, `std:8.1`, `swissVatArea:true`),
+  Flag 🇱🇮 → LI erscheint automatisch in allen Länder-Pickern (auch als EPROHA-Zielland).
+- **`isCH(c)`** erfasst jetzt `CH` **und** `LI` → LI läuft durch die bestehenden CH-Renderer
+  (`analyzeCH`, `buildCHExportResult`, `analyzeCHInland`) und die Mode-3-Dispatch-Weichen.
+- **`SAP_TAX_MAP`:** `EPROHA.LI` (`export A0`, `domestic B5/IB`) und `EPDE.LI` (`export G0`) —
+  spiegeln jeweils die CH-Einträge.
+- **Mode 2 (`analyze2`):** neuer additiver Branch `dest === 'LI'` (CH-Pfad unangetastet) mit
+  eigener `buildMode2IncoExport('LI')`-Konfiguration (DAP/EXW → A0 Ausfuhr · DDP → B5 8,1 %,
+  Registrierung via CH-UID) + Konsi-Lager-Hinweis.
+- **`drittlandRegCountry`:** LI-Registrierung gilt über die CH-UID als abgedeckt → keine falsche
+  „Registrierung nötig"-Warnung bei DDP.
+- Verifiziert (JSDOM): `rate/cn/flag/isCH/isNonEU`, `getSapCode(EPROHA,LI,export|domestic)`
+  = A0/B5, `EPDE.LI.export` = G0, DDP/DAP-Karte, `drittlandRegCountry` = null. `node --check` ok.
+
+---
+
 ## v4.3 · 06.07.2026 — Bugfix: Mode-5-Selects wurden bei „Ergebnis berechnen" zurückgesetzt
 
 `renderAll()` (ausgelöst u.a. vom Button „Ergebnis berechnen" und beim Gesellschaftswechsel)

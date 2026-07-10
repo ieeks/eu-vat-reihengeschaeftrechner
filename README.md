@@ -56,6 +56,7 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 
 ## Drittland-Support
 - **CH (Schweiz):** 2P und 3P, DAP/DDP, BAZG, EUSt 8,1%, FHA
+- **LI (Liechtenstein):** gemeinsamer Schweizer MWST-Raum (Zollvertrag 1923) → wie CH behandelt (Ausfuhr A0/G0 · CH/LI-Inland B5 8,1%; CH-Registrierung deckt LI ab), als Zielland wählbar
 - **GB (Post-Brexit):** 2P und 3P, DAP/DDP, HMRC, UK VAT, TCA
 
 ## Mobile

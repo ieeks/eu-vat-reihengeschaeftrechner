@@ -4,6 +4,21 @@ Stand: 20.05.2026
 
 ---
 
+## Liechtenstein (LI) als Zielland — live (10.07.2026)
+
+LI = gemeinsamer Schweizer MWST-Raum (Zollvertrag 1923), CH-Registrierung von EPROHA deckt LI ab.
+
+- [x] `LI` im `EU`-Array (`nonEU`, `std:8.1`, `swissVatArea`) + Flag 🇱🇮 → als Zielland wählbar
+- [x] `isCH()` erfasst CH+LI → LI läuft durch alle CH-Renderer (3P + Mode-3-Dispatch)
+- [x] `SAP_TAX_MAP.EPROHA.LI` (A0/B5) + `SAP_TAX_MAP.EPDE.LI` (G0)
+- [x] Mode-2 additiver `dest==='LI'`-Branch + `buildMode2IncoExport('LI')` (DAP→A0 · DDP→B5)
+- [x] `drittlandRegCountry`: LI-Reg über CH-UID abgedeckt (keine falsche Warnung)
+- [ ] Feinschliff: hartkodierte „Schweiz"/🇨🇭-Labels in `computeTaxCH`/CH-Renderern auf LI-Fälle
+      hin prüfen (einige fixe Textstellen zeigen „Schweiz" statt „Liechtenstein";
+      dynamische `cn(dest)`-Stellen sind korrekt)
+
+---
+
 ## Lohnveredelung: Inlandskauf-Fall (sup = Heimatland) — live (05.07.2026)
 
 Realer PapTrade→EPROHA-Fall (AT-Lieferant, DE-Veredelung, Rückkehr AT) war bisher nicht abbildbar.
