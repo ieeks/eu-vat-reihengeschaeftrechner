@@ -1,59 +1,77 @@
-# M365-Copilot-Agent — Reihengeschäft-Assistent
+# M365-Copilot-Agenten — Reihengeschäft-Assistent (EPROHA & EPDE)
 
-Dieser Ordner enthält alles, um in **Microsoft 365 Copilot** einen Agenten zu
-bauen, der auf die Frage „wer liefert wohin?" die korrekte umsatzsteuerliche
-Behandlung eines Reihengeschäfts ausgibt (Transportzuordnung, Dreiecksgeschäft,
-Registrierung, SAP-Kennzeichen).
+Dieser Ordner enthält alles, um in **Microsoft 365 Copilot** zwei getrennte
+Agenten zu bauen — **einen für EPROHA, einen für EPDE** (unterschiedliche
+Mitarbeiter). Jeder Agent gibt auf die Frage „wer liefert wohin?" die korrekte
+umsatzsteuerliche Behandlung eines Reihengeschäfts aus (Transportzuordnung,
+Dreiecksgeschäft, Registrierung, SAP-Kennzeichen) — jeweils aus fester
+Firmen-Perspektive.
 
 > **Wichtig:** M365 Copilot ist **nicht** GitHub Copilot. Die Dateien unter
 > `.github/` (GitHub-Copilot-Agent) werden von M365 Copilot **nicht** gelesen.
 > M365 Copilot kann auch nicht direkt auf GitHub zugreifen — Wissen muss in
 > **OneDrive/SharePoint** liegen.
 
+## Warum zwei Agenten?
+
+Der fachliche Kern (EU-Recht, Regeln, Referenzfälle) ist identisch. Getrennt
+sind nur **Firmenkontext + SAP-Buchungskreise** und die **feste Perspektive** in
+den Anweisungen. So sieht ein EPROHA-Mitarbeiter nur EPROHA-UIDs/-SAP-Codes und
+umgekehrt — keine Verwechslung.
+
 ## Dateien in diesem Ordner
 
-| Datei | Zweck |
-|---|---|
-| `wissensbasis.md` | **Generiert.** Alle 24 `vat-knowledge`-Dateien + Firmenkontext in einer Datei → nach OneDrive/SharePoint hochladen und als Wissensquelle verknüpfen. |
-| `agent-anweisungen.md` | Text zum Einfügen ins „Anweisungen/Instructions"-Feld des Agenten. |
-| `firmenkontext.md` | Quelldatei (EPDE/EPROHA + SAP-Matrix) für den Generator — nicht hochladen, wird in `wissensbasis.md` gebündelt. |
+| Datei | Für | Zweck |
+|---|---|---|
+| `wissensbasis-eproha.md` | EPROHA | **Generiert.** Nach OneDrive/SharePoint hochladen, als Wissensquelle verknüpfen. |
+| `agent-anweisungen-eproha.md` | EPROHA | Text ins „Anweisungen"-Feld des EPROHA-Agenten. |
+| `firmenkontext-eproha.md` | EPROHA | Quelldatei (EPROHA + SAP) für den Generator — **nicht** hochladen. |
+| `wissensbasis-epde.md` | EPDE | **Generiert.** Hochladen + verknüpfen. |
+| `agent-anweisungen-epde.md` | EPDE | Text ins „Anweisungen"-Feld des EPDE-Agenten. |
+| `firmenkontext-epde.md` | EPDE | Quelldatei (EPDE + SAP) für den Generator — **nicht** hochladen. |
 
-## Einrichtung (einmalig)
+## Einrichtung (pro Agent einmalig)
 
-1. **Wissen hochladen:** `wissensbasis.md` in einen OneDrive- oder
-   SharePoint-Ordner legen, auf den du Zugriff hast. (Optional als PDF/Word
-   speichern, falls dein Tenant `.md`-Upload nicht direkt akzeptiert — der Inhalt
-   bleibt gleich.)
+Für **EPROHA** die `-eproha`-Dateien, für **EPDE** die `-epde`-Dateien nehmen:
+
+1. **Wissen hochladen:** `wissensbasis-<firma>.md` in einen OneDrive- oder
+   SharePoint-Ordner legen. (Optional als PDF/Word speichern, falls dein Tenant
+   `.md`-Upload nicht direkt akzeptiert — Inhalt bleibt gleich.)
 2. **Agent anlegen:** In M365 Copilot Business Chat auf **„Agent erstellen"**
-   (oder in **Copilot Studio → Agenten → Neu**).
-3. **Name & Beschreibung:** z. B. „Reihengeschäft-Assistent (EPDE/EPROHA)".
-4. **Anweisungen:** kompletten Text aus `agent-anweisungen.md` (ohne die
-   Zitat-Kopfzeilen) in das Anweisungen-Feld einfügen.
-5. **Wissen verknüpfen:** unter „Wissen/Knowledge" die hochgeladene
-   `wissensbasis.md` (bzw. den OneDrive/SharePoint-Ordner) hinzufügen.
-6. **Speichern & testen** mit einem der Beispiele unten.
-7. Bei Bedarf für Kolleg:innen **freigeben** (Teilen-Funktion des Agenten).
+   (oder Copilot Studio → Agenten → Neu).
+3. **Name:** z. B. „Reihengeschäft-Assistent EPROHA" bzw. „… EPDE".
+4. **Anweisungen:** kompletten Text aus `agent-anweisungen-<firma>.md` (ohne die
+   Zitat-Kopfzeilen) einfügen.
+5. **Wissen verknüpfen:** die hochgeladene `wissensbasis-<firma>.md` hinzufügen.
+6. **Speichern & testen** mit einem Beispiel unten.
+7. Bei Bedarf nur für die jeweiligen Mitarbeiter **freigeben**.
+
+Danach das Ganze mit den `-epde`-Dateien für den zweiten Agenten wiederholen.
 
 ## Beispiel-Eingaben
 
+EPROHA:
 - „EPROHA kauft in DE ein, die Ware geht direkt nach IT, der deutsche Lieferant
   transportiert."
-- „Wir (EPDE) verkaufen an einen CH-Kunden, Ware ab DE, Lieferbedingung DDP."
-- „Drei Parteien, alle in der EU, aber der mittlere legt seine
-  Bestimmungsland-UID vor."
+- „Wir verkaufen an einen CH-Kunden, Ware ab AT, Lieferbedingung DDP."
+
+EPDE:
+- „EPDE kauft in NL, Ware geht direkt nach IT, wir holen selbst ab."
+- „Drei Parteien, alle in der EU, aber wir legen unsere Bestimmungsland-UID vor."
 
 Erwartete Antwort: Kette-Diagramm → bewegte Lieferung → Behandlungstabelle mit
 SAP-Codes → Dreieck-Status → Registrierungshinweis → Rechtsgrundlagen.
 
-## Wissensbasis aktualisieren
+## Wissensbasen aktualisieren
 
-Single Source of Truth ist der Ordner `vat-knowledge/` (+ `firmenkontext.md`).
-Nach inhaltlichen Änderungen dort:
+Single Source of Truth ist `vat-knowledge/` (+ die `firmenkontext-*.md`). Nach
+inhaltlichen Änderungen dort **beide** Wissensbasen neu bauen:
 
 ```bash
-node scripts/gen-m365-knowledge.mjs        # baut wissensbasis.md neu
-node scripts/gen-m365-knowledge.mjs --check # prüft, ob wissensbasis.md aktuell ist
+npm run gen:m365        # baut wissensbasis-eproha.md UND wissensbasis-epde.md
+npm run check:m365      # prüft, ob beide aktuell sind (Exit 1 wenn veraltet)
 ```
 
-Danach die neue `wissensbasis.md` erneut nach OneDrive/SharePoint hochladen
-(gleiche Datei überschreiben) — der Agent nutzt dann automatisch den neuen Stand.
+Danach die neuen `wissensbasis-<firma>.md` erneut nach OneDrive/SharePoint
+hochladen (gleiche Datei überschreiben) — der jeweilige Agent nutzt dann
+automatisch den neuen Stand.

@@ -1,16 +1,16 @@
-# VAT-Wissensbasis für den M365-Copilot-Agenten
+# VAT-Wissensbasis für den M365-Copilot-Agenten — EPDE (DE)
 
 > **AUTOMATISCH GENERIERT** von `scripts/gen-m365-knowledge.mjs` —
 > nicht direkt bearbeiten. Quelle: `vat-knowledge/` +
-> `copilot-m365/firmenkontext.md`. Neu bauen mit:
+> `copilot-m365/firmenkontext-epde.md`. Neu bauen mit:
 > `node scripts/gen-m365-knowledge.mjs`.
 >
-> Diese Datei nach OneDrive/SharePoint hochladen und im M365-Agenten
+> Diese Datei nach OneDrive/SharePoint hochladen und im EPDE (DE)-Agenten
 > als Wissensquelle verknüpfen (siehe `copilot-m365/README.md`).
 
 ## Inhaltsverzeichnis
 
-1. Firmenkontext & SAP-Kennzeichen
+1. Firmenkontext EPDE
 2. Kernregeln & Index
 3. Referenzfälle (Goldstandard)
 4. Grenzfälle
@@ -27,59 +27,36 @@
 15. EU · Quick Fixes 2020
 16. AT · Reihengeschäft
 17. AT · Dreiecksgeschäft
-18. AT · EPROHA-Buchungskreise
-19. DE · § 3 Abs. 6a UStG
-20. DE · UStAE Reihengeschäft
-21. DE · EPDE-Buchungskreise
-22. NL · Wet OB Reihengeschäft
-23. CH · Ort der Lieferung
-24. CH · Konsignationslager
+18. DE · § 3 Abs. 6a UStG
+19. DE · UStAE Reihengeschäft
+20. NL · Wet OB Reihengeschäft
+21. CH · Ort der Lieferung
+22. CH · Konsignationslager
+23. DE · EPDE-Buchungskreise
 
 ---
-# 1. Firmenkontext & SAP-Kennzeichen
-<!-- Quelle: copilot-m365/firmenkontext.md -->
+# 1. Firmenkontext EPDE
+<!-- Quelle: copilot-m365/firmenkontext-epde.md -->
 
-# Firmenkontext — EPDE & EPROHA
+# Firmenkontext — EPDE (Sitz DE)
 
-> Quelldatei für die M365-Wissensbasis. Wird vom Generator
+> Quelldatei für die EPDE-Wissensbasis. Wird vom Generator
 > `scripts/gen-m365-knowledge.mjs` als erster Abschnitt in
-> `copilot-m365/wissensbasis.md` eingefügt. Inhaltlich abgestimmt mit dem
-> Abschnitt „Entities" und „SAP-Steuerkennzeichen (MWSKZ)" in `CLAUDE.md`.
+> `copilot-m365/wissensbasis-epde.md` eingefügt.
 
-## Firmen (Entities)
+## Firma
 
 | Firma | Sitz | vorhandene UIDs |
 |---|---|---|
 | **EPDE** | DE | DE, SI, LV, EE, NL, BE, CZ, PL |
-| **EPROHA** | AT | AT, DE, CH |
 
-Fehlt eine UID im Bestimmungsland, ist das ein starkes Signal für
-Registrierungspflicht **oder** für die Dreiecksgeschäft-Vereinfachung (Art. 141).
+Standardperspektive dieses Agenten: **Ich = EPDE**. Fehlt eine UID im
+Bestimmungsland, ist das ein starkes Signal für Registrierungspflicht **oder**
+für die Dreiecksgeschäft-Vereinfachung (Art. 141).
 
-## SAP-Steuerkennzeichen (MWSKZ)
+## SAP-Steuerkennzeichen (MWSKZ) — EPDE
 
-### EPROHA — AT-UID
-
-| Treatment | Out | In | Bedeutung |
-|---|---|---|---|
-| `ic-exempt` | **AF** | **AF** | IG-Lieferung AT 0 % — OUT+IN gleich, Netto 0 |
-| `ic-acquisition` | **VE** | **VE** | IG-Erwerb AT 20 % (ESA/ESE) — OUT+IN gleich, Netto 0 |
-| `domestic` | **A2** | **V2** | Inlandslieferung AT 20 % |
-| `export` | **A0** | — | Ausfuhr ins Drittland 0 % (CH, UK, CN …) |
-| `dreiecks` | **AF** | — | Dreiecksgeschäft AT (Erwerbsteuer 0 %) |
-| `rc` | **RC** | **RC** | Reverse Charge AT (RCA/RCE) |
-| `not-taxable` | **X0** | — | Nicht steuerbar AT |
-
-### EPROHA — DE-UID
-
-| Treatment | Out | In | Bedeutung |
-|---|---|---|---|
-| `ic-exempt` | **DH** | **DH** | IG-Lieferung DE 0 % |
-| `ic-acquisition` | **VH** | **VH** | IG-Erwerb DE 19 % |
-| `domestic` | **DS** | **VD** | Inlandslieferung DE 19 % |
-| `export` | **D0** | — | Ausfuhr Drittland 0 % (über DE-UID) |
-
-### EPDE — DE-UID
+### DE-UID
 
 | Treatment | Out | In | Bedeutung |
 |---|---|---|---|
@@ -89,7 +66,7 @@ Registrierungspflicht **oder** für die Dreiecksgeschäft-Vereinfachung (Art. 14
 | `export` | **G0** | — | Ausfuhrlieferung DE 0 % (§ 6 UStG; auch DE→CH) |
 | `rc` | — | **DC** | Reverse Charge DE 19 % (§ 13b UStG) |
 
-### EPDE — weitere UIDs
+### Weitere UIDs
 
 | UID-Land | Treatment | Out | In |
 |---|---|---|---|
@@ -101,15 +78,17 @@ Registrierungspflicht **oder** für die Dreiecksgeschäft-Vereinfachung (Art. 14
 | PL | `ic-acquisition` | **W5** | **W5** |
 | BE | `ic-acquisition` | **BP** | **BP** |
 | BE | `domestic` | **BS** | **BI** |
+| NL | `ic-acquisition` | **NP** | **NP** |
+| NL | `rc` | **NC** | **NI** |
 | IT | `ic-acquisition` | **IP** | **IP** |
 | IT | `rc` | **IC** | **VI** |
 
-**Pendant-Beziehung EPROHA ⇄ EPDE:** VE ⇄ VH (IG-Erwerb, Eingang) · AF ⇄ DH
-(IG-Lieferung, Ausgang). EPDE braucht kein eigenes `dreiecks`-Kennzeichen — im
-Dreieck greift `ic-exempt[DE] = DH` korrekt.
+**Merkhilfe EPDE:** DH = IG-Lieferung (DE-UID) · VH = IG-Erwerb (DE-UID) ·
+G0 = Ausfuhr Drittland (DE-UID) · DS/VD = Inland DE.
 
-**Merkhilfe:** AF = IG-Lieferung (EPROHA-AT) · A0 = Ausfuhr Drittland
-(EPROHA-AT) · DH = IG-Lieferung (DE-UID) · G0 = Ausfuhr Drittland (EPDE-DE).
+**Pendant zu EPROHA (nur fürs Dreieck-Verständnis):** VH ⇄ VE (Erwerb) ·
+DH ⇄ AF (Lieferung). EPDE braucht **kein** eigenes `dreiecks`-Kennzeichen — im
+Dreieck greift `ic-exempt[DE] = DH` korrekt (DH ist das Pendant zu AF).
 
 ---
 
@@ -1741,192 +1720,7 @@ Zusammenfassende Meldung: IG-Lieferungen + Dreiecksgeschäfte melden.
 
 ---
 
-# 18. AT · EPROHA-Buchungskreise
-<!-- Quelle: vat-knowledge/at/eproha-buchungskreise.md -->
-
-# EPROHA — AT-Buchungskreis vs. DE-Buchungskreis
-
-> EPROHA ist in Österreich ansässig (home='AT') und hat UIDs in AT, DE und CH.
-> Die SAP-Buchung hängt davon ab, **welche UID auf der Rechnung steht** — nicht davon,
-> wo die Ware körperlich ist. Diese Datei erklärt die Entscheidungslogik.
-
----
-
-## Grundprinzip: UID bestimmt Buchungskreis
-
-Für Vorgänge mit grenzüberschreitendem Bezug (IG-Lieferung, IG-Erwerb, Ausfuhr,
-Dreiecksgeschäft) gilt:
-
-```
-Welche UID steht auf der Rechnung?
-  → AT-UID  → AT-Buchungskreis → AT-UVA → SAP: AF / A0 / VE / A2
-  → DE-UID  → DE-Buchungskreis → DE-UStVA → SAP: DH / D0 / VH / DS
-  → CH-UID  → CH-Buchungskreis → CH-MWST-Abrechnung → SAP: B5 / IB
-```
-
-Für **Inlandslieferungen und RC** gilt abweichend: der Buchungskreis ist das
-Land des Lieferorts (transaction country), unabhängig von der UID.
-
----
-
-## Vollständige SAP-Matrix EPROHA
-
-### AT-Buchungskreis (AT-UID auf Rechnung)
-
-| Vorgang | Code Ausgang | Code Eingang | Meldung |
-|---|---|---|---|
-| IG-Lieferung AT (steuerfreie IGL) | **AF** | — | ZM AT + Intrastat |
-| IG-Erwerb AT (wir kaufen, Ware kommt nach AT) | — | **VE** | UVA AT |
-| Dreiecksgeschäft AT (mittlerer Erwerber) | **AF** | — | ZM AT (KZ 077) |
-| Ausfuhr AT → Drittland (CH, GB, …) | **A0** | — | Ausfuhrnachweis ATLAS |
-| Inlandslieferung AT (20% MwSt) | **A2** | **V2** | UVA AT |
-| Nicht steuerbar AT | **X0** | — | — |
-
-### DE-Buchungskreis (DE-UID auf Rechnung)
-
-| Vorgang | Code Ausgang | Code Eingang | Meldung |
-|---|---|---|---|
-| IG-Lieferung DE (steuerfreie IGL) | **DH** | — | ZM DE + Intrastat |
-| IG-Erwerb DE (wir kaufen, Ware kommt nach DE) | — | **VH** | UStVA DE |
-| Ausfuhr DE → CH (§ 6 UStG) | **D0** | — | Ausfuhrnachweis |
-| Inlandslieferung DE (19% MwSt) | **DS** | **VD** | UStVA DE |
-
-### CH-Buchungskreis (CH-UID auf Rechnung)
-
-| Vorgang | Code Ausgang | Code Eingang | Meldung |
-|---|---|---|---|
-| CH-Inlandslieferung (8,1% CH-MWST) | **B5** | **IB** | CH-MWST-Abrechnung |
-| Ausfuhr AT → CH (aus AT heraus) | **A0** | — | AT-Buchungskreis! |
-
-### IT-Sonderfall (kein IT-Buchungskreis, keine IT-UID)
-
-EPROHA hat keine IT-UID. IT hat Umkehrlogik: RC ist möglich wenn der Lieferant
-**nicht** IT-registriert ist (Art. 17 Abs. 2 DPR 633/1972).
-
-| Vorgang | Code Ausgang | Code Eingang | Meldung |
-|---|---|---|---|
-| L2 ruhend IT — inversione contabile | **IC** | — | AT-UVA (steuerfreie Lieferung) |
-| Eingangsrechnung IT-Lieferant (Vorsteuer) | — | **VT** | AT-UVA |
-
-EPROHA fakturiert 0% + Pflichttext „inversione contabile". IT-Empfänger führt
-22% IT-MwSt selbst ab. Kein IT-Buchungskreis erforderlich.
-
----
-
-## A0 vs. AF — wann welcher Code?
-
-| | **A0** | **AF** |
-|---|---|---|
-| Bedeutung | Ausfuhrlieferung (Drittland) 0% | IG-Lieferung (EU-Mitgliedstaat) 0% |
-| Rechtsgrundlage | § 7 UStG AT / Art. 146 MwStSystRL | Art. 6 Abs. 1 iVm. Art. 7 UStG 1994 / Art. 138 MwStSystRL |
-| Bestimmungsland | Drittland (CH, GB, US, …) | EU-Mitgliedstaat (DE, IT, FR, …) |
-| Belegnachweis | AT-Ausfuhrbestätigung (ATLAS/e-dec); Gelangensbestätigung **reicht nicht** | Gelangensbestätigung oder CMR |
-| ZM-Meldung | **Nein** | **Ja** (bis 25. des Folgemonats) |
-| Intrastat | **Nein** | **Ja** (Versendung) |
-
-**Merksatz:** Geht die Ware aus der EU heraus → **A0**. Bleibt sie in der EU → **AF**.
-
-**Grenzfall CH:** Die Schweiz ist kein EU-Mitglied → immer **A0** (auch wenn das
-Feeling „innereuropäisch" ist). Mode 2 AT→CH zeigt dies explizit.
-
----
-
-## DH vs. AF — wann welcher Code?
-
-Beide bedeuten steuerfreie IG-Lieferung 0%. Der Unterschied ist **ausschließlich
-der Buchungskreis** — also welche UID auf der Rechnung steht:
-
-| | **AF** (AT-Buchungskreis) | **DH** (DE-Buchungskreis) |
-|---|---|---|
-| UID auf Rechnung | ATU… (AT-UID) | DE… (DE-UID) |
-| Meldung | ZM AT · Intrastat AT | ZM DE · Intrastat DE |
-| UVA/UStVA | Österreichische UVA | Deutsche UStVA |
-| Typischer Fall | L2 ruhend in AT, EPROHA liefert IG ab AT | L2 ruhend in DE, EPROHA liefert IG ab DE (z.B. Lager DE) |
-
-**Entscheidungsbaum:**
-```
-EPROHA tätigt IG-Lieferung
-  → Lieferort / Abgangsland = AT?
-      → AT-UID auf Rechnung → SAP AF
-  → Lieferort / Abgangsland = DE?
-      → DE-UID auf Rechnung → SAP DH
-```
-
-**Praktisches Beispiel:**
-- DE→AT(EPROHA)→IT, Transport B mit AT-UID: L2 startet in DE (Abgangsland DE),
-  EPROHA verwendet **DE-UID** → **SAP DH** (Testfall LF-02c)
-- DE→AT(EPROHA)→IT, Transport A: EPROHA verkauft L2 ruhend in IT,
-  Dreiecksgeschäft mit AT-UID → **SAP AF** (Testfall LF-02a)
-
----
-
-## `_sapEffectiveCountry()` — Implementierung
-
-```js
-function _sapEffectiveCountry(company, country, treatment, uidCountry) {
-  const uidTreatments = ['ic-exempt', 'ic-acquisition', 'dreiecks', 'export'];
-  if (!uidTreatments.includes(treatment)) return country;
-  const home = COMPANIES[company]?.home || country;
-  const uidLand = uidCountry || selectedUidOverride || home;
-  return SAP_TAX_MAP[company]?.[uidLand]?.[treatment] ? uidLand : country;
-}
-```
-
-**Zwei Pfade:**
-
-1. **Domestic / RC / not-taxable** (nicht in `uidTreatments`):
-   → Effektives Land = `country` (Lieferort/Transaktionsland).
-   Buchungskreis folgt dem Land des Umsatzes, UID irrelevant.
-
-2. **IG-Lieferung / IG-Erwerb / Dreiecksgeschäft / Ausfuhr** (in `uidTreatments`):
-   → Effektives Land = UID-Land (`uidCountry` → `selectedUidOverride` → `home`).
-   Wenn kein SAP-Eintrag für dieses UID-Land existiert: Fallback auf `country`.
-
-**Konsequenz:** Wählt der Nutzer im UI eine DE-UID als Override →
-wird automatisch der DE-Buchungskreis für die IG-Buchung verwendet.
-
----
-
-## Häufige Konstellationen (EPROHA-spezifisch)
-
-| Konstellation | UID | SAP Ausgang | SAP Eingang | Buchungskreis |
-|---|---|---|---|---|
-| AT-Lieferant → EPROHA → EU-Empfänger, L1 moving | AT | — | **VE** (IG-Erwerb AT) | AT |
-| AT-Lieferant → EPROHA → EU-Empfänger, L2 ruhend EU | AT | **AF** (IG-Lieferung) | — | AT |
-| AT-Lieferant → EPROHA → DE, L1 moving, Erwerb in DE | DE | — | **VH** (IG-Erwerb DE) | DE |
-| DE-Lieferant → EPROHA → EU, L1 ruhend DE, L2 moving | DE | **DH** (IG-Lieferung ab DE) | — | DE |
-| EPROHA → CH (Ausfuhr) | AT | **A0** (Ausfuhr) | — | AT |
-| EPROHA → CH (Ausfuhr), DE-UID verwendet | DE | **D0** (Ausfuhr DE) | — | DE |
-| EPROHA → AT-Inlandskunde | AT | **A2** (20% AT) | — | AT |
-| EPROHA → DE-Inlandskunde (Lager DE) | DE | **DS** (19% DE) | — | DE |
-| Dreiecksgeschäft (EPROHA als mittlerer Erwerber) | AT | **AF** | — | AT (ZM KZ 077) |
-| L2 ruhend IT (inversione contabile) | AT | **IC** | — | AT (kein IT-Buchungskreis) |
-| Eingangsrechnung IT-Lieferant | AT | — | **VT** | AT |
-
----
-
-## Offene Fälle / bekannte Lücken
-
-- **EPROHA als Dreieck-Erwerber mit DE-UID:** theoretisch möglich (dreiecks in DE),
-  aber kein SAP_TAX_MAP-Eintrag für `EPROHA DE dreiecks` — würde auf AT-Buchungskreis
-  zurückfallen. Bisher kein Praxisfall bekannt.
-
-## Produktiv-Abgleich SAP VK12 — 05.07.2026
-
-Abgang **AT** (Schema `TAXAT`), Konditionstabellen A002/A011 → KONP → T007A.
-**Bestätigt (deckungsgleich):** `A2` (AT-Inland 20 %) · `AF` (IG-Lieferung/Dreieck 0 %) ·
-`A0` (Ausfuhr Drittland 0 %) · `DS` (Strecke DE 19 %) · `B5` (CH-Inland 8,1 %, EPROHA Importeur) ·
-`D0` (Ausfuhr über DE-UID) · `IC` (IT inversione) · `X0` (nicht steuerbar).
-Steuerklasse Kunde (SAP TAXK1) 1 + Zielland DE → **`DS` 19 %** (Strecke DE). Details + LT-Offenpunkt: `de/epde-buchungskreise.md`.
-
----
-
-*Verwandte Dateien:* `rules/uid_usage_rules.md` · `reference-cases.md` · `at/ustg_at_reihengeschaeft.md`
-*Code:* `_sapEffectiveCountry()` · `SAP_TAX_MAP` · `sapBadge()` in `docs/assets/scripts/app.js`
-
----
-
-# 19. DE · § 3 Abs. 6a UStG
+# 18. DE · § 3 Abs. 6a UStG
 <!-- Quelle: vat-knowledge/de/ustg_de_3_6a.md -->
 
 # § 3 Abs. 6a UStG — Quick Fix DE-Umsetzung
@@ -1967,7 +1761,7 @@ Direktregistrierungen (relevant für BE RC-Block, Art. 51 §2 5° WBTW).
 
 ---
 
-# 20. DE · UStAE Reihengeschäft
+# 19. DE · UStAE Reihengeschäft
 <!-- Quelle: vat-knowledge/de/ustae_reihengeschaeft.md -->
 
 # UStAE / UStG DE — Reihengeschäft & Dreiecksgeschäft
@@ -2004,7 +1798,282 @@ Im Code: `luxuryTrustWarning` im Triangle-Return.
 
 ---
 
-# 21. DE · EPDE-Buchungskreise
+# 20. NL · Wet OB Reihengeschäft
+<!-- Quelle: vat-knowledge/nl/wet_ob_nl_reihengeschaeft.md -->
+
+# Wet OB 1968 NL — Reihengeschäft & RC-Sonderfall
+
+> EPDE ist in den Niederlanden direkt registriert (NL-UID **NL827914052B01**),
+> **ohne** NL-Betriebsstätte. NL ist der einzige EPDE-Buchungskreis, in dem
+> Reverse Charge trotz Direktregistrierung möglich ist (Art. 12 Abs. 3 Wet OB).
+
+---
+
+## Art. 5 lid 1 letter a Wet OB 1968 — Lieferort
+„De plaats waar een levering wordt verricht is […] ingeval het goed in
+verband met de levering wordt verzonden of vervoerd, de plaats waar de
+verzending of het vervoer aanvangt." Entspricht Art. 32 MwStSystRL.
+Im Code: `placeOfSupply = dep` bei `isMoving` (gemeinsame Engine-Logik,
+kein NL-Sonderpfad).
+
+## Art. 12 Abs. 3 Wet OB 1968 — Reverse Charge bei Direktregistrierung
+**Kern-Sonderfall NL.** Anders als BE/PL/CZ/SI/LV/EE blockiert NL den RC
+**nicht**, wenn der Lieferant zwar NL-registriert, aber dort nicht ansässig
+ist. Damit kann EPDE eine ruhende Lieferung in NL als RC-Lieferung
+fakturieren (0%, „BTW verlegd").
+
+Im Code:
+- `_checkRCBlock()` enthält **keinen** NL-Block — RC läuft regulär durch
+  (`rules/rc_country_rules.md`)
+- `SAP_TAX_MAP['EPDE']['NL']['rc'] = { out:'NC', in:'NI' }` (app.js Zeile 89)
+- `SAP_TAX_MAP['EPDE']['NL']['domestic'] = { out:null, in:'NI' }` —
+  bewusst kein `out` für lokale Steuer; Fallback in
+  `_qcRate()`/`computeTax()` greift auf `rc`-Entry zurück
+  (app.js Zeile 11612 ff., Kommentar: „NL: EPDE hat keine Betriebsstätte
+  → RC-Pflicht")
+- `RC_WORDING['NL']` setzt Pflichttext „BTW verlegd" / „VAT reverse-charged"
+  (app.js Zeile 1738) mit Rechtsverweis Art. 12 Abs. 3 Wet OB 1968 /
+  Art. 194 MwStSystRL
+- Pflichttext-Sprache: Englisch oder Niederländisch akzeptiert
+
+## Art. 37c Wet OB 1968 — Dreiecksgeschäft (NL als Bestimmungsland)
+NL-Umsetzung Art. 141 MwStSystRL. Titel im Wet OB:
+„Achterwege blijven heffing; voorwaarden; driehoekstransactie".
+**Gesetzlich drei onderdelen (a/b/c)**, in der Praxis erweitert durch
+verschränkte Verweise auf Art. 12 lid 3 (RC) und Art. 37a (ICP-Meldung).
+
+Materielle Bedingungen kombiniert (5-Bedingungen-Lesart, wie im Code
+hinterlegt):
+
+| Bed. | Inhalt | Rechtsgrundlage NL | Code-Check |
+|---|---|---|---|
+| (1) | Zwischenhändler nicht in NL ansässig | Art. 37c onderdeel a | `establishments` enthält NL nicht |
+| (2) | Direktlieferung an NL-Abnehmer | Art. 37c onderdeel b | `s4 === dest === 'NL'` |
+| (3) | Ware kommt **nicht** aus dem MS, der dem ZH die NL-UID erteilt hat | Art. 37c onderdeel c | `_detectTriangle3()` Zeile 1089: `dest === 'NL' && s1 === 'NL'` → `_noTriangle(...)` |
+| (4) | NL-Abnehmer schuldet Steuer per RC | Art. 37c onderdeel b juncto Art. 12 lid 3 / Art. 197 MwStSystRL | implizit über `rcCountry: dest` |
+| (5) | ICP-Pflicht nach Art. 37a Wet OB erfüllt | Art. 37a | wird auf Rechnungs-/Meldepflichten-Ebene gerendert |
+
+**Strenge NL-Bedingung (Art. 37c onderdeel b iVm. Art. 12 lid 3):**
+Wortlaut verlangt, dass Partij C in NL **gevestigd** (= ansässig, mit
+Betriebsstätte) ist — nicht nur registriert. Damit ist die NL-Umsetzung
+strenger als Art. 141 MwStSystRL. Die **Belastingdienst** wendet jedoch
+seit dem EuGH-Urteil zu Art. 141 eine richtlinienkonforme (mildere)
+Auslegung an — bloße NL-Registrierung des C reicht in der Praxis.
+Quelle: PwC „Ruimere toepassing vereenvoudigde ABC-regeling".
+
+**Praxisfolge:** Wenn EPDE die DE-UID nutzt (nicht NL-UID) und Ware aus DE
+nach NL geht, ist Bed. (3) eingehalten → Dreiecksgeschäft möglich. Setzt
+EPDE die NL-UID, blockiert Art. 141 lit. a die Vereinfachung schon vorher
+(`!!vatIds[dest]` in `_detectTriangle3()`).
+
+## Art. 37a Wet OB 1968 — ICP-Meldung (ZM-Pflicht NL)
+Standard: **monatlich**, spätestens letzter Tag des Folgemonats — elektronisch
+bei der Belastingdienst (Opgaaf intracommunautaire prestaties, „ICP").
+**Quartalsoption:** zulässig, wenn IG-Warenlieferungen sowohl im laufenden
+Quartal **als auch in jedem der 4 vorhergehenden Quartale** EUR 50.000
+nicht übersteigen; wird die Schwelle überschritten, ab diesem Quartal
+monatlich. **Materielle Voraussetzung** der Dreiecksgeschäft-Vereinfachung
+nach Art. 37c. Im Code als Legal-Reference `nl37a` registriert
+(app.js Zeile 1946).
+
+## Art. 9 lid 1 Wet OB 1968 — Steuersatz
+Wortlaut: „De belasting bedraagt 21 percent." Allgemeiner Satz für
+Lieferungen und Dienstleistungen. Im Code: `COUNTRIES['NL'].std = 21`
+(Zeile 167). Reduzierter Satz (Tabel I): 9 %. Nullsatz (Tabel II): 0 %.
+
+---
+
+## Implementierung
+
+| Funktion / Konstante | Datei / Zeile | NL-Verhalten |
+|---|---|---|
+| `SAP_TAX_MAP['EPDE']['NL']` | app.js ~85 | NC/NI (rc) · NP (ic-acq) · NI (domestic-input) · kein ic-exempt-out |
+| `_checkRCBlock()` | app.js | **kein** NL-Branch → RC läuft durch |
+| `_detectTriangle3()` | app.js ~1085 | Bed. (3) Wet OB als Edge-Case: `dest==='NL' && s1==='NL'` → kein Dreieck |
+| `RC_WORDING['NL']` | app.js 1738 | „BTW verlegd" + Art. 12 Abs. 3 Wet OB |
+| `LEGAL_REFS.nl37c` / `.nl37a` | app.js 1945/1946 | Legal-Chips für Begründungs-Tab |
+| `computeTax()` RC-Fallback | app.js ~11612 | wenn `domestic.out===null` → `rc.out` greift |
+
+## COMPANIES['EPDE']
+```js
+vatIds: { DE, SI, LV, EE, NL:'NL827914052B01', BE, CZ, PL }
+establishments: ['DE']
+```
+NL ist Direktregistrierung — keine NL-Betriebsstätte, keine fiskale Vertretung
+erforderlich (NL erlaubt Direktregistrierung formlos).
+
+---
+
+## Wann greift der NL-Buchungskreis?
+
+```
+EPDE-Lieferung mit Lieferort = NL?
+  → ruhende Lieferung in NL (L2 in 3P, oder L2/L3 in 4P)
+      → Kunde = nl-registrierter Unternehmer?
+          → RC anwendbar → SAP NC (out) / NI (in), „BTW verlegd"
+      → Kunde nicht NL-registriert / kein RC-Voraussetzung?
+          → ⚠️ kein domestic.out im SAP-Map → Fallback rc.out (NC)
+            → praktisch: EPDE muss klären ob RC zulässig; B2C wäre
+              Tatbestand für lokale Reg.-Pflicht (außerhalb des Tools)
+```
+
+**Praxis:** Der NL-Buchungskreis greift fast immer als RC-Variante.
+Echte 21%-Inlandslieferung NL aus EPDE-Sicht ist im SAP-Map bewusst
+nicht abgebildet (`out:null`), weil EPDE in NL keine Betriebsstätte hat
+und der Standardfall RC ist.
+
+## Häufige Konstellationen (EPDE-spezifisch)
+
+| Konstellation | UID | SAP Ausgang | SAP Eingang | Hinweis |
+|---|---|---|---|---|
+| DE→EPDE→NL, L2 ruhend NL, Dreieck | DE | **DH** (ZM) | — | klassisches Dreiecksgeschäft, NL = RC-Land |
+| DE→EPDE→NL, L2 ruhend NL, kein Dreieck | NL | **NC** | — | RC nach Art. 12 Abs. 3 Wet OB |
+| FR→EPDE→NL, L2 ruhend NL | DE/NL | **DH** oder **NC** | — | DE-UID → Dreieck; NL-UID → RC, kein Dreieck |
+| NL→EPDE→DE, L1 ruhend NL (IG-Erwerb) | NL | — | **NP** | EPDE kauft mit NL-UID ein |
+| NL→NL→NL Inlandskette mit EPDE | NL | **NC** | **NI** | Inlands-RC NL |
+
+---
+
+## Praxisbeispiel (verifizierter EPDE-Produktionsfall)
+
+**Konstellation:** `AT → EPDE (NL-UID) → NL-Kunde`, Transport durch AT-Lieferant
+(Warenfluss direkt von AT zum NL-Kunden).
+
+```
+🇦🇹 AT ──L1──▶ 🇩🇪 DE/EPDE ──L2──▶ 🇳🇱 NL
+       Lieferant fährt direkt nach NL
+       EPDE tritt mit NL-UID auf
+```
+
+**Ablauf:**
+
+| Lieferung | Behandlung | EPDE-Buchung | Pflichttext / Meldung |
+|---|---|---|---|
+| L1 AT→EPDE | IG-Lieferung AT → NL (0 %) | IG-Erwerb NL · **SAP NP** | AT-Lieferant in AT-ZM (Empfänger: EPDE NL-UID) |
+| L2 EPDE→NL-Kunde | RC NL (0 %) Art. 12 Abs. 3 Wet OB | **SAP NC** | „BTW verlegd" + NL-ZM monatlich (Art. 37a Wet OB) |
+
+**Kernpunkt:** Dreiecksgeschäft ist blockiert (Art. 141 lit. a — EPDE hat NL-UID
+im Bestimmungsland), trotzdem fällt **kein lokales NL-MwSt-Ausweisen** an, weil
+Art. 12 Abs. 3 Wet OB den RC trotz NL-Direktregistrierung erlaubt. Wäre EPDE
+in NL ansässig (Betriebsstätte), wäre dieser RC-Weg versperrt und EPDE müsste
+21 % NL-MwSt auf der L2-Rechnung ausweisen.
+
+**Alternative UID-Wahl:** Hätte EPDE die DE-UID statt der NL-UID verwendet,
+wäre Art. 141 MwStSystRL (Dreiecksgeschäft) anwendbar gewesen — wirtschaftlich
+identisches Ergebnis, aber Buchung **DH** statt NC und DE-ZM mit Dreieck-Kennzeichen
+statt monatlicher NL-ZM. Die NL-UID-Variante ist administrativ aufwendiger, wird
+aber gewählt, wenn der NL-Kunde NL-UID auf der Rechnung erwartet oder EPDE
+ohnehin in NL meldet.
+
+Vollständige Tabelle inkl. Belegnachweis: `reference-cases.md` · Fall **C4**.
+
+---
+
+## Abgrenzung zu BE / PL / CZ / SI / LV / EE
+
+Alle 6 anderen EPDE-Direktregistrierungen **blockieren** RC, sobald EPDE
+dort registriert ist (`_checkRCBlock()` greift). NL ist die einzige
+Ausnahme. Praktische Folge: EPDE muss in BE/PL/CZ/SI/LV/EE den lokalen
+Steuersatz ausweisen (BS/A4/AE/CB/LS/ES), in NL hingegen RC mit 0% (NC).
+
+Details: `rules/rc_country_rules.md` · `de/epde-buchungskreise.md`
+
+---
+
+*Verwandte Dateien:* `rules/rc_country_rules.md` · `rules/uid_usage_rules.md` ·
+`de/epde-buchungskreise.md` · `eu/art141_triangle.md` · `eu/art138_mwstrl.md`
+*Code:* `_checkRCBlock()` · `_detectTriangle3()` · `SAP_TAX_MAP['EPDE']['NL']` ·
+`RC_WORDING['NL']` in `docs/assets/scripts/app.js`
+
+*Quellen (verifiziert Mai 2026):* wetten.overheid.nl (BWBR0002629) ·
+Belastingdienst „Vereenvoudigde ABC-levering" · Fiscale Encyclopedie
+De Vakstudie Art. 37c · PwC „Ruimere toepassing vereenvoudigde
+ABC-regeling" · belastingdienst.nl „Opgaaf intracommunautaire prestaties"
+
+---
+
+# 21. CH · Ort der Lieferung
+<!-- Quelle: vat-knowledge/ch/mwst_ch_ort_lieferung.md -->
+
+# MWSTG CH — Ort der Lieferung & Reihengeschäft
+
+## Art. 7 MWSTG — Lieferort
+Abs. 1 Bst. b: Lieferort bei Beförderung = Ort des Beförderungsbeginns.
+Im Code: `analyzeCHInland()`: „Lieferort: Schweiz (Art. 7 Abs. 1 Bst. b MWSTG)".
+`natLaw('ch.place')` → `'Art. 7 Abs. 1 Bst. b MWSTG (SR 641.20)'`.
+
+## Art. 23 Abs. 2 Ziff. 1 MWSTG — Ausfuhr steuerfrei
+Lieferungen ins Ausland sind von der Steuer befreit wenn Ausfuhr nachgewiesen.
+`natLaw('ch.export')` → `'Art. 23 Abs. 2 Ziff. 1 MWSTG (SR 641.20)'`.
+
+## Art. 10 MWSTG — Steuerpflicht / CHF 100.000 Schwelle
+Abs. 2 Bst. a: Obligatorische Steuerpflicht ab CHF 100.000 Jahresumsatz.
+`natLaw('ch.threshold')` → `'Art. 10 Abs. 2 Bst. a MWSTG: CHF 100\'000/Jahr'`.
+Im Code: `analyzeCHInland()` warnt bei fehlender CH-UID.
+
+## Art. 67 MWSTG — Steuervertreter
+Ausländische Unternehmen mit CH-Steuerpflicht brauchen Vertreter mit CH-Sitz.
+`natLaw('ch.agent')` → `'Art. 67 Abs. 1 MWSTG (SR 641.20)'`.
+
+## Implementierung
+- `computeTaxCH(direction, from, to, myCode)`: Berechnet MwSt pro
+  Lieferung — `export`, `export-l2`, `import`, `domestic-l1`, `domestic-l2-ch`
+- `analyzeCH(supplier, me, customer, dep, dest)`: Vollanalyse EU↔CH,
+  Case 1 (EU→CH) mit DAP/DDP-Grid, Case 2 (CH→EU) mit Import-Logik
+- `analyzeCHInland(ctx)`: CH-Inland (dep=dest=CH), 8.1% auf alles
+
+## Drittland-Routing in analyze()
+```
+hasCH + dep===CH + dest===CH → analyzeCHInland()
+hasCH + dep!==CH + dest===CH → buildCHExportResult()  // EU→CH
+hasCH + dep===CH + dest!==CH → analyzeCH()            // CH→EU
+```
+`hasCH`-Checks steuern den Dispatch bevor die EU-Engine läuft.
+
+---
+
+# 22. CH · Konsignationslager
+<!-- Quelle: vat-knowledge/ch/mwst_ch_konsignationslager.md -->
+
+# MWSTG CH — Konsignationslager
+
+## MI06 Ziff. 6.1 (ESTV Merkblatt)
+Konsignationslager in der Schweiz: Lieferant lagert Ware in CH ein,
+Eigentumswechsel erst bei Entnahme durch Kunden. Zwei steuerliche Phasen.
+
+## Phase 1 — Einlagerung (AT→CH Konsilager)
+- Kein Eigentumswechsel → keine Lieferung iSd Art. 3 Bst. d MWSTG
+- AT-seitig: steuerfreie Ausfuhr (§ 7 UStG AT, 0% MwSt)
+- CH-seitig: Einfuhr durch EPROHA als Einführer → 8.1% EUSt
+- EUSt als CH-Vorsteuer abziehbar (Art. 28 MWSTG)
+- Zolllagerverfahren möglich: EUSt-Aussetzung bis Entnahme (ZG Art. 50–57)
+
+## Phase 2 — Lieferung an Kunden (Konsilager→Endkunde)
+- Eigentumsübergang bei Entnahme → Lieferung iSd Art. 3 Bst. d MWSTG
+- Lieferort: CH (Art. 7 Abs. 1 Bst. a MWSTG — Ort der Ware bei Übergabe)
+- EPROHA fakturiert 8.1% CH-MWST mit CH-UID
+- ESTV-Abrechnung: Ausgangssteuer Ziff. 200, steuerbarer Umsatz Ziff. 302
+
+## ZG Art. 50–57 — Zolllagerverfahren
+Einlagerung unter Zollaufsicht setzt EUSt aus bis zur Entnahme.
+Liquiditätsvorteil bei großen Lagerbeständen. BAZG-Bewilligung erforderlich.
+
+## Implementierung — buildKonsiLagerCH(myCHVat, myCode)
+- `myCHVat = COMPANIES['EPROHA'].vatIds['CH']` — wird vom Aufrufer als Parameter
+  übergeben. `null` wenn EPROHA keine CH-Registrierung hat.
+- Baut 2-Phasen-Grid (Phase 1: Einlagerung, Phase 2: Lieferung)
+- `myCHVat`: wenn vorhanden, grünes ✅; sonst ⚠️-Warnung
+- `invoiceP2`: Rechnungspflichtangaben Phase 2 (CH-UID, CHF, 8.1%)
+- UID-Status: `chVat || null` — steuert Warnungen und Pflichtangaben
+- Zolllager-Hinweis, Lagervertrag-Hinweis, Bestandsführung-Hinweis als `rH()`
+
+## Aufruf
+- `analyzeCH()`: Wird bei EU→CH nach dem DAP/DDP-Grid angehängt
+- `analyze2()`: Wird bei AT→CH nach den Incoterms-Karten angehängt
+
+---
+
+# 23. DE · EPDE-Buchungskreise
 <!-- Quelle: vat-knowledge/de/epde-buchungskreise.md -->
 
 # EPDE — Buchungskreise: DE + 7 EU-Registrierungen
@@ -2257,280 +2326,5 @@ Strecke Land→Land · Strecke Drittland→Land, mit Ein- und Ausgangsrechnung).
 *Verwandte Dateien:* `rules/uid_usage_rules.md` · `rules/rc_country_rules.md` · `de/ustg_de_3_6a.md` · `reference-cases.md`
 *Analogie EPROHA:* `at/eproha-buchungskreise.md`
 *Code:* `_sapEffectiveCountry()` · `SAP_TAX_MAP` · `_checkRCBlock()` in `docs/assets/scripts/app.js`
-
----
-
-# 22. NL · Wet OB Reihengeschäft
-<!-- Quelle: vat-knowledge/nl/wet_ob_nl_reihengeschaeft.md -->
-
-# Wet OB 1968 NL — Reihengeschäft & RC-Sonderfall
-
-> EPDE ist in den Niederlanden direkt registriert (NL-UID **NL827914052B01**),
-> **ohne** NL-Betriebsstätte. NL ist der einzige EPDE-Buchungskreis, in dem
-> Reverse Charge trotz Direktregistrierung möglich ist (Art. 12 Abs. 3 Wet OB).
-
----
-
-## Art. 5 lid 1 letter a Wet OB 1968 — Lieferort
-„De plaats waar een levering wordt verricht is […] ingeval het goed in
-verband met de levering wordt verzonden of vervoerd, de plaats waar de
-verzending of het vervoer aanvangt." Entspricht Art. 32 MwStSystRL.
-Im Code: `placeOfSupply = dep` bei `isMoving` (gemeinsame Engine-Logik,
-kein NL-Sonderpfad).
-
-## Art. 12 Abs. 3 Wet OB 1968 — Reverse Charge bei Direktregistrierung
-**Kern-Sonderfall NL.** Anders als BE/PL/CZ/SI/LV/EE blockiert NL den RC
-**nicht**, wenn der Lieferant zwar NL-registriert, aber dort nicht ansässig
-ist. Damit kann EPDE eine ruhende Lieferung in NL als RC-Lieferung
-fakturieren (0%, „BTW verlegd").
-
-Im Code:
-- `_checkRCBlock()` enthält **keinen** NL-Block — RC läuft regulär durch
-  (`rules/rc_country_rules.md`)
-- `SAP_TAX_MAP['EPDE']['NL']['rc'] = { out:'NC', in:'NI' }` (app.js Zeile 89)
-- `SAP_TAX_MAP['EPDE']['NL']['domestic'] = { out:null, in:'NI' }` —
-  bewusst kein `out` für lokale Steuer; Fallback in
-  `_qcRate()`/`computeTax()` greift auf `rc`-Entry zurück
-  (app.js Zeile 11612 ff., Kommentar: „NL: EPDE hat keine Betriebsstätte
-  → RC-Pflicht")
-- `RC_WORDING['NL']` setzt Pflichttext „BTW verlegd" / „VAT reverse-charged"
-  (app.js Zeile 1738) mit Rechtsverweis Art. 12 Abs. 3 Wet OB 1968 /
-  Art. 194 MwStSystRL
-- Pflichttext-Sprache: Englisch oder Niederländisch akzeptiert
-
-## Art. 37c Wet OB 1968 — Dreiecksgeschäft (NL als Bestimmungsland)
-NL-Umsetzung Art. 141 MwStSystRL. Titel im Wet OB:
-„Achterwege blijven heffing; voorwaarden; driehoekstransactie".
-**Gesetzlich drei onderdelen (a/b/c)**, in der Praxis erweitert durch
-verschränkte Verweise auf Art. 12 lid 3 (RC) und Art. 37a (ICP-Meldung).
-
-Materielle Bedingungen kombiniert (5-Bedingungen-Lesart, wie im Code
-hinterlegt):
-
-| Bed. | Inhalt | Rechtsgrundlage NL | Code-Check |
-|---|---|---|---|
-| (1) | Zwischenhändler nicht in NL ansässig | Art. 37c onderdeel a | `establishments` enthält NL nicht |
-| (2) | Direktlieferung an NL-Abnehmer | Art. 37c onderdeel b | `s4 === dest === 'NL'` |
-| (3) | Ware kommt **nicht** aus dem MS, der dem ZH die NL-UID erteilt hat | Art. 37c onderdeel c | `_detectTriangle3()` Zeile 1089: `dest === 'NL' && s1 === 'NL'` → `_noTriangle(...)` |
-| (4) | NL-Abnehmer schuldet Steuer per RC | Art. 37c onderdeel b juncto Art. 12 lid 3 / Art. 197 MwStSystRL | implizit über `rcCountry: dest` |
-| (5) | ICP-Pflicht nach Art. 37a Wet OB erfüllt | Art. 37a | wird auf Rechnungs-/Meldepflichten-Ebene gerendert |
-
-**Strenge NL-Bedingung (Art. 37c onderdeel b iVm. Art. 12 lid 3):**
-Wortlaut verlangt, dass Partij C in NL **gevestigd** (= ansässig, mit
-Betriebsstätte) ist — nicht nur registriert. Damit ist die NL-Umsetzung
-strenger als Art. 141 MwStSystRL. Die **Belastingdienst** wendet jedoch
-seit dem EuGH-Urteil zu Art. 141 eine richtlinienkonforme (mildere)
-Auslegung an — bloße NL-Registrierung des C reicht in der Praxis.
-Quelle: PwC „Ruimere toepassing vereenvoudigde ABC-regeling".
-
-**Praxisfolge:** Wenn EPDE die DE-UID nutzt (nicht NL-UID) und Ware aus DE
-nach NL geht, ist Bed. (3) eingehalten → Dreiecksgeschäft möglich. Setzt
-EPDE die NL-UID, blockiert Art. 141 lit. a die Vereinfachung schon vorher
-(`!!vatIds[dest]` in `_detectTriangle3()`).
-
-## Art. 37a Wet OB 1968 — ICP-Meldung (ZM-Pflicht NL)
-Standard: **monatlich**, spätestens letzter Tag des Folgemonats — elektronisch
-bei der Belastingdienst (Opgaaf intracommunautaire prestaties, „ICP").
-**Quartalsoption:** zulässig, wenn IG-Warenlieferungen sowohl im laufenden
-Quartal **als auch in jedem der 4 vorhergehenden Quartale** EUR 50.000
-nicht übersteigen; wird die Schwelle überschritten, ab diesem Quartal
-monatlich. **Materielle Voraussetzung** der Dreiecksgeschäft-Vereinfachung
-nach Art. 37c. Im Code als Legal-Reference `nl37a` registriert
-(app.js Zeile 1946).
-
-## Art. 9 lid 1 Wet OB 1968 — Steuersatz
-Wortlaut: „De belasting bedraagt 21 percent." Allgemeiner Satz für
-Lieferungen und Dienstleistungen. Im Code: `COUNTRIES['NL'].std = 21`
-(Zeile 167). Reduzierter Satz (Tabel I): 9 %. Nullsatz (Tabel II): 0 %.
-
----
-
-## Implementierung
-
-| Funktion / Konstante | Datei / Zeile | NL-Verhalten |
-|---|---|---|
-| `SAP_TAX_MAP['EPDE']['NL']` | app.js ~85 | NC/NI (rc) · NP (ic-acq) · NI (domestic-input) · kein ic-exempt-out |
-| `_checkRCBlock()` | app.js | **kein** NL-Branch → RC läuft durch |
-| `_detectTriangle3()` | app.js ~1085 | Bed. (3) Wet OB als Edge-Case: `dest==='NL' && s1==='NL'` → kein Dreieck |
-| `RC_WORDING['NL']` | app.js 1738 | „BTW verlegd" + Art. 12 Abs. 3 Wet OB |
-| `LEGAL_REFS.nl37c` / `.nl37a` | app.js 1945/1946 | Legal-Chips für Begründungs-Tab |
-| `computeTax()` RC-Fallback | app.js ~11612 | wenn `domestic.out===null` → `rc.out` greift |
-
-## COMPANIES['EPDE']
-```js
-vatIds: { DE, SI, LV, EE, NL:'NL827914052B01', BE, CZ, PL }
-establishments: ['DE']
-```
-NL ist Direktregistrierung — keine NL-Betriebsstätte, keine fiskale Vertretung
-erforderlich (NL erlaubt Direktregistrierung formlos).
-
----
-
-## Wann greift der NL-Buchungskreis?
-
-```
-EPDE-Lieferung mit Lieferort = NL?
-  → ruhende Lieferung in NL (L2 in 3P, oder L2/L3 in 4P)
-      → Kunde = nl-registrierter Unternehmer?
-          → RC anwendbar → SAP NC (out) / NI (in), „BTW verlegd"
-      → Kunde nicht NL-registriert / kein RC-Voraussetzung?
-          → ⚠️ kein domestic.out im SAP-Map → Fallback rc.out (NC)
-            → praktisch: EPDE muss klären ob RC zulässig; B2C wäre
-              Tatbestand für lokale Reg.-Pflicht (außerhalb des Tools)
-```
-
-**Praxis:** Der NL-Buchungskreis greift fast immer als RC-Variante.
-Echte 21%-Inlandslieferung NL aus EPDE-Sicht ist im SAP-Map bewusst
-nicht abgebildet (`out:null`), weil EPDE in NL keine Betriebsstätte hat
-und der Standardfall RC ist.
-
-## Häufige Konstellationen (EPDE-spezifisch)
-
-| Konstellation | UID | SAP Ausgang | SAP Eingang | Hinweis |
-|---|---|---|---|---|
-| DE→EPDE→NL, L2 ruhend NL, Dreieck | DE | **DH** (ZM) | — | klassisches Dreiecksgeschäft, NL = RC-Land |
-| DE→EPDE→NL, L2 ruhend NL, kein Dreieck | NL | **NC** | — | RC nach Art. 12 Abs. 3 Wet OB |
-| FR→EPDE→NL, L2 ruhend NL | DE/NL | **DH** oder **NC** | — | DE-UID → Dreieck; NL-UID → RC, kein Dreieck |
-| NL→EPDE→DE, L1 ruhend NL (IG-Erwerb) | NL | — | **NP** | EPDE kauft mit NL-UID ein |
-| NL→NL→NL Inlandskette mit EPDE | NL | **NC** | **NI** | Inlands-RC NL |
-
----
-
-## Praxisbeispiel (verifizierter EPDE-Produktionsfall)
-
-**Konstellation:** `AT → EPDE (NL-UID) → NL-Kunde`, Transport durch AT-Lieferant
-(Warenfluss direkt von AT zum NL-Kunden).
-
-```
-🇦🇹 AT ──L1──▶ 🇩🇪 DE/EPDE ──L2──▶ 🇳🇱 NL
-       Lieferant fährt direkt nach NL
-       EPDE tritt mit NL-UID auf
-```
-
-**Ablauf:**
-
-| Lieferung | Behandlung | EPDE-Buchung | Pflichttext / Meldung |
-|---|---|---|---|
-| L1 AT→EPDE | IG-Lieferung AT → NL (0 %) | IG-Erwerb NL · **SAP NP** | AT-Lieferant in AT-ZM (Empfänger: EPDE NL-UID) |
-| L2 EPDE→NL-Kunde | RC NL (0 %) Art. 12 Abs. 3 Wet OB | **SAP NC** | „BTW verlegd" + NL-ZM monatlich (Art. 37a Wet OB) |
-
-**Kernpunkt:** Dreiecksgeschäft ist blockiert (Art. 141 lit. a — EPDE hat NL-UID
-im Bestimmungsland), trotzdem fällt **kein lokales NL-MwSt-Ausweisen** an, weil
-Art. 12 Abs. 3 Wet OB den RC trotz NL-Direktregistrierung erlaubt. Wäre EPDE
-in NL ansässig (Betriebsstätte), wäre dieser RC-Weg versperrt und EPDE müsste
-21 % NL-MwSt auf der L2-Rechnung ausweisen.
-
-**Alternative UID-Wahl:** Hätte EPDE die DE-UID statt der NL-UID verwendet,
-wäre Art. 141 MwStSystRL (Dreiecksgeschäft) anwendbar gewesen — wirtschaftlich
-identisches Ergebnis, aber Buchung **DH** statt NC und DE-ZM mit Dreieck-Kennzeichen
-statt monatlicher NL-ZM. Die NL-UID-Variante ist administrativ aufwendiger, wird
-aber gewählt, wenn der NL-Kunde NL-UID auf der Rechnung erwartet oder EPDE
-ohnehin in NL meldet.
-
-Vollständige Tabelle inkl. Belegnachweis: `reference-cases.md` · Fall **C4**.
-
----
-
-## Abgrenzung zu BE / PL / CZ / SI / LV / EE
-
-Alle 6 anderen EPDE-Direktregistrierungen **blockieren** RC, sobald EPDE
-dort registriert ist (`_checkRCBlock()` greift). NL ist die einzige
-Ausnahme. Praktische Folge: EPDE muss in BE/PL/CZ/SI/LV/EE den lokalen
-Steuersatz ausweisen (BS/A4/AE/CB/LS/ES), in NL hingegen RC mit 0% (NC).
-
-Details: `rules/rc_country_rules.md` · `de/epde-buchungskreise.md`
-
----
-
-*Verwandte Dateien:* `rules/rc_country_rules.md` · `rules/uid_usage_rules.md` ·
-`de/epde-buchungskreise.md` · `eu/art141_triangle.md` · `eu/art138_mwstrl.md`
-*Code:* `_checkRCBlock()` · `_detectTriangle3()` · `SAP_TAX_MAP['EPDE']['NL']` ·
-`RC_WORDING['NL']` in `docs/assets/scripts/app.js`
-
-*Quellen (verifiziert Mai 2026):* wetten.overheid.nl (BWBR0002629) ·
-Belastingdienst „Vereenvoudigde ABC-levering" · Fiscale Encyclopedie
-De Vakstudie Art. 37c · PwC „Ruimere toepassing vereenvoudigde
-ABC-regeling" · belastingdienst.nl „Opgaaf intracommunautaire prestaties"
-
----
-
-# 23. CH · Ort der Lieferung
-<!-- Quelle: vat-knowledge/ch/mwst_ch_ort_lieferung.md -->
-
-# MWSTG CH — Ort der Lieferung & Reihengeschäft
-
-## Art. 7 MWSTG — Lieferort
-Abs. 1 Bst. b: Lieferort bei Beförderung = Ort des Beförderungsbeginns.
-Im Code: `analyzeCHInland()`: „Lieferort: Schweiz (Art. 7 Abs. 1 Bst. b MWSTG)".
-`natLaw('ch.place')` → `'Art. 7 Abs. 1 Bst. b MWSTG (SR 641.20)'`.
-
-## Art. 23 Abs. 2 Ziff. 1 MWSTG — Ausfuhr steuerfrei
-Lieferungen ins Ausland sind von der Steuer befreit wenn Ausfuhr nachgewiesen.
-`natLaw('ch.export')` → `'Art. 23 Abs. 2 Ziff. 1 MWSTG (SR 641.20)'`.
-
-## Art. 10 MWSTG — Steuerpflicht / CHF 100.000 Schwelle
-Abs. 2 Bst. a: Obligatorische Steuerpflicht ab CHF 100.000 Jahresumsatz.
-`natLaw('ch.threshold')` → `'Art. 10 Abs. 2 Bst. a MWSTG: CHF 100\'000/Jahr'`.
-Im Code: `analyzeCHInland()` warnt bei fehlender CH-UID.
-
-## Art. 67 MWSTG — Steuervertreter
-Ausländische Unternehmen mit CH-Steuerpflicht brauchen Vertreter mit CH-Sitz.
-`natLaw('ch.agent')` → `'Art. 67 Abs. 1 MWSTG (SR 641.20)'`.
-
-## Implementierung
-- `computeTaxCH(direction, from, to, myCode)`: Berechnet MwSt pro
-  Lieferung — `export`, `export-l2`, `import`, `domestic-l1`, `domestic-l2-ch`
-- `analyzeCH(supplier, me, customer, dep, dest)`: Vollanalyse EU↔CH,
-  Case 1 (EU→CH) mit DAP/DDP-Grid, Case 2 (CH→EU) mit Import-Logik
-- `analyzeCHInland(ctx)`: CH-Inland (dep=dest=CH), 8.1% auf alles
-
-## Drittland-Routing in analyze()
-```
-hasCH + dep===CH + dest===CH → analyzeCHInland()
-hasCH + dep!==CH + dest===CH → buildCHExportResult()  // EU→CH
-hasCH + dep===CH + dest!==CH → analyzeCH()            // CH→EU
-```
-`hasCH`-Checks steuern den Dispatch bevor die EU-Engine läuft.
-
----
-
-# 24. CH · Konsignationslager
-<!-- Quelle: vat-knowledge/ch/mwst_ch_konsignationslager.md -->
-
-# MWSTG CH — Konsignationslager
-
-## MI06 Ziff. 6.1 (ESTV Merkblatt)
-Konsignationslager in der Schweiz: Lieferant lagert Ware in CH ein,
-Eigentumswechsel erst bei Entnahme durch Kunden. Zwei steuerliche Phasen.
-
-## Phase 1 — Einlagerung (AT→CH Konsilager)
-- Kein Eigentumswechsel → keine Lieferung iSd Art. 3 Bst. d MWSTG
-- AT-seitig: steuerfreie Ausfuhr (§ 7 UStG AT, 0% MwSt)
-- CH-seitig: Einfuhr durch EPROHA als Einführer → 8.1% EUSt
-- EUSt als CH-Vorsteuer abziehbar (Art. 28 MWSTG)
-- Zolllagerverfahren möglich: EUSt-Aussetzung bis Entnahme (ZG Art. 50–57)
-
-## Phase 2 — Lieferung an Kunden (Konsilager→Endkunde)
-- Eigentumsübergang bei Entnahme → Lieferung iSd Art. 3 Bst. d MWSTG
-- Lieferort: CH (Art. 7 Abs. 1 Bst. a MWSTG — Ort der Ware bei Übergabe)
-- EPROHA fakturiert 8.1% CH-MWST mit CH-UID
-- ESTV-Abrechnung: Ausgangssteuer Ziff. 200, steuerbarer Umsatz Ziff. 302
-
-## ZG Art. 50–57 — Zolllagerverfahren
-Einlagerung unter Zollaufsicht setzt EUSt aus bis zur Entnahme.
-Liquiditätsvorteil bei großen Lagerbeständen. BAZG-Bewilligung erforderlich.
-
-## Implementierung — buildKonsiLagerCH(myCHVat, myCode)
-- `myCHVat = COMPANIES['EPROHA'].vatIds['CH']` — wird vom Aufrufer als Parameter
-  übergeben. `null` wenn EPROHA keine CH-Registrierung hat.
-- Baut 2-Phasen-Grid (Phase 1: Einlagerung, Phase 2: Lieferung)
-- `myCHVat`: wenn vorhanden, grünes ✅; sonst ⚠️-Warnung
-- `invoiceP2`: Rechnungspflichtangaben Phase 2 (CH-UID, CHF, 8.1%)
-- UID-Status: `chVat || null` — steuert Warnungen und Pflichtangaben
-- Zolllager-Hinweis, Lagervertrag-Hinweis, Bestandsführung-Hinweis als `rH()`
-
-## Aufruf
-- `analyzeCH()`: Wird bei EU→CH nach dem DAP/DDP-Grid angehängt
-- `analyze2()`: Wird bei AT→CH nach den Incoterms-Karten angehängt
 
 ---
