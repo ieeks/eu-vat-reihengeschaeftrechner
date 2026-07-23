@@ -40,8 +40,8 @@ gelassen — sie reproduziert alle 8 exakt. Erst danach wurden die zusätzlichen
 Die EPROHA-Datei enthält bewusst die **Schweiz (CH)** und **Liechtenstein (LI)**, weil das die
 Drittland-Fälle mit eigener Registrierung sind.
 
-Jede Datei hat zusätzlich ein zweites Tabellenblatt **„Hinweise"** mit Erläuterungen (u. a. zur
-Transport-/Positionsvariation, siehe Punkt 10).
+Jede Datei hat zusätzlich die Tabellenblätter **„MIRO_Eingang"** (Eingangs-/Vorsteuerseite, siehe
+Punkt 6) und **„Hinweise"** (Erläuterungen, u. a. zur Transport-/Positionsvariation, Punkt 10).
 
 ---
 
@@ -101,13 +101,30 @@ Das ist kein Fehler, sondern gewollt — beim SAP-Test unbedingt den Incoterm mi
 
 ---
 
-## 6. Was die Spalte „tax code Miro" betrifft
+## 6. Die Eingangsseite (MIRO) — Blatt „MIRO_Eingang"
 
-Die Spalte **tax code Miro** (Eingangs-/Einkaufsseite) ist **bewusst offen** (`⟶ in SAP prüfen`).
-Grund: Schon in der Original-Matrix hängt dieses Kennzeichen davon ab, **wie der Lieferant
-fakturiert** (z. B. Zeile 3 = B7, Zeilen 5/6 = VD trotz SI-Verkauf). Das lässt sich aus der
-Verkaufs-Konstellation allein nicht eindeutig ableiten und sollte direkt aus SAP gezogen und
-gegengeprüft werden.
+Im Hauptblatt ist **tax code Miro** bewusst offen (`⟶ in SAP prüfen`), weil es von der
+**Verkaufs**-Konstellation allein nicht ableitbar ist. Für die **Eingangsseite** gibt es deshalb
+ein eigenes Tabellenblatt **„MIRO_Eingang"** mit einer eigenen Logik.
+
+Das MIRO-Kennzeichen folgt **vier Vorgängen** (aus Käufer-/Erwerbersicht):
+
+| Vorgang | wann | Beispiel-Kennzeichen |
+|---|---|---|
+| **ig. Erwerb** | eingehende Lieferung ist **bewegt** (Ware kommt grenzüberschreitend zu uns) → Selbstveranlagung im Ankunftsland | VE (AT), VH (DE), W5 (PL), EC (SI), UR (CZ) … |
+| **Inlandseinkauf** | eingehende Lieferung ist **ruhend** (Ware schon im Land, Lieferant weist lokale MwSt aus) → Vorsteuer | VD (DE), V2 (AT), B7 (PL), IB (CH/LI) … |
+| **Reverse Charge** | Auslandslieferant, wir Steuerschuldner | DC (DE §13b), RC (AT), VI (IT) |
+| **Einfuhr Drittland** | Ware aus CH/GB/… | EUSt über EORI (kein Tabellen-MWSKZ) |
+| *entfällt* | eigene Ware ab Werk → kein Einkauf | *not relevant* |
+
+**Wichtig:** MIRO braucht **zwei Zusatz-Eingaben**, die die Verkaufsseite nicht hergibt — das
+**Lieferantenland** und ob die **eingehende Lieferung bewegt oder ruhend** ist. Genau das
+entscheidet zwischen ig. Erwerb (z. B. W5) und Inlandseinkauf (z. B. B7) und erklärt die
+scheinbare Inkonsistenz der Original-Matrix (Zeile 3 = B7, Zeilen 5/6 = VD).
+
+**Offen zu klären:** Der Workshop hat MIRO als teils **manuell** markiert („steuerliches
+Abgangsland in der MIRO-Buchung korrekt pflegen"). Vor einer Automatisierung mit dem SAP-Team
+abstimmen, ob die Findung MIRO automatisch ermitteln soll oder ob es ein manueller Schritt bleibt.
 
 ---
 
