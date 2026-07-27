@@ -2,6 +2,35 @@
 
 ---
 
+## v4.3 · 27.07.2026 — Bugfix Lohnveredelung: IG-Lieferung ab Veredelungsland zeigte AF statt DH
+
+Fall AT→DE→AT (EPROHA, Verfügungsmacht in AT, **Ware kommt nicht zurück**): Schritt 3
+„IG-Lieferung Deutschland → Österreich" wurde mit **AF** ausgewiesen — dem Kennzeichen für eine
+ig. Lieferung unter der **AT**-UID. Die Ware geht aber ab **DE** los (Lieferort DE, Art. 32
+MwStSystRL), die Lieferung ist unter der DE-UID zu erklären → **DH**.
+
+- **Ursache:** `computeLohn()` rief `sap(con,'ic-exempt','seller')` **ohne** `uidCountry`-Hint.
+  `_sapEffectiveCountry()` fällt bei `ic-exempt` bewusst auf das UID-Land zurück — ohne Hint auf
+  `home` (EPROHA = AT) → AF. Das Abgangsland `con` wurde im Lookup verworfen.
+- **Fix:** neuer Helper `sapFrom(c, treatment, role)` reicht das Land als `uidCountry` durch;
+  in **allen drei** `ig-sale`-Zweigen (Inland-, `supIsHome`- und Normalpfad) verwendet.
+  Kein Kennzeichen für dieses UID-Land hinterlegt → **kein Code** statt eines falschen
+  (z.B. EPROHA/PL) — keine erfundenen Codes.
+- **Neuer Hinweis pro ig-sale-Schritt** (`igSaleNote`): Lieferort = Abgangsland, Rechnung/UStVA/ZM
+  laufen über dessen UID; fehlt das SAP-Ausgangskennzeichen, wird genau das gesagt.
+- **`verbringenSapHint()`:** beim meldepflichtigen ig. Verbringen (lit. f greift nicht) werden die
+  beiden echten Kennzeichen ergänzt (AT→DE: Ausgang **AF** / Eingang **VH**) — dort gehört AF hin.
+- **Banner-Inkonsistenz behoben:** Die lit.-f-Texte im `supIsHome`-Renderer hingen an
+  `homeHandover` statt an `litF` — bei „Ware kommt nicht zurück" versprachen sie trotzdem
+  „lit. f vermeidet die Registrierung im Veredelungsland", obwohl Schritt 1 korrekt
+  „lit. f greift nicht" meldete. Jetzt `litF`-abhängig, inkl. Warn-Hinweis auf das
+  meldepflichtige Verbringen + Verkauf ab dem Veredelungsland.
+- **Tests:** `s3sap`-Assertion im Lohn-Smoke-Runner; LV-02/03/04 um erwartete Kennzeichen
+  ergänzt, neu **LV-10** (AT→DE→AT, Ware bleibt → DH) und **LV-11** (AT→PL→AT → kein Code +
+  PL-Registrierung). `npm test` 49/49 grün.
+
+---
+
 ## v4.3 · 10.07.2026 — Liechtenstein (LI) als eigenes Zielland (Schweizer MWST-Raum)
 
 Liechtenstein war bisher **gar nicht im Rechner** vorhanden (Länderliste kannte nur

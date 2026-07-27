@@ -4073,12 +4073,33 @@ function computeLohn(opts) {
   const myHome = C.home;
   const vat = (c) => C.vatIds[c] || null;
   const sap = (c, treatment, role) => getSapCode(company, c, treatment, role) || null;
+  // ig. Lieferung: das Kennzeichen hängt am UID-Land des ABGANGSLANDS, nicht an der
+  // Heimat-UID. Ohne expliziten uidCountry-Hint fällt _sapEffectiveCountry auf home
+  // zurück (EPROHA → AT → AF), obwohl die Ware z.B. ab DE geht (→ DH). Liefert null,
+  // wenn für dieses UID-Land kein Kennzeichen hinterlegt ist — keine erfundenen Codes.
+  const sapFrom = (c, treatment, role) => getSapCode(company, c, treatment, role, c) || null;
 
   const inland     = sup === con;
   const supIsHome  = sup === myHome;   // Rohmaterial-Lieferant im eigenen Heimatland (Inlandskauf möglich)
   const sameConCus = con === cus;
   const myConVat = vat(con), myHomVat = vat(myHome), mySupVat = vat(sup);
   const conRate = rate(con), cusRate = rate(cus), homeRate = rate(myHome), supRate = rate(sup);
+
+  // Hinweis für eine ig. Lieferung, die NICHT im Heimatland beginnt: Lieferort ist das
+  // Abgangsland (Art. 32 MwStSystRL) → Rechnung/UStVA/ZM laufen über die dortige UID.
+  const igSaleNote = (c) => {
+    if (c === myHome) return null;
+    return sapFrom(c, 'ic-exempt', 'seller')
+      ? `Warenbewegung beginnt in ${cn(c)} → Lieferort ${cn(c)} (Art. 32 MwStSystRL): Rechnung, UStVA und ZM laufen über deine ${cn(c)}-UID${vat(c) ? ` (${vat(c)})` : ''} — nicht über die ${cn(myHome)}-UID`
+      : `Warenbewegung beginnt in ${cn(c)} → Lieferort ${cn(c)} (Art. 32 MwStSystRL): Meldung nur über eine ${cn(c)}-UID möglich — für eine ig. Lieferung mit ${cn(c)}-UID ist kein SAP-Ausgangskennzeichen hinterlegt`;
+  };
+
+  // Meldepflichtiges ig. Verbringen myHome → con (lit. f greift nicht): fiktive ig.
+  // Lieferung im Abgangsland + fiktiver ig. Erwerb im Bestimmungsland.
+  const verbringenSapHint = () => {
+    const out = sapFrom(myHome, 'ic-exempt', 'seller'), inn = sapFrom(con, 'ic-acquisition', 'buyer');
+    return (out && inn) ? ` · SAP: Ausgang ${cn(myHome)} ${out} / Eingang ${cn(con)} ${inn}` : '';
+  };
 
   const steps = [];
   const regRisks = [];
@@ -4102,7 +4123,8 @@ function computeLohn(opts) {
       steps.push({ key:'verkauf', kind:'ig-sale',
         title:`Verkauf · IG-Lieferung ${cn(con)} → ${cn(cus)}`,
         taxInfo:`IG-Lieferung 0% · Kunde tätigt ig. Erwerb in ${cn(cus)} (${cusRate}%)`,
-        sap: sap(con, 'ic-exempt', 'seller'), regRisk: myConVat ? null : con });
+        sap: sapFrom(con, 'ic-exempt', 'seller'), note: igSaleNote(con),
+        regRisk: myConVat ? null : con });
       if (!myConVat) regRisks.push(con);
     }
     return { company, myHome, sup, con, cus, inland, supIsHome, sameConCus, lvDirect, litF, homeHandover,
@@ -4128,7 +4150,7 @@ function computeLohn(opts) {
         sap: sap(myHome, 'domestic', 'buyer'),
         note: litF
           ? `Anschließendes Verbringen eigener Ware ${cn(myHome)} → ${cn(con)} (Veredelung) + Rücksendung = kein ig. Verbringen (Art. 17 Abs. 2 lit. f) → keine Registrierung in ${cn(con)}`
-          : `Ware kommt nicht zurück → ig. Verbringen ${cn(myHome)} → ${cn(con)} meldepflichtig (Art. 17 MwStSystRL) — lit. f greift nicht`,
+          : `Ware kommt nicht zurück → ig. Verbringen ${cn(myHome)} → ${cn(con)} meldepflichtig (Art. 17 MwStSystRL) — lit. f greift nicht${verbringenSapHint()}`,
         regRisk: (!myConVat && !litF) ? con : null });
       if (!myConVat && !litF) regRisks.push(con);
     } else {
@@ -4165,7 +4187,8 @@ function computeLohn(opts) {
       steps.push({ key:'verkauf', kind:'ig-sale',
         title:`Verkauf · IG-Lieferung ${cn(con)} → ${cn(cus)}`,
         taxInfo:`IG-Lieferung 0% · Kunde tätigt ig. Erwerb in ${cn(cus)} (${cusRate}%)`,
-        sap: sap(con, 'ic-exempt', 'seller'), regRisk: myConVat ? null : con });
+        sap: sapFrom(con, 'ic-exempt', 'seller'), note: igSaleNote(con),
+        regRisk: myConVat ? null : con });
       if (!myConVat) regRisks.push(con);
     }
 
@@ -4190,7 +4213,7 @@ function computeLohn(opts) {
       taxInfo:`${cn(sup)} 0% · ig. Erwerb in ${cn(myHome)} (${homeRate}%, Saldo 0)`,
       sap: sap(myHome, 'ic-acquisition', 'buyer'),
       note: litF ? `Hin- und Rückverbringen ${cn(myHome)} ↔ ${cn(con)} = kein ig. Verbringen (Art. 17 Abs. 2 lit. f)`
-                 : `ig. Verbringen ${cn(myHome)} → ${cn(con)} meldepflichtig (Art. 17 MwStSystRL) — lit. f greift nicht`,
+                 : `ig. Verbringen ${cn(myHome)} → ${cn(con)} meldepflichtig (Art. 17 MwStSystRL) — lit. f greift nicht${verbringenSapHint()}`,
       regRisk: (!myConVat && !litF) ? con : null });
     if (!myConVat && !litF) regRisks.push(con);
   }
@@ -4216,7 +4239,8 @@ function computeLohn(opts) {
     steps.push({ key:'verkauf', kind:'ig-sale',
       title:`Verkauf · IG-Lieferung ${cn(con)} → ${cn(cus)}`,
       taxInfo:`IG-Lieferung 0% · Kunde tätigt ig. Erwerb in ${cn(cus)} (${cusRate}%)`,
-      sap: sap(con, 'ic-exempt', 'seller'), regRisk: myConVat ? null : con });
+      sap: sapFrom(con, 'ic-exempt', 'seller'), note: igSaleNote(con),
+      regRisk: myConVat ? null : con });
     if (!myConVat) regRisks.push(con);
   }
 
@@ -4352,7 +4376,9 @@ function analyzeLohn() {
     if (homeHandover) {
       shtml += `<div style="padding:10px 14px;background:rgba(45,212,191,0.08);border:1px solid rgba(45,212,191,0.3);border-radius:8px;margin-bottom:12px;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--teal);">
         ℹ️ <strong>Inlandskauf-Lesart:</strong> Verfügungsmacht geht in ${flag(myHome)} <strong>${cn(myHome)}</strong> über → ${cn(sup)}-Lieferant fakturiert <strong>${L.homeRate}% Inlands-MwSt</strong>.<br>
-        <span style="color:var(--tx-2);font-size:0.68rem;">Die Fahrt ${cn(myHome)}→${cn(con)} zur Veredelung ist dein <strong>eigenes Verbringen</strong>; bei Rückkehr durch <strong>Art. 17 Abs. 2 lit. f</strong> gedeckt → keine ${cn(con)}-Registrierung.</span>
+        <span style="color:var(--tx-2);font-size:0.68rem;">${litF
+          ? `Die Fahrt ${cn(myHome)}→${cn(con)} zur Veredelung ist dein <strong>eigenes Verbringen</strong>; bei Rückkehr durch <strong>Art. 17 Abs. 2 lit. f</strong> gedeckt → keine ${cn(con)}-Registrierung.`
+          : `Die Fahrt ${cn(myHome)}→${cn(con)} ist dein <strong>eigenes Verbringen</strong> — die Ware kommt <strong>nicht</strong> zurück, daher greift <strong>lit. f nicht</strong>: meldepflichtiges ig. Verbringen + Verkauf ab ${cn(con)} → <strong>${cn(con)}-Registrierung/UID erforderlich</strong>.`}</span>
       </div>`;
     } else {
       shtml += `<div style="padding:10px 14px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.35);border-radius:8px;margin-bottom:12px;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--amber);">
@@ -4380,9 +4406,11 @@ function analyzeLohn() {
     const uniqReg = [...new Set(L.regRisks)];
     shtml += `<div class="hints" style="margin-top:10px;">
       ${uniqReg.length === 0
-        ? rH({type:'ok',icon:'✅',text:`Kein Registrierungsrisiko — benötigte UIDs vorhanden${homeHandover ? ' (lit. f vermeidet die Registrierung im Veredelungsland)' : ''}.`})
+        ? rH({type:'ok',icon:'✅',text:`Kein Registrierungsrisiko — benötigte UIDs vorhanden${homeHandover && litF ? ' (lit. f vermeidet die Registrierung im Veredelungsland)' : ''}.`})
         : uniqReg.map(c => rH({type:'warn',icon:'📋',text:`Registrierung in <strong>${cn(c)}</strong> beantragen oder Steuerberater konsultieren.`})).join('')}
-      ${rH({type:'info',icon:'⚖️',text:`Voraussetzung Art. 17 Abs. 2 lit. f: Ware muss tatsächlich nach ${cn(myHome)} zurückkommen + Lohnveredelungsvertrag + Verbringungsregister dokumentiert.`})}
+      ${litF
+        ? rH({type:'info',icon:'⚖️',text:`Voraussetzung Art. 17 Abs. 2 lit. f: Ware muss tatsächlich nach ${cn(myHome)} zurückkommen + Lohnveredelungsvertrag + Verbringungsregister dokumentiert.`})
+        : rH({type:'warn',icon:'⚖️',text:`Art. 17 Abs. 2 lit. f greift <strong>nicht</strong> (Ware kommt nicht zurück): Verbringen ${cn(myHome)} → ${cn(con)} ist meldepflichtig (ig. Verbringen Art. 17 Abs. 1) und der anschließende Verkauf ist eine ig. Lieferung <strong>ab ${cn(con)}</strong> — beides läuft über die ${cn(con)}-UID.`})}
     </div>`;
 
     document.getElementById('resultContent').innerHTML = shtml;
@@ -10243,15 +10271,15 @@ function runOutputTests() {
     { id:'LV-01', name:'FI→PL→DE EPROHA direkt, Ware kommt zurück: RC + Verkauf separat + Reg PL',
       o:{company:'EPROHA',sup:'FI',con:'PL',cus:'DE',lvDirect:true,litF:true},
       exp:{ inland:false, s2kind:'rc', s3kind:'separate', reg:['PL'] } },
-    { id:'LV-02', name:'FI→PL→DE EPROHA direkt, Ware bleibt: Verkauf IG-Lieferung PL→DE',
+    { id:'LV-02', name:'FI→PL→DE EPROHA direkt, Ware bleibt: Verkauf IG-Lieferung PL→DE (kein PL-Stkz → kein Code)',
       o:{company:'EPROHA',sup:'FI',con:'PL',cus:'DE',lvDirect:true,litF:false},
-      exp:{ s3kind:'ig-sale', reg:['PL'] } },
-    { id:'LV-03', name:'FI→PL→DE EPDE (PL-UID vorhanden): kein Registrierungsrisiko',
+      exp:{ s3kind:'ig-sale', s3sap:null, reg:['PL'] } },
+    { id:'LV-03', name:'FI→PL→DE EPDE (PL-UID vorhanden): kein Registrierungsrisiko, IG-Lieferung ab PL = T1',
       o:{company:'EPDE',sup:'FI',con:'PL',cus:'DE',lvDirect:true,litF:false},
-      exp:{ reg:[] } },
-    { id:'LV-04', name:'DE→DE→AT EPROHA (sup=con): rein inländisch, kein RC',
+      exp:{ s3sap:'T1', reg:[] } },
+    { id:'LV-04', name:'DE→DE→AT EPROHA (sup=con): rein inländisch, kein RC, IG-Lieferung ab DE = DH',
       o:{company:'EPROHA',sup:'DE',con:'DE',cus:'AT',lvDirect:true,litF:false},
-      exp:{ inland:true, s2rc:false } },
+      exp:{ inland:true, s2rc:false, s3sap:'DH' } },
     { id:'LV-05', name:'FI→PL→PL EPDE, Ware bleibt: Verkauf Inland PL',
       o:{company:'EPDE',sup:'FI',con:'PL',cus:'PL',lvDirect:true,litF:false},
       exp:{ s3kind:'inland-sale' } },
@@ -10268,6 +10296,14 @@ function runOutputTests() {
     { id:'LV-09', name:'AT→PL→AT EPROHA, Verfügungsmacht PL (DAP): ig. Erwerb PL → Registrierung PL nötig',
       o:{company:'EPROHA',sup:'AT',con:'PL',cus:'AT',lvDirect:true,litF:true,homeHandover:false},
       exp:{ supIsHome:true, s1kind:'ig-acquisition', reg:['PL'] } },
+    // Ware kommt NICHT zurück → Verkauf ist ig. Lieferung ab dem Veredelungsland:
+    // Kennzeichen richtet sich nach der UID des Abgangslands (DE = DH), nicht nach der Heimat-UID (AF).
+    { id:'LV-10', name:'AT→DE→AT EPROHA, Verfügungsmacht AT, Ware bleibt: IG-Lieferung ab DE = DH (nicht AF)',
+      o:{company:'EPROHA',sup:'AT',con:'DE',cus:'AT',lvDirect:true,litF:false,homeHandover:true},
+      exp:{ supIsHome:true, s1kind:'home-purchase', s3kind:'ig-sale', s3sap:'DH', reg:[] } },
+    { id:'LV-11', name:'AT→PL→AT EPROHA, Ware bleibt: kein PL-Ausgangs-Stkz → kein Code + PL-Registrierung',
+      o:{company:'EPROHA',sup:'AT',con:'PL',cus:'AT',lvDirect:true,litF:false,homeHandover:true},
+      exp:{ supIsHome:true, s3kind:'ig-sale', s3sap:null, reg:['PL'] } },
   ];
   LOHN_TESTS.forEach(t => {
     const errs = [];
@@ -10280,6 +10316,7 @@ function runOutputTests() {
       if (e.s2kind && (!s2 || s2.kind !== e.s2kind)) errs.push(`Schritt2.kind: erwartet ${e.s2kind}, erhalten ${s2 && s2.kind}`);
       if ('s2rc' in e && (!s2 || s2.rc !== e.s2rc)) errs.push(`Schritt2.rc: erwartet ${e.s2rc}, erhalten ${s2 && s2.rc}`);
       if (e.s3kind && (!s3 || s3.kind !== e.s3kind)) errs.push(`Schritt3.kind: erwartet ${e.s3kind}, erhalten ${s3 && s3.kind}`);
+      if ('s3sap' in e && ((s3 && s3.sap) || null) !== e.s3sap) errs.push(`Schritt3.sap: erwartet ${e.s3sap}, erhalten ${(s3 && s3.sap) || null}`);
       if (e.reg) { const got = [...new Set(L.regRisks)].sort().join(','), want = e.reg.slice().sort().join(','); if (got !== want) errs.push(`regRisks: erwartet [${want}], erhalten [${got}]`); }
     } catch(ex) { errs.push(`Exception: ${ex.message}`); }
     const ok = errs.length === 0; if (ok) passed++; else failed++;
