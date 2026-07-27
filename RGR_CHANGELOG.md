@@ -2,6 +2,55 @@
 
 ---
 
+## v4.3 · 27.07.2026 — Bugfix Lohnveredelung: Reverse Charge hing an der falschen Bedingung
+
+Schritt 2 (Veredelungsleistung) wurde im Normalpfad **immer** als Reverse Charge ausgewiesen —
+auch wenn der Converter im selben Land sitzt wie der Auftraggeber. Beispiel EPDE (Sitz DE),
+Lieferant AT, Converter DE: Das Tool verlangte eine 0-%-Rechnung mit RC-Pflichttext, richtig ist
+eine **normale deutsche Rechnung mit 19 % USt** + Vorsteuerabzug.
+
+- **Ursache:** die Fallunterscheidung lief über `sup === con` (Warenbewegung). Für Reverse Charge
+  zählt aber ausschließlich, ob der **Leistende im Ausland ansässig** ist (Art. 196 MwStSystRL,
+  § 13b Abs. 2 Nr. 1 UStG, Art. 196 iVm. § 19 Abs. 1 UStG AT) — also `con` ↔ `myHome`.
+- **Neu `conIsHome` + `veredelungStep()`** in `computeLohn()`: EINE Regel für alle drei Zweige.
+  `con === myHome` → `kind:'inland-service'`, `rc:false`, lokale MwSt (EPDE/DE = **VD**);
+  sonst `kind:'rc'` wie bisher (EPROHA/AT = **RC**). Leistungsort bleibt immer Art. 44 = Sitz.
+- **Spiegelbildlicher Fehler mitbehoben:** der `inland`-Zweig (`sup === con`) behauptete pauschal
+  „kein Reverse Charge". Für EPROHA (Sitz AT) mit Lieferant **und** Converter in DE ist die
+  Werkleistung sehr wohl grenzüberschreitend → RC in AT. Der Einkauf bleibt DE-Inland.
+- Render-Schicht nachgezogen: Schritt-2-Karte (Normalpfad **und** Inland-Zweig), Banner im
+  Inland-Zweig, Meldepflichten-Übersicht, Legal-Tab (`legalRow` Schritt 2 ohne Art. 196/§ 13b,
+  wenn Inlandsleistung) und QuickCheck (Statuszeile + Hinweis).
+- **Tests:** neue Assertions `conIsHome` / `s2sap`; **LV-12** (EPDE AT→DE→AT: `inland-service`,
+  kein RC, VD) und **LV-13** (EPROHA AT→DE→AT: RC) ergänzt; **LV-04** korrigiert — erwartet jetzt
+  `s2rc:true` (EPROHA, sup=con=DE, Sitz AT) statt bisher `false`. `npm test` 51/51 grün.
+
+---
+
+## v4.3 · 27.07.2026 — Typeahead-Länderpicker auch im Lohnveredelungs-Modus
+
+Im Modus 5 waren die drei Länder-Selects (Einkaufs-/Veredelungs-/Verkaufsland) noch native
+`<select>`-Elemente ohne Suche — Tippen von „AT" sprang **nicht** auf Österreich (die native
+Select-Suche matcht auf den Options-Text, der mit dem Flaggen-Emoji beginnt).
+
+- `initTypeaheadPickers()` ist jetzt **idempotent** (Guard auf `.typeahead`) und wird am Ende der
+  Erst-Initialisierung von `initLohnPanel()` erneut aufgerufen — beim App-Start sind die
+  Lohn-Selects noch leer, deshalb greift der ursprüngliche Aufruf dort nicht.
+- Die drei Lohn-Select-Container tragen `class="picker-wrap"`, die Flaggen-Overlays
+  `class="picker-flag"` (per CSS ausgeblendet, sobald das Typeahead-Input die Flagge selbst zeigt).
+- **Trefferreihenfolge** in `buildOptions()`: exakter Ländercode zuerst, dann Code-Präfix,
+  dann Namensanfang, dann sonstige Namenstreffer — „AT" listet **Österreich vor Kroatien**
+  (`kroatien`.includes(`at`)). Bester Treffer ist vormarkiert → **Enter** übernimmt ihn direkt.
+  Gilt für alle Picker (3P/4P/2P), nicht nur Lohn.
+- **`sel._taSync()`**: programmatische Wertänderungen (Share-Link-Restore, Defaults,
+  Gesellschaftswechsel) ziehen die Anzeige nach; in `onLohnChange()` eingehängt.
+- Verifiziert (JSDOM): Modus 5 → alle drei Picker mit genau einem Input; „AT" + Enter = Österreich
+  (Reihenfolge AT, HR); programmatisch `NL` → Anzeige „🇳🇱 Niederlande"; Re-Init erzeugt kein
+  zweites Input und setzt die Auswahl nicht zurück. Hauptpicker unverändert („de" → DE/NL/SE,
+  „öster" → AT). `npm test` 49/49, `npm run check` + `node --check` ok.
+
+---
+
 ## v4.3 · 27.07.2026 — Bugfix Lohnveredelung: IG-Lieferung ab Veredelungsland zeigte AF statt DH
 
 Fall AT→DE→AT (EPROHA, Verfügungsmacht in AT, **Ware kommt nicht zurück**): Schritt 3
