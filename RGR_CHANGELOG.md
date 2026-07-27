@@ -2,6 +2,50 @@
 
 ---
 
+## v4.3 · 27.07.2026 — Modus 5: Experten-Tabs kommen jetzt aus computeLohn()
+
+Im Lohnveredelungs-Modus rechnete nur der **Ergebnis**-Tab mit der Lohnveredelungs-Logik. Die
+drei Experten-Tabs liefen weiter über `VATEngine.run()` + `classifySuppliesNorm()` — und die
+3-Parteien-Engine kennt weder Werkleistung noch eigenes Verbringen. Sie las AT→DE→AT als
+Reihengeschäft und widersprach dem Ergebnis direkt:
+
+- **Begründung & Recht:** „…wird nach der Veredelung **zurückgesendet**" (obwohl „Ware kommt nicht
+  zurück" gewählt war) + „L1 **ruhende Lieferung** AT 20 % / L2 ruhende Lieferung AT 20 %".
+- **Rechnung & Pflichten:** Musterrechnung an „**Deutschland**-Kunde GmbH · Deutschland" mit 20 %,
+  obwohl der Kunde in AT sitzt.
+- **Meldepflichten:** „ZM Österreich: **Keine ZM-Pflicht**" — tatsächlich sind das ig. Verbringen
+  AT→DE und eine ig. Lieferung **ab DE** (ZM in Deutschland) zu melden.
+
+Neu — drei Renderer aus derselben Quelle wie der Ergebnis-Tab (`_lohnLast`, von `analyzeLohn()`
+gesetzt). **Keine neue Steuerlogik**, reine Darstellung:
+
+- **`renderLohnBegruendung()`** — Prosa entlang der drei Schritte: Art des Geschäfts (Werkleistung,
+  ausdrücklich **kein** Reihengeschäft), Verbringen/lit. f passend zur Auswahl, Einkauf je Variante,
+  Werkleistung mit Art. 44 **und** der RC-Frage (`conIsHome`), Verkauf inkl. Art. 32 + ZM im
+  Abgangsland, Verfügungsmacht-Lesart bei `supIsHome`, Melde-/Registrierungspflichten. Dazu die
+  SAP-Tabelle aus den Schritten. `renderExpertLegal()` (eigener Mode-5-Zweig) hängt wie bisher an.
+- **`renderLohnInvoice()`** — echte Belege statt Handelsrechnung: Eingangsrechnung Rohmaterial,
+  Converter-Rechnung (RC **oder** lokale MwSt), Ausgangsrechnung Kunde; je Beleg Aussteller/
+  Empfänger, Positionstext, Steuerzeile, UID des richtigen Landes, SAP-Kennzeichen und die
+  Rechnungspflichtangaben (`getRpaItems`) — Umschalter `setLohnDoc()`.
+- **`renderLohnMelde()`** — UVA je Land (Heimat + Veredelungsland, nur wenn dort Pflichten
+  bestehen), ZM im **Abgangsland** der ig. Lieferung und ZM für ein meldepflichtiges Verbringen,
+  Intrastat je physischer Warenbewegung (mit Hinweis auf den eigenen Code für die Art des Geschäfts
+  bei Veredelung), Registrierungs-Kacheln aus `regRisks`.
+
+Dafür in `computeLohn()` ergänzt (Datenebene, keine neue Entscheidung):
+- **`STEP_META`** hängt an jeden Schritt `uidCountry` / `sapTreatment` / `role` — abgeleitet aus
+  `kind`, damit die Tabs nicht selbst raten müssen, unter welcher UID ein Vorgang läuft.
+- **`verbringen`** = `{from, to, meldepflichtig}` oder `null` — macht explizit, was bisher nur im
+  Hinweistext stand. Alle drei `return`-Zweige laufen über `finish()`.
+
+**Tests:** neue Assertions `s3uid` + `verbr` in den LV-Tests (51 grün) und ein zweiter Testlauf
+`scripts/test-lohn-tabs.mjs`, der die drei Tabs für **12 Konstellationen** im DOM prüft: keine
+3P-Formulierungen, lit.-f-Aussage passend zur Auswahl, ZM nur wenn Pflicht (und im richtigen Land),
+RC-Aussage passend zu `conIsHome`, vollständige Belegauswahl. In `npm test` verkettet.
+
+---
+
 ## v4.3 · 27.07.2026 — Bugfix Lohnveredelung: Reverse Charge hing an der falschen Bedingung
 
 Schritt 2 (Veredelungsleistung) wurde im Normalpfad **immer** als Reverse Charge ausgewiesen —
