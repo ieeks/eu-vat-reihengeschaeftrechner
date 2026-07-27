@@ -2,6 +2,31 @@
 
 ---
 
+## v4.3 · 27.07.2026 — Bugfix Lohnveredelung: Reverse Charge hing an der falschen Bedingung
+
+Schritt 2 (Veredelungsleistung) wurde im Normalpfad **immer** als Reverse Charge ausgewiesen —
+auch wenn der Converter im selben Land sitzt wie der Auftraggeber. Beispiel EPDE (Sitz DE),
+Lieferant AT, Converter DE: Das Tool verlangte eine 0-%-Rechnung mit RC-Pflichttext, richtig ist
+eine **normale deutsche Rechnung mit 19 % USt** + Vorsteuerabzug.
+
+- **Ursache:** die Fallunterscheidung lief über `sup === con` (Warenbewegung). Für Reverse Charge
+  zählt aber ausschließlich, ob der **Leistende im Ausland ansässig** ist (Art. 196 MwStSystRL,
+  § 13b Abs. 2 Nr. 1 UStG, Art. 196 iVm. § 19 Abs. 1 UStG AT) — also `con` ↔ `myHome`.
+- **Neu `conIsHome` + `veredelungStep()`** in `computeLohn()`: EINE Regel für alle drei Zweige.
+  `con === myHome` → `kind:'inland-service'`, `rc:false`, lokale MwSt (EPDE/DE = **VD**);
+  sonst `kind:'rc'` wie bisher (EPROHA/AT = **RC**). Leistungsort bleibt immer Art. 44 = Sitz.
+- **Spiegelbildlicher Fehler mitbehoben:** der `inland`-Zweig (`sup === con`) behauptete pauschal
+  „kein Reverse Charge". Für EPROHA (Sitz AT) mit Lieferant **und** Converter in DE ist die
+  Werkleistung sehr wohl grenzüberschreitend → RC in AT. Der Einkauf bleibt DE-Inland.
+- Render-Schicht nachgezogen: Schritt-2-Karte (Normalpfad **und** Inland-Zweig), Banner im
+  Inland-Zweig, Meldepflichten-Übersicht, Legal-Tab (`legalRow` Schritt 2 ohne Art. 196/§ 13b,
+  wenn Inlandsleistung) und QuickCheck (Statuszeile + Hinweis).
+- **Tests:** neue Assertions `conIsHome` / `s2sap`; **LV-12** (EPDE AT→DE→AT: `inland-service`,
+  kein RC, VD) und **LV-13** (EPROHA AT→DE→AT: RC) ergänzt; **LV-04** korrigiert — erwartet jetzt
+  `s2rc:true` (EPROHA, sup=con=DE, Sitz AT) statt bisher `false`. `npm test` 51/51 grün.
+
+---
+
 ## v4.3 · 27.07.2026 — Typeahead-Länderpicker auch im Lohnveredelungs-Modus
 
 Im Modus 5 waren die drei Länder-Selects (Einkaufs-/Veredelungs-/Verkaufsland) noch native

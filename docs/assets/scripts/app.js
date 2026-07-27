@@ -4081,6 +4081,7 @@ function computeLohn(opts) {
 
   const inland     = sup === con;
   const supIsHome  = sup === myHome;   // Rohmaterial-Lieferant im eigenen Heimatland (Inlandskauf möglich)
+  const conIsHome  = con === myHome;   // Converter im eigenen Sitzstaat → Werkleistung ist Inlandsleistung
   const sameConCus = con === cus;
   const myConVat = vat(con), myHomVat = vat(myHome), mySupVat = vat(sup);
   const conRate = rate(con), cusRate = rate(cus), homeRate = rate(myHome), supRate = rate(sup);
@@ -4101,6 +4102,26 @@ function computeLohn(opts) {
     return (out && inn) ? ` · SAP: Ausgang ${cn(myHome)} ${out} / Eingang ${cn(con)} ${inn}` : '';
   };
 
+  // Schritt 2 (Veredelungsleistung) — EINE Regel für alle Zweige:
+  // Leistungsort ist immer Art. 44 = Sitz des Leistungsempfängers (myHome). Reverse Charge
+  // greift aber NUR, wenn der Converter in einem ANDEREN Land ansässig ist: Art. 196
+  // MwStSystRL (bzw. § 13b Abs. 2 Nr. 1 UStG / Art. 196 iVm. § 19 UStG AT) setzt einen im
+  // Ausland ansässigen Leistenden voraus. Sitzt der Converter im selben Land wie ich, ist es
+  // eine reine Inlandsleistung → er fakturiert lokale MwSt, ich ziehe Vorsteuer.
+  // Maßgeblich ist con ↔ myHome — NICHT sup ↔ con (die Warenbewegung sagt nichts über den
+  // Leistungsort der Werkleistung).
+  const veredelungStep = () => conIsHome
+    ? { key:'veredelung', kind:'inland-service', rc:false,
+        title:`Lohnveredelung · ${cn(con)} Converter → ${cn(myHome)} (du) — Inlandsleistung`,
+        taxInfo:`Werkleistung · Leistungsort Art. 44 = ${cn(myHome)} · KEIN Reverse Charge (Converter im selben Land ansässig) · Converter fakturiert ${homeRate}% ${cn(myHome)}-MwSt → Vorsteuerabzug (Saldo 0)`,
+        sap: sap(myHome, 'domestic', 'buyer'),
+        note:`Art. 196 MwStSystRL greift nur bei einem im Ausland ansässigen Leistenden — Converter-Rechnung mit offen ausgewiesener ${cn(myHome)}-MwSt, KEIN RC-Pflichttext${myHomVat ? ` (deine ${cn(myHome)}-UID ${myHomVat} gehört trotzdem auf die Rechnung)` : ''}` }
+    : { key:'veredelung', kind:'rc', rc:true,
+        title:`Lohnveredelung · ${cn(con)} Converter → ${cn(myHome)} (du)`,
+        taxInfo:`Werkleistung · Leistungsort Art. 44 = ${cn(myHome)} · Reverse Charge (Art. 196) · Converter 0% · du ${homeRate}% RC (Saldo 0)`,
+        sap: sap(myHome, 'rc', 'buyer'),
+        note:`Converter-Rechnung mit deiner ${cn(myHome)}-UID${myHomVat ? ` (${myHomVat})` : ''} + Pflichttext „Steuerschuldnerschaft des Leistungsempfängers"` };
+
   const steps = [];
   const regRisks = [];
 
@@ -4110,10 +4131,7 @@ function computeLohn(opts) {
       title:`Einkauf Rohmaterial · ${cn(sup)} (Inland)`,
       taxInfo:`Inlandslieferung ${supRate}% ${cn(sup)}-MwSt · Vorsteuerabzug`,
       sap: sap(sup, 'domestic', 'buyer') });
-    steps.push({ key:'veredelung', kind:'inland-service', rc:false,
-      title:`Lohnveredelung · ${cn(con)} (Inland)`,
-      taxInfo:`Werkleistung Inland · KEIN Reverse Charge (Art. 196 nur grenzüberschreitend) · Converter ${conRate}% ${cn(con)}-MwSt`,
-      sap: sap(con, 'domestic', 'buyer') });
+    steps.push(veredelungStep());
     if (sameConCus) {
       steps.push({ key:'verkauf', kind:'inland-sale',
         title:`Verkauf · Inland ${cn(con)}`,
@@ -4127,7 +4145,7 @@ function computeLohn(opts) {
         regRisk: myConVat ? null : con });
       if (!myConVat) regRisks.push(con);
     }
-    return { company, myHome, sup, con, cus, inland, supIsHome, sameConCus, lvDirect, litF, homeHandover,
+    return { company, myHome, sup, con, cus, inland, supIsHome, conIsHome, sameConCus, lvDirect, litF, homeHandover,
              myConVat, myHomVat, mySupVat, conRate, cusRate, homeRate, supRate, steps, regRisks };
   }
 
@@ -4166,12 +4184,8 @@ function computeLohn(opts) {
       if (!myConVat) regRisks.push(con);
     }
 
-    // Schritt 2: Veredelungsleistung — grenzüberschreitende Werkleistung, immer Reverse Charge
-    steps.push({ key:'veredelung', kind:'rc', rc:true,
-      title:`Lohnveredelung · ${cn(con)} Converter → ${cn(myHome)} (du)`,
-      taxInfo:`Werkleistung · Leistungsort Art. 44 = ${cn(myHome)} · Reverse Charge (Art. 196) · Converter 0% · du ${homeRate}% RC (Saldo 0)`,
-      sap: sap(myHome, 'rc', 'buyer'),
-      note: `Converter-Rechnung mit deiner ${cn(myHome)}-UID${myHomVat ? ` (${myHomVat})` : ''} + Pflichttext „Steuerschuldnerschaft des Leistungsempfängers"` });
+    // Schritt 2: Veredelungsleistung (hier immer grenzüberschreitend, da con ≠ myHome)
+    steps.push(veredelungStep());
 
     // Schritt 3: Verkauf Fertigprodukt
     if (litF) {
@@ -4192,7 +4206,7 @@ function computeLohn(opts) {
       if (!myConVat) regRisks.push(con);
     }
 
-    return { company, myHome, sup, con, cus, inland, supIsHome, sameConCus, lvDirect, litF, homeHandover,
+    return { company, myHome, sup, con, cus, inland, supIsHome, conIsHome, sameConCus, lvDirect, litF, homeHandover,
              myConVat, myHomVat, mySupVat, conRate, cusRate, homeRate, supRate, steps, regRisks };
   }
 
@@ -4218,12 +4232,8 @@ function computeLohn(opts) {
     if (!myConVat && !litF) regRisks.push(con);
   }
 
-  // Schritt 2: Lohnveredelungsleistung (immer Reverse Charge, Leistungsort = Heimat)
-  steps.push({ key:'veredelung', kind:'rc', rc:true,
-    title:`Lohnveredelung · ${cn(con)} Converter → ${cn(myHome)} (du)`,
-    taxInfo:`Werkleistung · Leistungsort Art. 44 = ${cn(myHome)} · Reverse Charge (Art. 196) · Converter 0% · du ${homeRate}% RC (Saldo 0)`,
-    sap: sap(myHome, 'rc', 'buyer'),
-    note: `Converter-Rechnung mit deiner ${cn(myHome)}-UID${myHomVat ? ` (${myHomVat})` : ''} + Pflichttext „Steuerschuldnerschaft des Leistungsempfängers"` });
+  // Schritt 2: Lohnveredelungsleistung — Leistungsort Art. 44 = Heimat; RC nur wenn con ≠ Heimat
+  steps.push(veredelungStep());
 
   // Schritt 3: Verkauf Fertigprodukt
   if (litF) {
@@ -4244,7 +4254,7 @@ function computeLohn(opts) {
     if (!myConVat) regRisks.push(con);
   }
 
-  return { company, myHome, sup, con, cus, inland, supIsHome, sameConCus, lvDirect, litF, homeHandover,
+  return { company, myHome, sup, con, cus, inland, supIsHome, conIsHome, sameConCus, lvDirect, litF, homeHandover,
            myConVat, myHomVat, mySupVat, conRate, cusRate, homeRate, supRate, steps, regRisks };
 }
 
@@ -4287,7 +4297,7 @@ function analyzeLohn() {
     // Info-Banner
     ihml += `<div style="padding:10px 14px;background:rgba(45,212,191,0.08);border:1px solid rgba(45,212,191,0.3);border-radius:8px;margin-bottom:12px;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--teal);">
       ℹ️ <strong>Rein innerstaatlicher Sachverhalt</strong> — Lieferant und Converter befinden sich beide in ${flag(sup)} <strong>${cn(sup)}</strong>.<br>
-      <span style="color:var(--tx-2);font-size:0.68rem;">Keine grenzüberschreitende Warenbewegung beim Einkauf → keine ig. Lieferung, kein ig. Erwerb, kein Reverse Charge auf die Veredelungsleistung.</span>
+      <span style="color:var(--tx-2);font-size:0.68rem;">Keine grenzüberschreitende Warenbewegung beim Einkauf → keine ig. Lieferung, kein ig. Erwerb.${L.conIsHome ? ' Auch die Veredelungsleistung ist Inlandsleistung → kein Reverse Charge.' : ` Die <strong>Veredelungsleistung</strong> ist davon unabhängig: Converter in ${cn(con)}, dein Sitz in ${cn(myHome)} → <strong>Reverse Charge</strong> (Art. 44/196).`}</span>
     </div>`;
 
     // Schritt 1: Inlandseinkauf
@@ -4312,22 +4322,35 @@ function analyzeLohn() {
     // Schritt 2: Werkleistung Inland
     ihml += `<div style="background:var(--surface-2);border:1px solid rgba(139,92,246,0.3);border-radius:10px;padding:14px;margin-bottom:10px;">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:700;color:var(--violet);margin-bottom:10px;">
-        🔧 Schritt 2 · Lohnveredelungsleistung · ${flag(con)} Converter (${cn(con)}, Inland)
+        🔧 Schritt 2 · Lohnveredelungsleistung · ${flag(con)} Converter (${cn(con)}${L.conIsHome ? ', Inland' : ` → ${cn(myHome)}`})
       </div>
       <div style="font-size:0.72rem;color:var(--tx-2);font-family:'IBM Plex Mono',monospace;line-height:1.7;">
-        <div>✅ <strong>Sonstige Leistung / Werkleistung</strong> — Inlandsleistung, da Converter ebenfalls in ${flag(con)} ${cn(con)}</div>
-        <div>✅ Leistungsort nach Art. 44 MwStSystRL = Sitz des Leistungsempfängers</div>
+        <div>✅ <strong>Sonstige Leistung / Werkleistung</strong> — kein Eigentumsübergang am Material</div>
+        <div>✅ Leistungsort nach Art. 44 MwStSystRL = Sitz des Leistungsempfängers = <strong>${flag(myHome)} ${cn(myHome)}</strong></div>
+        ${L.conIsHome ? `
         <div style="padding:6px 8px;margin:4px 0;background:rgba(248,81,73,0.08);border-left:3px solid var(--red);border-radius:4px;">
-          ⛔ <strong>Kein Reverse Charge</strong> — Art. 196 MwStSystRL gilt nur bei grenzüberschreitenden B2B-Leistungen.<br>
-          Da Converter im selben Land wie du (${cn(con)}) → <strong>Converter schuldet ${supConRate}% ${cn(con)}-MwSt</strong>
+          ⛔ <strong>Kein Reverse Charge</strong> — Converter ist in ${cn(con)} ansässig, also im selben Land wie du.<br>
+          ${natLaw('rc')} setzt einen <strong>im Ausland ansässigen</strong> Leistenden voraus → <strong>Converter schuldet ${supConRate}% ${cn(con)}-MwSt</strong>
         </div>
         <div>✅ Converter fakturiert <strong>${supConRate}% ${cn(con)}-MwSt</strong> auf dich</div>
         <div>✅ Du ziehst <strong>${supConRate}% Vorsteuer</strong> aus Converter-Rechnung ab</div>
         ${mySupConVat ? `<div>✅ Deine ${cn(con)}-UID auf Eingangsrechnung: <strong style="color:var(--teal);">${mySupConVat}</strong></div>` : ''}
+        ` : `
+        <div style="padding:6px 8px;margin:4px 0;background:rgba(139,92,246,0.10);border-left:3px solid var(--violet);border-radius:4px;">
+          ↔️ <strong>Reverse Charge</strong> — der Converter sitzt in ${cn(con)}, dein Sitz ist ${cn(myHome)}: grenzüberschreitende B2B-Leistung (Art. 44/196 MwStSystRL).<br>
+          Die Warenbewegung (Einkauf im Inland ${cn(con)}) ändert daran nichts.
+        </div>
+        <div>✅ Converter fakturiert <strong>0% lokale MwSt</strong> mit deiner <strong style="color:var(--teal);">${cn(myHome)}-UID: ${myHomVat||'–'}</strong></div>
+        <div>✅ Du schuldest <strong>${rate(myHome)}% ${cn(myHome)}-MwSt</strong> (${natLaw('rc')}) → gleichzeitig Vorsteuer → Saldo 0</div>
+        <div>✅ Pflichttext auf Converter-Rechnung: <em>„Steuerschuldnerschaft des Leistungsempfängers / Art. 196 MwStSystRL"</em></div>
+        `}
       </div>
       <div class="hints" style="margin-top:10px;">
-        ${rH({type:'info',icon:'📋',text:`Converter-Rechnung: <strong>${supConRate}% ${cn(con)}-MwSt</strong> ausgewiesen. Kein Reverse-Charge-Hinweis erforderlich.`})}
-        ${rH({type:'warn',icon:'⚠️',text:`Wenn Converter und du im selben Land sitzt, ist Art. 44 MwStSystRL (B2B-Generalklausel mit RC) <strong>nicht</strong> anwendbar.`})}
+        ${L.conIsHome
+          ? rH({type:'info',icon:'📋',text:`Converter-Rechnung: <strong>${supConRate}% ${cn(con)}-MwSt</strong> ausgewiesen. Kein Reverse-Charge-Hinweis erforderlich.`})
+            + rH({type:'warn',icon:'⚠️',text:`Wenn Converter und du im selben Land sitzt, ist Art. 44 MwStSystRL (B2B-Generalklausel mit RC) <strong>nicht</strong> anwendbar.`})
+          : rH({type:'warn',icon:'⚠️',text:`Converter-Rechnung muss deine <strong>${cn(myHome)}-UID</strong> enthalten – sonst kein RC möglich!`})
+            + rH({type:'info',icon:'📋',text:`${cn(myHome)}-Voranmeldung: RC-Betrag in Zeile „Leistungen gem. ${natLaw('rc')}" eintragen.`})}
       </div>
     </div>`;
 
@@ -4497,13 +4520,33 @@ function analyzeLohn() {
   </div>`;
 
   // ── SCHRITT 2: Lohnschnitt / Veredelungsleistung ────────────────────────────
+  // Leistungsort ist immer Art. 44 = mein Sitz. Reverse Charge aber NUR, wenn der Converter
+  // im Ausland ansässig ist (Art. 196 MwStSystRL / § 13b Abs. 2 Nr. 1 UStG). Sitzt er im
+  // selben Land wie ich, fakturiert er lokale MwSt und ich ziehe Vorsteuer.
   html += `<div style="background:var(--surface-2);border:1px solid rgba(139,92,246,0.3);border-radius:10px;padding:14px;margin-bottom:10px;">
     <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:700;color:var(--violet);margin-bottom:10px;">
       🔧 Schritt 2 · Lohnveredelungsleistung · ${flag(con)} Converter → ${flag(myHome)} ${cn(myHome)} (ich)
     </div>
     <div style="font-size:0.72rem;color:var(--tx-2);font-family:'IBM Plex Mono',monospace;line-height:1.7;">
       <div>✅ <strong>Sonstige Leistung</strong> (Werkleistung) – kein Eigentumsübergang am Material</div>
-      <div>✅ Leistungsort nach Art. 44 MwStSystRL = Sitz des Leistungsempfängers = <strong>${flag(myHome)} ${cn(myHome)}</strong></div>
+      <div>✅ Leistungsort nach Art. 44 MwStSystRL = Sitz des Leistungsempfängers = <strong>${flag(myHome)} ${cn(myHome)}</strong></div>`;
+  if (L.conIsHome) {
+    html += `
+      <div style="padding:6px 8px;margin:4px 0;background:rgba(248,81,73,0.08);border-left:3px solid var(--red);border-radius:4px;">
+        ⛔ <strong>Kein Reverse Charge</strong> — Converter ist in ${flag(con)} ${cn(con)} ansässig, also im selben Land wie du.<br>
+        ${natLaw('rc')} setzt einen <strong>im Ausland ansässigen</strong> Leistenden voraus → reine Inlandsleistung.
+      </div>
+      <div>✅ Converter fakturiert <strong>${rate(myHome)}% ${cn(myHome)}-MwSt</strong> offen auf der Rechnung</div>
+      <div>✅ Du ziehst die <strong>${rate(myHome)}% Vorsteuer</strong> ab (Saldo 0 bei vollem Vorsteuerabzug)</div>
+      ${myHomVat ? `<div>✅ Deine ${cn(myHome)}-UID auf der Eingangsrechnung: <strong style="color:var(--teal);">${myHomVat}</strong></div>` : ''}
+    </div>
+    <div class="hints" style="margin-top:10px;">
+      ${rH({type:'info',icon:'📋',text:`Converter-Rechnung: <strong>${rate(myHome)}% ${cn(myHome)}-MwSt</strong> ausgewiesen — <strong>kein</strong> RC-Pflichttext.`})}
+      ${rH({type:'warn',icon:'⚠️',text:`Eine Rechnung mit 0% und RC-Hinweis wäre hier <strong>falsch</strong> — die Steuer schuldet der Converter, nicht du.`})}
+    </div>
+  </div>`;
+  } else {
+    html += `
       <div>✅ Converter fakturiert <strong>0% lokale MwSt</strong> – Reverse Charge</div>
       <div>✅ Converter verwendet deine <strong style="color:var(--teal);">${cn(myHome)}-UID: ${myHomVat||'–'}</strong> auf Rechnung</div>
       <div>✅ Du schuld­est <strong>${rate(myHome)}% ${cn(myHome)}-MwSt</strong> (${natLaw('rc')}) → gleichzeitig Vorsteuer → Saldo 0</div>
@@ -4514,6 +4557,7 @@ function analyzeLohn() {
       ${rH({type:'info',icon:'📋',text:`${cn(myHome)}-Voranmeldung: RC-Betrag in Zeile „Leistungen gem. ${natLaw('rc')}" eintragen.`})}
     </div>
   </div>`;
+  }
 
   // ── SCHRITT 3: Verkauf fertiges Produkt (nur wenn Ware nicht zurückkommt) ────
   const sameCountry = L.sameConCus;
@@ -4571,8 +4615,9 @@ function analyzeLohn() {
       </div>
       <div><strong style="color:var(--teal);">${flag(myHome)} ${cn(myHome)}:</strong>
         UID: ${myHomVat||'–'} ·
-        RC Lohnveredelungsleistung (${rate(myHome)}%, Saldo 0) ·
-        ${natLaw('rc')} ·
+        ${L.conIsHome
+          ? `Veredelungsleistung als <strong>Inlandsleistung</strong> (${rate(myHome)}% MwSt vom Converter, Vorsteuerabzug) · kein RC`
+          : `RC Lohnveredelungsleistung (${rate(myHome)}%, Saldo 0) · ${natLaw('rc')}`} ·
         Voranmeldung
       </div>
       ${!lvDirect && !litFGreift ? `<div><strong style="color:var(--amber);">${flag(myHome)} ${cn(myHome)} (ig. Verbringen):</strong> Verbringen ${cn(myHome)}→${cn(con)} meldepflichtig (Art. 17 MwStSystRL) — lit. f greift nicht</div>` : ''}
@@ -10277,9 +10322,11 @@ function runOutputTests() {
     { id:'LV-03', name:'FI→PL→DE EPDE (PL-UID vorhanden): kein Registrierungsrisiko, IG-Lieferung ab PL = T1',
       o:{company:'EPDE',sup:'FI',con:'PL',cus:'DE',lvDirect:true,litF:false},
       exp:{ s3sap:'T1', reg:[] } },
-    { id:'LV-04', name:'DE→DE→AT EPROHA (sup=con): rein inländisch, kein RC, IG-Lieferung ab DE = DH',
+    // sup=con=DE, EPROHA sitzt in AT: Wareneinkauf ist DE-Inland, die Werkleistung des
+    // DE-Converters an EPROHA (Sitz AT) ist aber grenzüberschreitend → RC (Art. 44/196).
+    { id:'LV-04', name:'DE→DE→AT EPROHA (sup=con, Sitz AT): Einkauf inländisch, Veredelung ABER RC',
       o:{company:'EPROHA',sup:'DE',con:'DE',cus:'AT',lvDirect:true,litF:false},
-      exp:{ inland:true, s2rc:false, s3sap:'DH' } },
+      exp:{ inland:true, conIsHome:false, s2kind:'rc', s2rc:true, s3sap:'DH' } },
     { id:'LV-05', name:'FI→PL→PL EPDE, Ware bleibt: Verkauf Inland PL',
       o:{company:'EPDE',sup:'FI',con:'PL',cus:'PL',lvDirect:true,litF:false},
       exp:{ s3kind:'inland-sale' } },
@@ -10304,6 +10351,14 @@ function runOutputTests() {
     { id:'LV-11', name:'AT→PL→AT EPROHA, Ware bleibt: kein PL-Ausgangs-Stkz → kein Code + PL-Registrierung',
       o:{company:'EPROHA',sup:'AT',con:'PL',cus:'AT',lvDirect:true,litF:false,homeHandover:true},
       exp:{ supIsHome:true, s3kind:'ig-sale', s3sap:null, reg:['PL'] } },
+    // Converter im eigenen Sitzstaat → Werkleistung ist Inlandsleistung: KEIN Reverse Charge
+    // (Art. 196 / § 13b Abs. 2 Nr. 1 UStG verlangen einen im Ausland ansässigen Leistenden).
+    { id:'LV-12', name:'AT→DE→AT EPDE (Converter im Heimatland DE): Veredelung 19% DE-MwSt, KEIN RC',
+      o:{company:'EPDE',sup:'AT',con:'DE',cus:'AT',lvDirect:true,litF:false},
+      exp:{ inland:false, conIsHome:true, s2kind:'inland-service', s2rc:false, s2sap:'VD', s3sap:'DH', reg:[] } },
+    { id:'LV-13', name:'AT→DE→AT EPROHA (Converter im Ausland): Veredelung mit RC in AT',
+      o:{company:'EPROHA',sup:'AT',con:'DE',cus:'AT',lvDirect:true,litF:false},
+      exp:{ conIsHome:false, s2kind:'rc', s2rc:true, s2sap:'RC' } },
   ];
   LOHN_TESTS.forEach(t => {
     const errs = [];
@@ -10312,6 +10367,8 @@ function runOutputTests() {
       const s1 = L.steps.find(s => s.key === 'einkauf'), s2 = L.steps.find(s => s.key === 'veredelung'), s3 = L.steps.find(s => s.key === 'verkauf');
       if ('inland' in e && L.inland !== e.inland) errs.push(`inland: erwartet ${e.inland}, erhalten ${L.inland}`);
       if ('supIsHome' in e && L.supIsHome !== e.supIsHome) errs.push(`supIsHome: erwartet ${e.supIsHome}, erhalten ${L.supIsHome}`);
+      if ('conIsHome' in e && L.conIsHome !== e.conIsHome) errs.push(`conIsHome: erwartet ${e.conIsHome}, erhalten ${L.conIsHome}`);
+      if ('s2sap' in e && ((s2 && s2.sap) || null) !== e.s2sap) errs.push(`Schritt2.sap: erwartet ${e.s2sap}, erhalten ${(s2 && s2.sap) || null}`);
       if (e.s1kind && (!s1 || s1.kind !== e.s1kind)) errs.push(`Schritt1.kind: erwartet ${e.s1kind}, erhalten ${s1 && s1.kind}`);
       if (e.s2kind && (!s2 || s2.kind !== e.s2kind)) errs.push(`Schritt2.kind: erwartet ${e.s2kind}, erhalten ${s2 && s2.kind}`);
       if ('s2rc' in e && (!s2 || s2.rc !== e.s2rc)) errs.push(`Schritt2.rc: erwartet ${e.s2rc}, erhalten ${s2 && s2.rc}`);
@@ -12645,11 +12702,18 @@ function renderExpertLegal() {
         'Art. 17 Abs. 1: Verbringen eigener Waren = fiktive IG-Lieferung → Registrierung im Bestimmungsland erforderlich. Art. 17 Abs. 2 lit. f greift NICHT (Ware kommt nicht zurück) → normales ig. Verbringen meldepflichtig.');
     }
 
+    // RC nur bei im Ausland ansässigem Converter (Art. 196 / § 13b Abs. 2 Nr. 1 UStG);
+    // sitzt er im Sitzstaat des Empfängers, ist es eine Inlandsleistung mit lokaler MwSt.
+    const lconIsHome = lcon === COMPANIES[currentCompany].home;
     h += legalRow('Schritt 2 · Lohnveredelungsleistung: ' + cn(lcon) + ' → ' + cn(COMPANIES[currentCompany].home),
-      ['Art. 44 MwStSystRL', 'Art. 196 MwStSystRL',
-       isAT ? '§ 3a Abs. 6 UStG AT' : '§ 3a Abs. 2 UStG',
-       isAT ? '§ 19 Abs. 1 UStG AT' : '§ 13b UStG'],
-      'Werkleistung (sonstige Leistung) B2B. Leistungsort = Sitz des Empfängers (Art. 44). Converter fakturiert 0% ohne lokale MwSt. Auftraggeber schuldet RC im Heimatland. Pflichttext auf Converter-Rechnung: „Steuerschuldnerschaft des Leistungsempfängers / Art. 196 MwStSystRL".');
+      lconIsHome
+        ? ['Art. 44 MwStSystRL', isAT ? '§ 3a Abs. 6 UStG AT' : '§ 3a Abs. 2 UStG']
+        : ['Art. 44 MwStSystRL', 'Art. 196 MwStSystRL',
+           isAT ? '§ 3a Abs. 6 UStG AT' : '§ 3a Abs. 2 UStG',
+           isAT ? '§ 19 Abs. 1 UStG AT' : '§ 13b UStG'],
+      lconIsHome
+        ? `Werkleistung (sonstige Leistung) B2B. Leistungsort = Sitz des Empfängers (Art. 44) = ${cn(lcon)}. Converter ist im selben Land ansässig → KEIN Reverse Charge (${isAT ? '§ 19 Abs. 1 UStG AT' : '§ 13b Abs. 2 Nr. 1 UStG'} und Art. 196 MwStSystRL setzen einen im Ausland ansässigen Leistenden voraus). Converter fakturiert ${rate(lcon)}% lokale MwSt, Auftraggeber zieht Vorsteuer.`
+        : 'Werkleistung (sonstige Leistung) B2B. Leistungsort = Sitz des Empfängers (Art. 44). Converter fakturiert 0% ohne lokale MwSt. Auftraggeber schuldet RC im Heimatland. Pflichttext auf Converter-Rechnung: „Steuerschuldnerschaft des Leistungsempfängers / Art. 196 MwStSystRL".');
 
     if (!litF) {
       h += legalRow('Schritt 3 · Verkauf Fertigprodukt: ' + cn(lcon) + ' → ' + cn(lcus),
@@ -13696,9 +13760,13 @@ function renderQuickCheck() {
         <div class="qc-reg-banner-title">🚨 Registrierungspflicht ${_qcCountryName(c)} (${_qcRate(c)} %)</div>
         <div class="qc-reg-banner-body">${co} hat keine ${c}-UID. Für ig. Erwerb bzw. IG-Lieferung im Veredelungsland ist eine Registrierung in ${_qcCountryName(c)} erforderlich.</div>
       </div>`).join('');
-    const statusText = Lq.inland
+    // RC hängt am Sitz des Converters (con ↔ myHome), nicht an der Warenbewegung (sup ↔ con).
+    const veredelungText = Lq.conIsHome
+      ? `Veredelung: Inlandsleistung in ${_qcCountryName(Lq.myHome)} — Converter fakturiert ${_qcRate(Lq.myHome)} % MwSt, kein Reverse Charge`
+      : `Veredelung: Reverse Charge in ${_qcCountryName(Lq.myHome)} (Art. 44/196)`;
+    const statusText = Lq.inland && Lq.conIsHome
       ? `Rein innerstaatlich (${_qcCountryName(Lq.sup)}) — kein Reverse Charge, keine ig. Lieferung beim Einkauf`
-      : `Veredelung: Reverse Charge in ${_qcCountryName(Lq.myHome)} (Art. 44/196) · ${Lq.litF ? 'Art. 17 Abs. 2 lit. f: kein ig. Verbringen (Ware kommt zurück)' : 'Ware bleibt im Ausland → Verkauf = Schritt 3'}`;
+      : `${veredelungText} · ${Lq.litF ? 'Art. 17 Abs. 2 lit. f: kein ig. Verbringen (Ware kommt zurück)' : `Ware bleibt in ${_qcCountryName(Lq.con)} → Verkauf = Schritt 3`}`;
     const sideLabels = { einkauf:'SCHRITT 1 · EINKAUF', veredelung:'SCHRITT 2 · VEREDELUNG', verkauf:'SCHRITT 3 · VERKAUF' };
     const typeFor = (k) => k === 'ig-sale' ? 'ig-lieferung' : (k === 'ig-acquisition' || k === 'ig-acquisition-home') ? 'ig-erwerb' : k === 'separate' ? 'resting-info' : 'resting-info';
     const boxes = Lq.steps.map(s => invoiceBox(
@@ -13709,7 +13777,9 @@ function renderQuickCheck() {
     const uniq = [...new Set(Lq.regRisks)];
     if (uniq.length === 0) hints.push('✅ Kein Registrierungsrisiko erkannt (benötigte UIDs vorhanden)');
     else uniq.forEach(c => hints.push(`📋 Registrierung in <strong>${_qcCountryName(c)}</strong> beantragen oder Steuerberater konsultieren`));
-    if (!Lq.inland) hints.push('🔧 Veredelung: Converter fakturiert 0 % mit deiner Heimat-UID, du rechnest Reverse Charge ab (Saldo 0)');
+    hints.push(Lq.conIsHome
+      ? `🔧 Veredelung: Converter sitzt in ${_qcCountryName(Lq.myHome)} wie du → er fakturiert ${_qcRate(Lq.myHome)} % MwSt, du ziehst Vorsteuer (kein RC)`
+      : '🔧 Veredelung: Converter fakturiert 0 % mit deiner Heimat-UID, du rechnest Reverse Charge ab (Saldo 0)');
     if (Lq.litF && !Lq.inland) hints.push('↩️ Ware kommt zurück (Art. 17 Abs. 2 lit. f) → der spätere Verkauf ist ein separater Vorgang (3-Parteien-Modus)');
     return `
       <div class="qc-form">
