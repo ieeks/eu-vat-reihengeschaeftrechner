@@ -26,6 +26,10 @@ Realer PapTrade→EPROHA-Fall (AT-Lieferant, DE-Veredelung, Rückkehr AT) war bi
 - [x] `computeLohn`-Zweig `supIsHome` + Parameter `homeHandover` (Inlandskauf vs. DAP/ig. Lieferung)
 - [x] Verfügungsmacht-Schalter Mode 5 + QuickCheck (nur wenn Lieferant im Heimatland)
 - [x] Render-Zweig in `analyzeLohn` mit Lesart-Banner + DAP-Warnung, Tests LV-06…LV-09
+- [x] **Bugfix (27.07.2026):** „Ware bleibt im Veredelungsland" → Schritt 3 zeigte **AF** (Heimat-UID)
+      statt des Kennzeichens des Abgangslands (**DH** bei DE). `sapFrom()`-Hint in allen drei
+      `ig-sale`-Zweigen + `igSaleNote()`; lit.-f-Banner jetzt `litF`- statt `homeHandover`-abhängig.
+      Tests LV-10/LV-11 + `s3sap`-Assertion.
 - [ ] **Begründungs-Prosa-Tab** (`ctx.mode===5`, app.js ~12350) auf die `homeHandover`-Lesart
       eingehen lassen (aktuell generischer lit.-f-Satz, unabhängig von Verfügungsmacht)
 - [ ] Prüfen, ob der Schalter auch **Vergleich-/Meldepflichten-Tab** braucht
