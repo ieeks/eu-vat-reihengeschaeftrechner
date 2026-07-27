@@ -119,6 +119,12 @@ v4.3 Header/Nav (Session 22)
   switchView(view, btn)        ← View-Nav (standard/quickcheck/vergleich) → delegiert an switchTab()
   switchToDesign(version)      ← v1/v2 Toggle im ⋯-Menü; überträgt URL-Params
   renderUIDInline()            ← Eigene UIDs: buyerUID = selectedUidOverride ?? homeUID
+  initTypeaheadPickers()       ← ersetzt jedes `select` in `.picker-wrap` durch Such-Input + Dropdown.
+                                 IDEMPOTENT (Guard auf `.typeahead`) → darf nachträglich erneut laufen;
+                                 initLohnPanel() ruft es nach dem Füllen der Lohn-Selects auf (Modus 5).
+                                 Trefferreihenfolge: exakter Code > Code-Präfix > Namensanfang > Rest,
+                                 bester Treffer vormarkiert (Enter übernimmt). `sel._taSync()` zieht die
+                                 Anzeige bei programmatischen Wertänderungen nach (in onLohnChange()).
 ```
 
 ## Aktuelle P0-Baustelle

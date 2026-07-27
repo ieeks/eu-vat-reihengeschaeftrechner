@@ -153,23 +153,23 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
               <div>
                 <div class="sub" style="margin-bottom:4px;">Einkaufsland (Lieferant Rohmaterial)</div>
-                <div style="position:relative;">
-                  <span id="lohn-flag-sup" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:1rem;pointer-events:none;z-index:1;"></span>
+                <div class="picker-wrap" style="position:relative;">
+                  <span id="lohn-flag-sup" class="picker-flag" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:1rem;pointer-events:none;z-index:1;"></span>
                   <select id="lohnSup" onchange="onLohnChange()" style="width:100%;padding:7px 10px 7px 32px;background:var(--surface-3);border:1px solid var(--border);border-radius:var(--r);color:var(--tx-1);font-size:0.8rem;appearance:none;outline:none;transition:border-color 0.15s;"></select>
                 </div>
               </div>
               <div>
                 <div class="sub" style="margin-bottom:4px;">Veredelungsland (Converter)</div>
-                <div style="position:relative;">
-                  <span id="lohn-flag-con" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:1rem;pointer-events:none;z-index:1;"></span>
+                <div class="picker-wrap" style="position:relative;">
+                  <span id="lohn-flag-con" class="picker-flag" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:1rem;pointer-events:none;z-index:1;"></span>
                   <select id="lohnCon" onchange="onLohnChange()" style="width:100%;padding:7px 10px 7px 32px;background:var(--surface-3);border:1px solid var(--border);border-radius:var(--r);color:var(--tx-1);font-size:0.8rem;appearance:none;outline:none;transition:border-color 0.15s;"></select>
                 </div>
               </div>
             </div>
             <div id="lohnCusBlock" style="margin-bottom:10px;">
               <div class="sub" style="margin-bottom:4px;">Verkaufsland (Kunde)</div>
-              <div style="position:relative;">
-                <span id="lohn-flag-cus" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:1rem;pointer-events:none;z-index:1;"></span>
+              <div class="picker-wrap" style="position:relative;">
+                <span id="lohn-flag-cus" class="picker-flag" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:1rem;pointer-events:none;z-index:1;"></span>
                 <select id="lohnCus" onchange="onLohnChange()" style="width:100%;padding:7px 10px 7px 32px;background:var(--surface-3);border:1px solid var(--border);border-radius:var(--r);color:var(--tx-1);font-size:0.8rem;appearance:none;outline:none;transition:border-color 0.15s;"></select>
               </div>
             </div>

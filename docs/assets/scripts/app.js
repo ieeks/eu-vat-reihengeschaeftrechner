@@ -11669,6 +11669,8 @@ function onLohnChange() {
   upd('lohnSup','lohn-flag-sup');
   upd('lohnCon','lohn-flag-con');
   upd('lohnCus','lohn-flag-cus');
+  // Typeahead-Anzeige nachziehen (Share-Link-Restore, Defaults, Gesellschaftswechsel)
+  ['lohnSup','lohnCon','lohnCus'].forEach(id => $(id)?._taSync?.());
   syncLohnHomeVisibility();
   renderResult();
 }
@@ -11689,6 +11691,9 @@ function initLohnPanel() {
     if ($('lohnSup')) $('lohnSup').value = 'FI';
     if ($('lohnCon')) $('lohnCon').value = 'PL';
     if ($('lohnCus')) $('lohnCus').value = home;
+    // Typeahead erst JETZT anhängen: initTypeaheadPickers() läuft beim App-Start, da sind
+    // die Lohn-Selects noch leer. Der Aufruf ist idempotent (Guard auf .typeahead).
+    initTypeaheadPickers();
   }
   onLohnChange();
   // Sync Verkaufsland visibility
@@ -11821,6 +11826,9 @@ function initTypeaheadPickers() {
   document.querySelectorAll('.picker-wrap').forEach(wrap => {
     const sel = wrap.querySelector('select');
     if (!sel || sel.disabled) return;
+    // Idempotent: mehrfacher Aufruf (z.B. nachträglich für das Lohn-Panel, dessen
+    // Options erst in initLohnPanel() gefüllt werden) darf kein zweites Input bauen.
+    if (wrap.classList.contains('typeahead')) return;
     wrap.classList.add('typeahead');
 
     // Build input + dropdown
@@ -11843,18 +11851,35 @@ function initTypeaheadPickers() {
 
     function buildOptions(filter) {
       const f = (filter || '').toLowerCase();
-      const matches = EU.filter(c => 
-        cn(c.code).toLowerCase().includes(f) || 
-        c.code.toLowerCase().includes(f)
-      );
-      dd.innerHTML = matches.map((c, i) => 
+      // Relevanz: exakter Ländercode zuerst („AT" → Österreich, nicht Kroatien),
+      // dann Code-/Namensanfang, dann sonstige Treffer im Namen.
+      const score = (c) => {
+        const code = c.code.toLowerCase(), name = cn(c.code).toLowerCase();
+        if (!f) return 4;
+        if (code === f) return 0;
+        if (code.startsWith(f)) return 1;
+        if (name.startsWith(f)) return 2;
+        return 3;
+      };
+      const matches = EU
+        .filter(c =>
+          cn(c.code).toLowerCase().includes(f) ||
+          c.code.toLowerCase().includes(f)
+        )
+        .map((c, i) => ({ c, i, s: score(c) }))
+        .sort((a, b) => a.s - b.s || a.i - b.i)
+        .map(x => x.c);
+      dd.innerHTML = matches.map((c, i) =>
         `<div class="ta-option" data-code="${c.code}" data-idx="${i}">
           <span>${flag(c.code)}</span>
           <span class="ta-code">${c.code}</span>
           <span>${cn(c.code)}</span>
         </div>`
       ).join('');
-      activeIdx = -1;
+      // Bester Treffer vorselektiert → Enter übernimmt ihn direkt („AT" + Enter = Österreich).
+      // Ohne Filter (Dropdown gerade geöffnet) bewusst nichts markiert.
+      activeIdx = (f && matches.length) ? 0 : -1;
+      if (activeIdx === 0) dd.querySelector('.ta-option')?.classList.add('active');
       // Click handlers
       dd.querySelectorAll('.ta-option').forEach(opt => {
         opt.addEventListener('mousedown', e => {
@@ -11872,6 +11897,12 @@ function initTypeaheadPickers() {
       input.blur();
       sel.dispatchEvent(new Event('change'));
     }
+
+    // Wird das Select programmatisch gesetzt (Share-Link, Defaults, Gesellschaftswechsel),
+    // muss die Anzeige nachziehen — außer der Nutzer tippt gerade.
+    sel._taSync = () => {
+      if (document.activeElement !== input) input.value = `${flag(sel.value)} ${cn(sel.value)}`;
+    };
 
     function highlightOption(idx) {
       const opts = dd.querySelectorAll('.ta-option');

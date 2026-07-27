@@ -2,6 +2,30 @@
 
 ---
 
+## v4.3 · 27.07.2026 — Typeahead-Länderpicker auch im Lohnveredelungs-Modus
+
+Im Modus 5 waren die drei Länder-Selects (Einkaufs-/Veredelungs-/Verkaufsland) noch native
+`<select>`-Elemente ohne Suche — Tippen von „AT" sprang **nicht** auf Österreich (die native
+Select-Suche matcht auf den Options-Text, der mit dem Flaggen-Emoji beginnt).
+
+- `initTypeaheadPickers()` ist jetzt **idempotent** (Guard auf `.typeahead`) und wird am Ende der
+  Erst-Initialisierung von `initLohnPanel()` erneut aufgerufen — beim App-Start sind die
+  Lohn-Selects noch leer, deshalb greift der ursprüngliche Aufruf dort nicht.
+- Die drei Lohn-Select-Container tragen `class="picker-wrap"`, die Flaggen-Overlays
+  `class="picker-flag"` (per CSS ausgeblendet, sobald das Typeahead-Input die Flagge selbst zeigt).
+- **Trefferreihenfolge** in `buildOptions()`: exakter Ländercode zuerst, dann Code-Präfix,
+  dann Namensanfang, dann sonstige Namenstreffer — „AT" listet **Österreich vor Kroatien**
+  (`kroatien`.includes(`at`)). Bester Treffer ist vormarkiert → **Enter** übernimmt ihn direkt.
+  Gilt für alle Picker (3P/4P/2P), nicht nur Lohn.
+- **`sel._taSync()`**: programmatische Wertänderungen (Share-Link-Restore, Defaults,
+  Gesellschaftswechsel) ziehen die Anzeige nach; in `onLohnChange()` eingehängt.
+- Verifiziert (JSDOM): Modus 5 → alle drei Picker mit genau einem Input; „AT" + Enter = Österreich
+  (Reihenfolge AT, HR); programmatisch `NL` → Anzeige „🇳🇱 Niederlande"; Re-Init erzeugt kein
+  zweites Input und setzt die Auswahl nicht zurück. Hauptpicker unverändert („de" → DE/NL/SE,
+  „öster" → AT). `npm test` 49/49, `npm run check` + `node --check` ok.
+
+---
+
 ## v4.3 · 27.07.2026 — Bugfix Lohnveredelung: IG-Lieferung ab Veredelungsland zeigte AF statt DH
 
 Fall AT→DE→AT (EPROHA, Verfügungsmacht in AT, **Ware kommt nicht zurück**): Schritt 3

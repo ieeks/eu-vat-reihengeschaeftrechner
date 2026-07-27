@@ -701,6 +701,8 @@ header {
 /* Typeahead country picker */
 .picker-wrap.typeahead select { display: none; }
 .picker-wrap.typeahead::after { display: none; }
+/* Lohn-Panel: overlay-Flagge entfällt, sobald das Typeahead-Input die Flagge selbst zeigt */
+.picker-wrap.typeahead .picker-flag { display: none; }
 .ta-input {
   width: 100%; background: var(--surface-2);
   border: 1px solid var(--border); border-radius: var(--r);
