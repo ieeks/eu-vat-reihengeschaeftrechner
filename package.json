@@ -11,7 +11,7 @@
     "check:pages": "node scripts/serve.mjs --check-pages",
     "gen:m365": "node scripts/gen-m365-knowledge.mjs",
     "check:m365": "node scripts/gen-m365-knowledge.mjs --check",
-    "test": "node scripts/test.mjs"
+    "test": "node scripts/test.mjs && node scripts/test-lohn-tabs.mjs"
   },
   "devDependencies": {
     "jsdom": "^24.1.3"

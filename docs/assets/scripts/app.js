@@ -4065,6 +4065,12 @@ function buildVATContext() {
 //  Rückgabe:  { inland, sameConCus, lvDirect, litF, myConVat, myHomVat, …,
 //               steps: [{key,kind,title,taxInfo,sap,note,regRisk}], regRisks: [] }
 // ═══════════════════════════════════════════════════════════════════════════════
+// Art. 17 Abs. 3 MwStSystRL: Fällt eine Voraussetzung des Abs. 2 (hier lit. f) später weg,
+// gilt die Verbringung als zu DIESEM Zeitpunkt erfolgt — nicht rückwirkend zum ursprünglichen
+// Transport. Maßgeblich für die Melde­periode. Gilt nur für reason 'no-return' (lit. f war
+// zunächst einschlägig); bei 'not-dispatched' wurde Abs. 2 nie in Anspruch genommen.
+const ART17_ABS3_HINT = 'Zeitpunkt: Die Verbringung gilt erst zu dem Zeitpunkt als erfolgt, zu dem die Rückkehr-Voraussetzung entfällt (Art. 17 Abs. 3 MwStSystRL) — also mit dem Entschluss zum Verkauf ab dem Veredelungsland, nicht rückwirkend zum ursprünglichen Transport. Danach richtet sich die Melde­periode für UVA und ZM.';
+
 function computeLohn(opts) {
   const { company, sup, con, cus, lvDirect } = opts;
   const litF = opts.litF !== false; // default: Ware kommt zurück (lit. f greift)
@@ -4095,11 +4101,11 @@ function computeLohn(opts) {
       : `Warenbewegung beginnt in ${cn(c)} → Lieferort ${cn(c)} (Art. 32 MwStSystRL): Meldung nur über eine ${cn(c)}-UID möglich — für eine ig. Lieferung mit ${cn(c)}-UID ist kein SAP-Ausgangskennzeichen hinterlegt`;
   };
 
-  // Meldepflichtiges ig. Verbringen myHome → con (lit. f greift nicht): fiktive ig.
-  // Lieferung im Abgangsland + fiktiver ig. Erwerb im Bestimmungsland.
-  const verbringenSapHint = () => {
-    const out = sapFrom(myHome, 'ic-exempt', 'seller'), inn = sapFrom(con, 'ic-acquisition', 'buyer');
-    return (out && inn) ? ` · SAP: Ausgang ${cn(myHome)} ${out} / Eingang ${cn(con)} ${inn}` : '';
+  // Meldepflichtiges ig. Verbringen (lit. f greift nicht): fiktive ig. Lieferung im
+  // Abgangsland + fiktiver ig. Erwerb im Bestimmungsland.
+  const verbringenSapHint = (from = myHome, to = con) => {
+    const out = sapFrom(from, 'ic-exempt', 'seller'), inn = sapFrom(to, 'ic-acquisition', 'buyer');
+    return (out && inn) ? ` · SAP: Ausgang ${cn(from)} ${out} / Eingang ${cn(to)} ${inn}` : '';
   };
 
   // Schritt 2 (Veredelungsleistung) — EINE Regel für alle Zweige:
@@ -4125,6 +4131,44 @@ function computeLohn(opts) {
   const steps = [];
   const regRisks = [];
 
+  // Metadaten je Schritt für die Experten-Tabs (Begründung / Rechnung / Meldepflichten):
+  // unter welcher UID der Vorgang läuft, welches SAP-Treatment dahintersteht und welche
+  // Belegseite ich bin. Reine Ableitung aus `kind` — KEINE zusätzliche Steuerentscheidung.
+  const STEP_META = {
+    'inland-purchase':     { uidCountry: sup,    sapTreatment: 'domestic',       role: 'buyer'  },
+    'home-purchase':       { uidCountry: myHome, sapTreatment: 'domestic',       role: 'buyer'  },
+    'ig-acquisition':      { uidCountry: con,    sapTreatment: 'ic-acquisition', role: 'buyer'  },
+    'ig-acquisition-home': { uidCountry: myHome, sapTreatment: 'ic-acquisition', role: 'buyer'  },
+    'rc':                  { uidCountry: myHome, sapTreatment: 'rc',             role: 'buyer'  },
+    'inland-service':      { uidCountry: myHome, sapTreatment: 'domestic',       role: 'buyer'  },
+    'ig-sale':             { uidCountry: con,    sapTreatment: 'ic-exempt',      role: 'seller' },
+    'inland-sale':         { uidCountry: con,    sapTreatment: 'domestic',       role: 'seller' },
+    'separate':            { uidCountry: null,   sapTreatment: null,             role: null     },
+  };
+  const finish = () => {
+    steps.forEach(s => Object.assign(s, STEP_META[s.kind] || {}));
+    // Verbringen eigener Ware. Zwei Konstellationen, zwei Richtungen:
+    //  (a) myHome → con: ich habe die Ware im Heimatland übernommen (supIsHome + homeHandover)
+    //      oder sie läuft über mich (!lvDirect). Kommt sie zurück, deckt Art. 17 Abs. 2 lit. f
+    //      das Verbringen ab → nicht meldepflichtig; sonst meldepflichtig (Grund: no-return).
+    //  (b) con → myHome bei sup === con: Einkauf UND Veredelung finden im selben Land statt,
+    //      die Ware war nie in myHome. Art. 17 Abs. 2 lit. f setzt aber voraus, dass die Ware
+    //      in den Mitgliedstaat zurückgelangt, „von dem aus sie ursprünglich versandt" wurde —
+    //      eine solche Hinbewegung gibt es hier nicht. Der Transport ins eigene Lager ist
+    //      deshalb ein normales ig. Verbringen nach Art. 17 Abs. 1 (Grund: not-dispatched).
+    const _vb =
+      (inland && litF)
+        ? { from: con, to: myHome, meldepflichtig: true, reason: 'not-dispatched' }
+      : ((supIsHome && homeHandover) || (!inland && !supIsHome && !lvDirect))
+        ? { from: myHome, to: con, meldepflichtig: !litF, reason: litF ? null : 'no-return' }
+        : null;
+    // Ein Verbringen setzt eine Bewegung über eine Grenze voraus — sitzt der Converter im
+    // eigenen Sitzstaat, bewegt sich innerstaatlich nichts Meldepflichtiges.
+    const verbringen = (_vb && _vb.from !== _vb.to) ? _vb : null;
+    return { company, myHome, sup, con, cus, inland, supIsHome, conIsHome, sameConCus, lvDirect, litF, homeHandover,
+             myConVat, myHomVat, mySupVat, conRate, cusRate, homeRate, supRate, verbringen, steps, regRisks };
+  };
+
   if (inland) {
     // ── Sonderfall sup === con: rein innerstaatlich ──
     steps.push({ key:'einkauf', kind:'inland-purchase',
@@ -4132,7 +4176,23 @@ function computeLohn(opts) {
       taxInfo:`Inlandslieferung ${supRate}% ${cn(sup)}-MwSt · Vorsteuerabzug`,
       sap: sap(sup, 'domestic', 'buyer') });
     steps.push(veredelungStep());
-    if (sameConCus) {
+    if (litF && con === myHome) {
+      // Einkauf, Veredelung und Lager im selben Land → keine Warenbewegung über eine Grenze.
+      // Der spätere Verkauf ist ein eigenständiger Vorgang (Verkaufsland hier nicht abgefragt).
+      steps.push({ key:'verkauf', kind:'separate',
+        title:`Verkauf — separater Vorgang`,
+        taxInfo:`Ware bleibt in ${cn(myHome)} → der spätere Verkauf ab Lager ist ein eigenständiger Liefervorgang (im 3-Parteien-Modus analysieren)` });
+    } else if (litF) {
+      // Ware geht nach der Bearbeitung ins eigene Lager in myHome. lit. f greift hier NICHT
+      // (die Ware wurde nie aus myHome versandt) → meldepflichtiges ig. Verbringen con → myHome;
+      // der spätere Verkauf ab dem Lager ist ein eigenständiger Vorgang.
+      steps.push({ key:'verkauf', kind:'separate',
+        title:`Rückverbringen nach ${cn(myHome)} — Verkauf separater Vorgang`,
+        taxInfo:`ig. Verbringen ${cn(con)} → ${cn(myHome)} meldepflichtig (Art. 17 Abs. 1 MwStSystRL) · späterer Verkauf ab Lager ist eigenständiger Liefervorgang (im 3-Parteien-Modus analysieren)`,
+        note:`Art. 17 Abs. 2 lit. f greift <strong>nicht</strong>: Die Ausnahme setzt voraus, dass die Ware in den Mitgliedstaat zurückgelangt, aus dem sie ursprünglich versandt wurde — Einkauf und Veredelung fanden aber beide in ${cn(con)} statt, eine Hinbewegung aus ${cn(myHome)} gab es nie${verbringenSapHint(con, myHome)}`,
+        regRisk: myConVat ? null : con });
+      if (!myConVat) regRisks.push(con);
+    } else if (sameConCus) {
       steps.push({ key:'verkauf', kind:'inland-sale',
         title:`Verkauf · Inland ${cn(con)}`,
         taxInfo:`Inlandslieferung ${conRate}% ${cn(con)}-MwSt`,
@@ -4145,8 +4205,7 @@ function computeLohn(opts) {
         regRisk: myConVat ? null : con });
       if (!myConVat) regRisks.push(con);
     }
-    return { company, myHome, sup, con, cus, inland, supIsHome, conIsHome, sameConCus, lvDirect, litF, homeHandover,
-             myConVat, myHomVat, mySupVat, conRate, cusRate, homeRate, supRate, steps, regRisks };
+    return finish();
   }
 
   // ── Sonderfall sup === myHome (con ≠ home): Inlandskauf + Veredelung im EU-Ausland ──
@@ -4206,8 +4265,7 @@ function computeLohn(opts) {
       if (!myConVat) regRisks.push(con);
     }
 
-    return { company, myHome, sup, con, cus, inland, supIsHome, conIsHome, sameConCus, lvDirect, litF, homeHandover,
-             myConVat, myHomVat, mySupVat, conRate, cusRate, homeRate, supRate, steps, regRisks };
+    return finish();
   }
 
   // ── Normalpfad sup ≠ con ──
@@ -4254,8 +4312,7 @@ function computeLohn(opts) {
     if (!myConVat) regRisks.push(con);
   }
 
-  return { company, myHome, sup, con, cus, inland, supIsHome, conIsHome, sameConCus, lvDirect, litF, homeHandover,
-           myConVat, myHomVat, mySupVat, conRate, cusRate, homeRate, supRate, steps, regRisks };
+  return finish();
 }
 
 function analyzeLohn() {
@@ -4277,6 +4334,7 @@ function analyzeLohn() {
   const litF = (typeof lvRueck !== 'undefined') ? lvRueck : true;
   const homeHandover = (typeof lvHomeHandover !== 'undefined') ? lvHomeHandover : true;
   const L = computeLohn({ company: currentCompany, sup, con, cus, lvDirect, litF, homeHandover });
+  _lohnLast = L;   // Quelle für die Experten-Tabs (Begründung / Rechnung / Meldepflichten)
 
   const el = document.getElementById('result');
   el.classList.add('show');
@@ -4354,8 +4412,45 @@ function analyzeLohn() {
       </div>
     </div>`;
 
-    // Schritt 3: Verkauf
+    // Schritt 3: Ware ins eigene Lager (litF) oder Verkauf ab dem Veredelungsland
     const sameConCus = L.sameConCus;
+    const vbI = L.verbringen;
+    const s3I = L.steps.find(s => s.key === 'verkauf');
+    if (s3I?.kind === 'separate') {
+      ihml += vbI
+        ? `<div style="background:var(--surface-2);border:1px solid rgba(251,191,36,0.35);border-radius:10px;padding:14px;margin-bottom:10px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:700;color:var(--amber);margin-bottom:10px;">
+          🚚 Schritt 3 · Rückverbringen ins eigene Lager · ${flag(con)} ${cn(con)} → ${flag(myHome)} ${cn(myHome)}
+        </div>
+        <div style="font-size:0.72rem;color:var(--tx-2);font-family:'IBM Plex Mono',monospace;line-height:1.7;">
+          <div>▶ <strong>ig. Verbringen</strong> ${cn(con)} → ${cn(myHome)} — meldepflichtig (Art. 17 Abs. 1 MwStSystRL)</div>
+          <div>✅ Fiktive ig. Lieferung in ${cn(con)} (0%) + fiktiver ig. Erwerb in ${cn(myHome)} (${rate(myHome)}%, Saldo 0)</div>
+          <div style="margin-top:6px;padding:6px 8px;background:rgba(248,81,73,0.08);border-left:3px solid var(--red);border-radius:4px;font-size:0.68rem;">
+            ⛔ <strong>Art. 17 Abs. 2 lit. f greift nicht:</strong> Die Ausnahme setzt voraus, dass die Ware in den Mitgliedstaat zurückgelangt, <em>aus dem sie ursprünglich versandt wurde</em>. Einkauf und Veredelung fanden beide in ${cn(con)} statt — eine Hinbewegung aus ${cn(myHome)} gab es nie.
+          </div>
+          <div style="margin-top:6px;">📦 Der spätere <strong>Verkauf ab Lager</strong> ist ein eigenständiger Liefervorgang — im 3-Parteien-Modus separat analysieren.</div>
+          ${mySupConVat ? `<div>✅ Deine ${cn(con)}-UID für die Meldung: <strong style="color:var(--teal);">${mySupConVat}</strong></div>`
+                        : `<div>⚠️ Keine ${cn(con)}-UID → <strong>Registrierung in ${cn(con)} erforderlich</strong> (ohne sie ist das Verbringen nicht meldbar)</div>`}
+        </div>
+        <div class="hints" style="margin-top:10px;">
+          ${rH({type:'info',icon:'📝',text:`ZM in <strong>${cn(con)}</strong>: Verbringen an die eigene ${cn(myHome)}-UID melden. Verbringungsregister führen.`})}
+          ${s3I.note ? rH({type:'info',icon:'🏷️',text:s3I.note}) : ''}
+        </div>
+      </div>`
+        : `<div style="background:var(--surface-2);border:1px solid rgba(100,116,139,0.3);border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:600;color:var(--tx-3);margin-bottom:6px;">
+          ℹ️ Schritt 3 · Verkauf — separater Vorgang
+        </div>
+        <div style="font-size:0.72rem;color:var(--tx-3);line-height:1.6;">
+          Einkauf, Veredelung und Lager liegen alle in ${flag(myHome)} <strong>${cn(myHome)}</strong> — es bewegt sich nichts über eine Grenze.
+          Der spätere Verkauf ist ein eigenständiger Liefervorgang und im <strong>3-Parteien-Modus</strong> separat zu analysieren.
+        </div>
+      </div>`;
+      document.getElementById('resultContent').innerHTML = ihml;
+      el.scrollIntoView({ behavior:'smooth', block:'start' });
+      setVergleichBtnVisible(false);
+      return;
+    }
     ihml += `<div style="background:var(--surface-2);border:1px solid rgba(45,212,191,0.3);border-radius:10px;padding:14px;margin-bottom:10px;">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:700;color:var(--teal);margin-bottom:10px;">
         📦 Schritt 3 · Verkauf fertiges Produkt · ${flag(con)} ${cn(con)} → ${flag(cus)} ${cn(cus)}
@@ -4433,7 +4528,8 @@ function analyzeLohn() {
         : uniqReg.map(c => rH({type:'warn',icon:'📋',text:`Registrierung in <strong>${cn(c)}</strong> beantragen oder Steuerberater konsultieren.`})).join('')}
       ${litF
         ? rH({type:'info',icon:'⚖️',text:`Voraussetzung Art. 17 Abs. 2 lit. f: Ware muss tatsächlich nach ${cn(myHome)} zurückkommen + Lohnveredelungsvertrag + Verbringungsregister dokumentiert.`})
-        : rH({type:'warn',icon:'⚖️',text:`Art. 17 Abs. 2 lit. f greift <strong>nicht</strong> (Ware kommt nicht zurück): Verbringen ${cn(myHome)} → ${cn(con)} ist meldepflichtig (ig. Verbringen Art. 17 Abs. 1) und der anschließende Verkauf ist eine ig. Lieferung <strong>ab ${cn(con)}</strong> — beides läuft über die ${cn(con)}-UID.`})}
+        : rH({type:'warn',icon:'⚖️',text:`Art. 17 Abs. 2 lit. f greift <strong>nicht</strong> (Ware kommt nicht zurück): Verbringen ${cn(myHome)} → ${cn(con)} ist meldepflichtig (ig. Verbringen Art. 17 Abs. 1) und der anschließende Verkauf ist eine ig. Lieferung <strong>ab ${cn(con)}</strong> — beides läuft über die ${cn(con)}-UID.`})
+          + rH({type:'info',icon:'🗓️',text:ART17_ABS3_HINT})}
     </div>`;
 
     document.getElementById('resultContent').innerHTML = shtml;
@@ -4620,7 +4716,8 @@ function analyzeLohn() {
           : `RC Lohnveredelungsleistung (${rate(myHome)}%, Saldo 0) · ${natLaw('rc')}`} ·
         Voranmeldung
       </div>
-      ${!lvDirect && !litFGreift ? `<div><strong style="color:var(--amber);">${flag(myHome)} ${cn(myHome)} (ig. Verbringen):</strong> Verbringen ${cn(myHome)}→${cn(con)} meldepflichtig (Art. 17 MwStSystRL) — lit. f greift nicht</div>` : ''}
+      ${!lvDirect && !litFGreift ? `<div><strong style="color:var(--amber);">${flag(myHome)} ${cn(myHome)} (ig. Verbringen):</strong> Verbringen ${cn(myHome)}→${cn(con)} meldepflichtig (Art. 17 Abs. 1 MwStSystRL) — lit. f greift nicht</div>
+      <div style="color:var(--tx-3);font-size:0.68rem;padding-left:2px;">🗓️ ${ART17_ABS3_HINT}</div>` : ''}
       ${litFGreift ? `<div><strong style="color:var(--teal);">✅ Art. 17 Abs. 2 lit. f:</strong> Kein ig. Verbringen — Ausnahme Lohnveredelung (Ware kommt zurück)</div>` : ''}
     </div>
   </div>`;
@@ -10315,7 +10412,7 @@ function runOutputTests() {
   const LOHN_TESTS = [
     { id:'LV-01', name:'FI→PL→DE EPROHA direkt, Ware kommt zurück: RC + Verkauf separat + Reg PL',
       o:{company:'EPROHA',sup:'FI',con:'PL',cus:'DE',lvDirect:true,litF:true},
-      exp:{ inland:false, s2kind:'rc', s3kind:'separate', reg:['PL'] } },
+      exp:{ inland:false, s2kind:'rc', s3kind:'separate', reg:['PL'], verbr:null } },
     { id:'LV-02', name:'FI→PL→DE EPROHA direkt, Ware bleibt: Verkauf IG-Lieferung PL→DE (kein PL-Stkz → kein Code)',
       o:{company:'EPROHA',sup:'FI',con:'PL',cus:'DE',lvDirect:true,litF:false},
       exp:{ s3kind:'ig-sale', s3sap:null, reg:['PL'] } },
@@ -10327,13 +10424,24 @@ function runOutputTests() {
     { id:'LV-04', name:'DE→DE→AT EPROHA (sup=con, Sitz AT): Einkauf inländisch, Veredelung ABER RC',
       o:{company:'EPROHA',sup:'DE',con:'DE',cus:'AT',lvDirect:true,litF:false},
       exp:{ inland:true, conIsHome:false, s2kind:'rc', s2rc:true, s3sap:'DH' } },
+    // sup === con: Einkauf UND Veredelung im selben Land. Kommt die Ware danach ins eigene
+    // Lager, greift lit. f NICHT (sie wurde nie aus der Heimat versandt) → ig. Verbringen.
+    { id:'LV-14', name:'DE→DE→AT EPROHA, Ware kommt zurück: ig. Verbringen DE→AT + Verkauf separat',
+      o:{company:'EPROHA',sup:'DE',con:'DE',cus:'AT',lvDirect:true,litF:true},
+      exp:{ inland:true, s3kind:'separate', s3sap:null, verbr:'DE→AT!', reg:[] } },
+    { id:'LV-15', name:'PL→PL→AT EPROHA, Ware kommt zurück: Verbringen ab PL → PL-Registrierung nötig',
+      o:{company:'EPROHA',sup:'PL',con:'PL',cus:'AT',lvDirect:true,litF:true},
+      exp:{ inland:true, s3kind:'separate', verbr:'PL→AT!', reg:['PL'] } },
+    { id:'LV-16', name:'DE→DE→AT EPDE (alles Heimat), Ware bleibt im Lager: kein Verbringen',
+      o:{company:'EPDE',sup:'DE',con:'DE',cus:'AT',lvDirect:true,litF:true},
+      exp:{ inland:true, conIsHome:true, s3kind:'separate', verbr:null, reg:[] } },
     { id:'LV-05', name:'FI→PL→PL EPDE, Ware bleibt: Verkauf Inland PL',
       o:{company:'EPDE',sup:'FI',con:'PL',cus:'PL',lvDirect:true,litF:false},
       exp:{ s3kind:'inland-sale' } },
     // ── sup === myHome: Inlandskauf + EU-Veredelung (PapTrade-Fall) ──
     { id:'LV-06', name:'AT→DE→AT EPROHA, Verfügungsmacht AT + Rückkehr: Inlandskauf 20% + lit. f, keine DE-Reg',
       o:{company:'EPROHA',sup:'AT',con:'DE',cus:'AT',lvDirect:true,litF:true,homeHandover:true},
-      exp:{ inland:false, supIsHome:true, s1kind:'home-purchase', s2kind:'rc', s3kind:'separate', reg:[] } },
+      exp:{ inland:false, supIsHome:true, s1kind:'home-purchase', s2kind:'rc', s3kind:'separate', reg:[], verbr:'AT→DE' } },
     { id:'LV-07', name:'AT→DE→AT EPROHA, Verfügungsmacht DE (DAP): ig. Erwerb DE (EPROHA hat DE-UID)',
       o:{company:'EPROHA',sup:'AT',con:'DE',cus:'AT',lvDirect:true,litF:true,homeHandover:false},
       exp:{ supIsHome:true, s1kind:'ig-acquisition', reg:[] } },
@@ -10347,7 +10455,7 @@ function runOutputTests() {
     // Kennzeichen richtet sich nach der UID des Abgangslands (DE = DH), nicht nach der Heimat-UID (AF).
     { id:'LV-10', name:'AT→DE→AT EPROHA, Verfügungsmacht AT, Ware bleibt: IG-Lieferung ab DE = DH (nicht AF)',
       o:{company:'EPROHA',sup:'AT',con:'DE',cus:'AT',lvDirect:true,litF:false,homeHandover:true},
-      exp:{ supIsHome:true, s1kind:'home-purchase', s3kind:'ig-sale', s3sap:'DH', reg:[] } },
+      exp:{ supIsHome:true, s1kind:'home-purchase', s3kind:'ig-sale', s3sap:'DH', s3uid:'DE', reg:[], verbr:'AT→DE!' } },
     { id:'LV-11', name:'AT→PL→AT EPROHA, Ware bleibt: kein PL-Ausgangs-Stkz → kein Code + PL-Registrierung',
       o:{company:'EPROHA',sup:'AT',con:'PL',cus:'AT',lvDirect:true,litF:false,homeHandover:true},
       exp:{ supIsHome:true, s3kind:'ig-sale', s3sap:null, reg:['PL'] } },
@@ -10355,10 +10463,10 @@ function runOutputTests() {
     // (Art. 196 / § 13b Abs. 2 Nr. 1 UStG verlangen einen im Ausland ansässigen Leistenden).
     { id:'LV-12', name:'AT→DE→AT EPDE (Converter im Heimatland DE): Veredelung 19% DE-MwSt, KEIN RC',
       o:{company:'EPDE',sup:'AT',con:'DE',cus:'AT',lvDirect:true,litF:false},
-      exp:{ inland:false, conIsHome:true, s2kind:'inland-service', s2rc:false, s2sap:'VD', s3sap:'DH', reg:[] } },
+      exp:{ inland:false, conIsHome:true, s2kind:'inland-service', s2rc:false, s2sap:'VD', s3sap:'DH', s3uid:'DE', reg:[], verbr:null } },
     { id:'LV-13', name:'AT→DE→AT EPROHA (Converter im Ausland): Veredelung mit RC in AT',
       o:{company:'EPROHA',sup:'AT',con:'DE',cus:'AT',lvDirect:true,litF:false},
-      exp:{ conIsHome:false, s2kind:'rc', s2rc:true, s2sap:'RC' } },
+      exp:{ conIsHome:false, s2kind:'rc', s2rc:true, s2sap:'RC', verbr:'AT→DE!' } },
   ];
   LOHN_TESTS.forEach(t => {
     const errs = [];
@@ -10374,6 +10482,10 @@ function runOutputTests() {
       if ('s2rc' in e && (!s2 || s2.rc !== e.s2rc)) errs.push(`Schritt2.rc: erwartet ${e.s2rc}, erhalten ${s2 && s2.rc}`);
       if (e.s3kind && (!s3 || s3.kind !== e.s3kind)) errs.push(`Schritt3.kind: erwartet ${e.s3kind}, erhalten ${s3 && s3.kind}`);
       if ('s3sap' in e && ((s3 && s3.sap) || null) !== e.s3sap) errs.push(`Schritt3.sap: erwartet ${e.s3sap}, erhalten ${(s3 && s3.sap) || null}`);
+      if ('s3uid' in e && ((s3 && s3.uidCountry) || null) !== e.s3uid) errs.push(`Schritt3.uidCountry: erwartet ${e.s3uid}, erhalten ${(s3 && s3.uidCountry) || null}`);
+      // Verbringen kompakt: 'AT→DE!' = meldepflichtig, 'AT→DE' = durch lit. f gedeckt, null = keines
+      const _vb = L.verbringen ? `${L.verbringen.from}→${L.verbringen.to}${L.verbringen.meldepflichtig ? '!' : ''}` : null;
+      if ('verbr' in e && _vb !== e.verbr) errs.push(`verbringen: erwartet ${e.verbr}, erhalten ${_vb}`);
       if (e.reg) { const got = [...new Set(L.regRisks)].sort().join(','), want = e.reg.slice().sort().join(','); if (got !== want) errs.push(`regRisks: erwartet [${want}], erhalten [${got}]`); }
     } catch(ex) { errs.push(`Exception: ${ex.message}`); }
     const ok = errs.length === 0; if (ok) passed++; else failed++;
@@ -12242,7 +12354,10 @@ function renderResult() {
       }
     }
     $('tab-basis').innerHTML = `<div class="fade">${rc?.innerHTML || ''}</div>`;
-    if (expertMode) { renderExpertBegrundung(); renderExpertLegal(); renderExpertInvoice(); renderExpertMelde(); renderExpertRPA(); }
+    // Modus 5: eigene Renderer aus computeLohn() — die 3P-Engine (renderExpertBegrundung/
+    // -Invoice/-Melde/-RPA) kennt weder Werkleistung noch Verbringen und widersprach dem
+    // Ergebnis-Tab. renderExpertLegal() hat einen eigenen Mode-5-Zweig und hängt an.
+    if (expertMode) { renderLohnBegruendung(); renderExpertLegal(); renderLohnInvoice(); renderLohnMelde(); }
     revertVergleichIfHidden();
     return;
   }
@@ -12946,6 +13061,316 @@ function renderExpertRPA() {
         <span class="rpa-label">${it.lbl} <span class="rpa-ref">${it.ref}</span></span>
       </div>`).join('')}
     </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  MODUS 5 · Experten-Tabs aus computeLohn()
+//
+//  Die 3-Parteien-Engine (VATEngine.run + classifySuppliesNorm) kennt weder
+//  Werkleistung noch eigenes Verbringen: Sie las AT→DE→AT als Reihengeschäft
+//  mit zwei ruhenden Lieferungen und produzierte in Begründung, Rechnung und
+//  Meldepflichten Aussagen, die dem Ergebnis-Tab direkt widersprachen
+//  („wird zurückgesendet" trotz lohnRueck=false, „Keine ZM-Pflicht" trotz
+//  ig. Lieferung ab dem Veredelungsland, Musterrechnung an das falsche Land).
+//  Diese drei Renderer speisen sich aus demselben computeLohn()-Ergebnis wie
+//  der Ergebnis-Tab (`_lohnLast`). KEINE neue Steuerlogik — reine Darstellung.
+// ═══════════════════════════════════════════════════════════════════════
+let _lohnLast = null;      // von analyzeLohn() gesetzt
+let activeLohnDoc = 0;     // ausgewählter Beleg im Rechnungs-Tab
+function setLohnDoc(i) { activeLohnDoc = i; renderLohnInvoice(); }
+
+const _lohnStepNo   = { einkauf:'Schritt 1', veredelung:'Schritt 2', verkauf:'Schritt 3' };
+const _lohnDocTitle = { einkauf:'Eingangsrechnung · Rohmaterial', veredelung:'Eingangsrechnung · Converter', verkauf:'Ausgangsrechnung · Kunde' };
+
+function _lohnEmpty(id, txt) {
+  const el = $(id);
+  if (el) el.innerHTML = `<div style="color:var(--tx-3);text-align:center;padding:30px">${txt}</div>`;
+}
+function _lohnCoName() {
+  return currentCompany === 'EPDE' ? 'Europapier Deutschland GmbH (EPDE)' : 'EU-RO Handels GmbH (EPROHA)';
+}
+// Satz zum Verbringen eigener Ware — genau die Fälle, die computeLohn unterscheidet.
+function _lohnVerbringenSatz(L) {
+  const v = L.verbringen;
+  const folge = (v) => `Das Verbringen gilt als fiktive innergemeinschaftliche Lieferung in ${cn(v.from)} (Art. 17 Abs. 1 MwStSystRL) mit korrespondierendem fiktiven ig. Erwerb in ${cn(v.to)} und ist in beiden Ländern unter der jeweiligen UID zu erklären.`;
+  if (v && v.meldepflichtig && v.reason === 'not-dispatched') {
+    return `Der Transport des bearbeiteten Materials von ${cn(v.from)} in das eigene Lager in ${cn(v.to)} ist ein <strong>Verbringen eigener Ware</strong>. <strong>Art. 17 Abs. 2 lit. f MwStSystRL greift hier nicht</strong>: Die Ausnahme setzt voraus, dass die Ware in den Mitgliedstaat zurückgelangt, <em>von dem aus sie ursprünglich versandt worden war</em> — Einkauf und Bearbeitung fanden aber beide in ${cn(v.from)} statt, eine Hinbewegung aus ${cn(v.to)} hat es nie gegeben. ${folge(v)}`;
+  }
+  if (v && v.meldepflichtig) {
+    return `Die Warenbewegung ${cn(v.from)} → ${cn(v.to)} ist ein <strong>Verbringen eigener Ware</strong>. Da die Ware <strong>nicht</strong> nach ${cn(L.myHome)} zurückkehrt, greift die Ausnahme des <strong>Art. 17 Abs. 2 lit. f MwStSystRL nicht</strong>: ${folge(v)} ${ART17_ABS3_HINT}`;
+  }
+  if (v) {
+    return `Die Warenbewegung ${cn(v.from)} → ${cn(v.to)} und zurück ist ein <strong>Verbringen eigener Ware</strong>, gilt aber nach <strong>Art. 17 Abs. 2 lit. f MwStSystRL</strong> nicht als innergemeinschaftliches Verbringen, weil die Ware nach der Bearbeitung in den Ausgangsmitgliedstaat zurückgelangt. Voraussetzung: Lohnveredelungsvertrag und dokumentierte Rücksendung (Verbringungsregister).`;
+  }
+  if (L.litF && !L.inland) {
+    return `Die Rücksendung ${cn(L.con)} → ${cn(L.myHome)} nach der Bearbeitung ist ein Verbringen eigener Ware, das nach <strong>Art. 17 Abs. 2 lit. f MwStSystRL</strong> nicht als innergemeinschaftliches Verbringen gilt (Ware gelangt in den Ausgangsmitgliedstaat zurück). Die Hinlieferung ist davon nicht erfasst — sie ist die Lieferung des Vorlieferanten.`;
+  }
+  return `Ein Verbringen eigener Ware liegt nicht vor: Das Rohmaterial gelangt unmittelbar zum Converter, das Fertigprodukt von dort weiter zum Kunden.`;
+}
+
+function renderLohnBegruendung() {
+  const el = $('tab-begrundung'); if (!el) return;
+  const L = _lohnLast;
+  if (!L) { _lohnEmpty('tab-begrundung', 'Analyse nicht verfügbar.'); return; }
+  const coName = _lohnCoName();
+  const isAT = L.myHome === 'AT';
+  const st = (k) => L.steps.find(s => s.key === k);
+  const s1 = st('einkauf'), s2 = st('veredelung'), s3 = st('verkauf');
+  const paras = [];
+
+  // P1 — Art des Geschäfts
+  paras.push(`Bei dem vorliegenden Geschäft handelt es sich um eine <strong>Lohnveredelung</strong>: ${coName} bezieht Rohmaterial aus ${cn(L.sup)} und lässt es von einem Converter in ${cn(L.con)} bearbeiten. Das Material bleibt durchgehend im Eigentum von ${coName} — der Converter erbringt eine <strong>Werkleistung</strong> (sonstige Leistung), keine Lieferung. Es liegt daher <strong>kein Reihengeschäft</strong> vor; Art. 36a MwStSystRL ist nicht anwendbar.`);
+
+  // P2 — Verbringen / lit. f
+  paras.push(_lohnVerbringenSatz(L));
+
+  // P3 — Schritt 1: Einkauf
+  if (s1) {
+    const t = { 'inland-purchase': `Der Einkauf des Rohmaterials ist eine <strong>Inlandslieferung in ${cn(L.sup)}</strong> (${L.supRate}% ${cn(L.sup)}-MwSt); ${coName} zieht die Vorsteuer ab. Eine innergemeinschaftliche Lieferung liegt nicht vor, weil die Ware das Land nicht verlässt.`,
+      'home-purchase': `Der Lieferant verschafft die Verfügungsmacht bereits in ${cn(L.myHome)}. Der Einkauf ist damit eine <strong>Inlandslieferung in ${cn(L.myHome)}</strong> (${L.homeRate}% MwSt, Vorsteuerabzug); der anschließende Transport zum Converter ist eine eigene Warenbewegung von ${coName}.`,
+      'ig-acquisition': `Der Lieferant versendet unmittelbar nach ${cn(L.con)}. Er erbringt eine <strong>steuerfreie innergemeinschaftliche Lieferung</strong> (Art. 138 MwStSystRL); ${coName} tätigt einen <strong>innergemeinschaftlichen Erwerb in ${cn(L.con)}</strong> (${L.conRate}%, bei vollem Vorsteuerabzug Saldo 0) und tritt dafür mit einer ${cn(L.con)}-UID auf.`,
+      'ig-acquisition-home': `Die Ware läuft zunächst zu ${coName} nach ${cn(L.myHome)}. Der Lieferant erbringt eine <strong>steuerfreie innergemeinschaftliche Lieferung</strong>, ${coName} tätigt den <strong>ig. Erwerb in ${cn(L.myHome)}</strong> (${L.homeRate}%, Saldo 0).` }[s1.kind];
+    if (t) paras.push(`<strong>Schritt 1 — Einkauf Rohmaterial:</strong> ${t}`);
+  }
+
+  // P4 — Schritt 2: Werkleistung (der eigentliche Kern)
+  if (s2) {
+    const ortSatz = `Leistungsort der Werkleistung ist nach <strong>Art. 44 MwStSystRL</strong> (${isAT ? '§ 3a Abs. 6 UStG AT' : '§ 3a Abs. 2 UStG'}) der Sitz des Leistungsempfängers, also <strong>${cn(L.myHome)}</strong>.`;
+    paras.push(`<strong>Schritt 2 — Veredelungsleistung:</strong> ${ortSatz} ` + (L.conIsHome
+      ? `Der Converter ist ebenfalls in ${cn(L.con)} ansässig. <strong>Reverse Charge greift damit nicht</strong> — sowohl Art. 196 MwStSystRL als auch ${isAT ? '§ 19 Abs. 1 UStG AT' : '§ 13b Abs. 2 Nr. 1 UStG'} setzen einen im <em>Ausland</em> ansässigen Leistenden voraus. Der Converter rechnet mit offen ausgewiesener ${cn(L.myHome)}-MwSt (${L.homeRate}%) ab, ${coName} zieht die Vorsteuer ab. Ein Reverse-Charge-Hinweis auf der Rechnung wäre unrichtig.`
+      : `Da der Converter in ${cn(L.con)} und damit im Ausland ansässig ist, geht die Steuerschuld nach <strong>Art. 196 MwStSystRL</strong> (${isAT ? '§ 19 Abs. 1 UStG AT' : '§ 13b Abs. 2 Nr. 1 UStG'}) auf ${coName} über. Der Converter fakturiert 0% und weist auf die Steuerschuldnerschaft des Leistungsempfängers hin; ${coName} erklärt ${L.homeRate}% ${cn(L.myHome)}-MwSt und zieht sie zeitgleich als Vorsteuer ab (Saldo 0).`));
+  }
+
+  // P5 — Schritt 3: Verkauf
+  if (s3) {
+    const t = { 'separate': `Da die Ware nach ${cn(L.myHome)} zurückkehrt, ist der spätere Verkauf ein <strong>eigenständiger Liefervorgang</strong> und nicht Teil dieser Lohnveredelung — er ist getrennt zu beurteilen (3-Parteien-Modus).`,
+      'inland-sale': `Das Fertigprodukt wird innerhalb von ${cn(L.con)} verkauft: <strong>Inlandslieferung mit ${L.conRate}% ${cn(L.con)}-MwSt</strong>, zu erklären unter einer ${cn(L.con)}-UID.`,
+      'ig-sale': `Das Fertigprodukt geht ab ${cn(L.con)} an den Kunden in ${cn(L.cus)}. Die Beförderung beginnt in ${cn(L.con)}, damit liegt der Lieferort nach <strong>Art. 32 MwStSystRL</strong> in ${cn(L.con)}: <strong>steuerfreie innergemeinschaftliche Lieferung aus ${cn(L.con)}</strong> (Art. 138 MwStSystRL), zu erklären und in der Zusammenfassenden Meldung <em>unter der ${cn(L.con)}-UID</em> — nicht unter der ${cn(L.myHome)}-UID. Der Kunde versteuert den ig. Erwerb in ${cn(L.cus)} (${L.cusRate}%).` }[s3.kind];
+    if (t) paras.push(`<strong>Schritt 3 — Verkauf Fertigprodukt:</strong> ${t}`);
+  }
+
+  // P6 — Verfügungsmacht-Lesart (nur wenn der Schalter überhaupt greift)
+  if (L.supIsHome) {
+    paras.push(`<strong>Zur gewählten Lesart:</strong> ${L.homeHandover
+      ? `Der Lieferant sitzt im Heimatland und verschafft die Verfügungsmacht in ${cn(L.myHome)} (Abholung/EXW beim Lieferanten). Der Einkauf ist deshalb ein Inlandsgeschäft, und die Fahrt zum Converter ist eine eigene Warenbewegung von ${coName}.`
+      : `Der Lieferant verschafft die Verfügungsmacht erst am Bestimmungsort in ${cn(L.con)} (z.B. DAP). Damit ist bereits die Hinlieferung seine innergemeinschaftliche Lieferung, und ${coName} tätigt den ig. Erwerb in ${cn(L.con)} — Art. 17 Abs. 2 lit. f schützt diesen Vorgang nicht, er setzt eine ${cn(L.con)}-Registrierung voraus.`} Maßgeblich ist der tatsächliche Übergang der Verfügungsmacht laut Incoterm und Vertrag.`);
+  }
+
+  // P7 — Melde- und Registrierungspflichten
+  const meldeTeile = [];
+  if (L.verbringen?.meldepflichtig) meldeTeile.push(`das ig. Verbringen ${cn(L.verbringen.from)} → ${cn(L.verbringen.to)} (ZM in ${cn(L.verbringen.from)}, ig. Erwerb in ${cn(L.verbringen.to)})`);
+  if (s3?.kind === 'ig-sale') meldeTeile.push(`die ig. Lieferung an den Kunden (ZM in <strong>${cn(L.con)}</strong>, ${isAT && L.con === 'AT' ? '§ 21 Abs. 3 UStG AT' : L.con === 'DE' ? '§ 18a UStG' : 'Art. 262 MwStSystRL'})`);
+  if (s2?.kind === 'rc') meldeTeile.push(`die Reverse-Charge-Leistung in der ${cn(L.myHome)}-Voranmeldung`);
+  const uniqReg = [...new Set(L.regRisks)];
+  paras.push(`<strong>Melde- und Registrierungspflichten:</strong> ${meldeTeile.length ? `Zu melden sind ${meldeTeile.join(', ')}.` : `Über die laufende ${cn(L.myHome)}-Voranmeldung hinaus bestehen keine zusätzlichen Meldepflichten.`} ${uniqReg.length
+    ? `Für ${uniqReg.map(cn).join(' und ')} fehlt ${coName} eine UID — <strong>eine Registrierung ist erforderlich</strong>, bevor der Vorgang so abgewickelt werden kann.`
+    : `Die dafür benötigten UIDs liegen vor; eine zusätzliche Registrierung ist nicht erforderlich.`}`);
+
+  const prosHtml = paras.map(p => `<p class="begr-para">${p}</p>`).join('');
+  const sapRows = L.steps.filter(s => s.sap).map(s => {
+    const desc = getSapDesc(currentCompany, s.uidCountry, s.sapTreatment, s.uidCountry) || '—';
+    return `<tr><td>${_lohnStepNo[s.key]}: ${s.title.split(' · ')[0]}</td><td>${s.role === 'seller' ? 'Ausgang' : 'Eingang'}</td><td style="font-family:var(--mono);color:var(--amber);font-weight:700">${s.sap}</td><td>${desc}</td></tr>`;
+  }).join('');
+
+  el.innerHTML = `<div class="begr-block fade" data-component="buildLohnBegruendung">
+    <div class="begr-header">
+      <div class="begr-title">📝 Begründungstext · Lohnveredelung</div>
+      <button class="begr-copy-btn" onclick="(()=>{
+        const txt=document.getElementById('begr-text-content').innerText;
+        navigator.clipboard.writeText(txt).then(()=>{
+          this.textContent='✅ Kopiert!';setTimeout(()=>this.textContent='📋 Kopieren',2000);
+        });
+      })()">📋 Kopieren</button>
+    </div>
+    <div class="begr-text" id="begr-text-content">${prosHtml}</div>
+    ${sapRows ? `<div class="begr-sap-title">SAP-Steuerkennzeichen</div>
+    <table class="begr-sap-table">
+      <thead><tr><th>Schritt</th><th>Seite</th><th>MWSKZ</th><th>Beschreibung</th></tr></thead>
+      <tbody>${sapRows}</tbody>
+    </table>` : ''}
+    <div class="begr-footer">Dieses Dokument wurde automatisch generiert — EU VAT Reihengeschäftsrechner v${TOOL_VERSION} · ${new Date().toLocaleDateString('de-AT')} · Nur zur internen Orientierung, kein Rechtsrat.</div>
+  </div>`;
+}
+
+function renderLohnInvoice() {
+  const el = $('tab-invoice'); if (!el) return;
+  const L = _lohnLast;
+  if (!L) { _lohnEmpty('tab-invoice', 'Analyse nicht verfügbar.'); return; }
+  const docs = L.steps.filter(s => s.kind !== 'separate');
+  if (!docs.length) { _lohnEmpty('tab-invoice', 'Kein eigener Beleg in diesem Vorgang.'); return; }
+  if (activeLohnDoc >= docs.length) activeLohnDoc = 0;
+  const s = docs[activeLohnDoc];
+  const coName = currentCompany === 'EPDE' ? 'Europapier Deutschland GmbH' : 'EU-RO Handels GmbH';
+  const coCity = currentCompany === 'EPDE' ? '99817 Eisenach, Deutschland' : '1030 Wien, Österreich';
+  const isOut  = s.role === 'seller';
+
+  // Belegparteien + Musterposition je Schritt
+  const partner = s.key === 'einkauf' ? L.sup : s.key === 'veredelung' ? L.con : L.cus;
+  const partnerName = s.key === 'einkauf' ? `${cn(L.sup)}-Lieferant ${legalForm(L.sup)}`
+                    : s.key === 'veredelung' ? `${cn(L.con)}-Converter ${legalForm(L.con)}`
+                    : customerName(L.cus);
+  const pos = s.key === 'einkauf' ? { txt:'Rohmaterial: Graphische Papiere, 20t (Pos. 4802)', net: 24000 }
+            : s.key === 'veredelung' ? { txt:'Lohnveredelung (Werkleistung) — Streichen + Konfektionieren', net: 6000 }
+            : { txt:'Fertigprodukt: Graphische Papiere, 20t (Pos. 4802)', net: 32000 };
+  const fmt = (n) => n.toLocaleString('de-AT', { minimumFractionDigits: 2 });
+
+  const treat = s.sapTreatment;
+  const zeroRated = treat === 'ic-exempt' || treat === 'rc' || treat === 'ic-acquisition';
+  const r = zeroRated ? 0 : rate(s.uidCountry);
+  const mwstLabel = treat === 'ic-exempt' ? 'MwSt 0% (ig. Lieferung)'
+                  : treat === 'ic-acquisition' ? 'MwSt 0% (ig. Lieferung des Lieferanten)'
+                  : treat === 'rc' ? 'MwSt 0% (Reverse Charge)'
+                  : `MwSt ${r}%`;
+  const ustNote = treat === 'ic-exempt'
+      ? `Steuerfreie innergemeinschaftliche Lieferung (${natLaw('ig.exempt', s.uidCountry)}). Ausgestellt unter der ${cn(s.uidCountry)}-UID — die Warenbewegung beginnt in ${cn(s.uidCountry)}.`
+    : treat === 'ic-acquisition'
+      ? `Steuerfreie ig. Lieferung des Lieferanten. ${coName} versteuert den innergemeinschaftlichen Erwerb in ${cn(s.uidCountry)} (${rate(s.uidCountry)}%) und zieht ihn zeitgleich als Vorsteuer ab.`
+    : treat === 'rc'
+      ? `Steuerschuldnerschaft des Leistungsempfängers (Art. 196 MwStSystRL / ${natLaw('rc')}). Die Umsatzsteuer ist von ${coName} in ${cn(L.myHome)} anzumelden.`
+      : `${r}% ${cn(s.uidCountry)}-MwSt offen ausgewiesen${isOut ? '' : ` — Vorsteuerabzug bei ${coName}`}. ${s.kind === 'inland-service' ? 'Kein Reverse-Charge-Hinweis, da der Leistende im Inland ansässig ist.' : ''}`;
+
+  const myUid = MY_VAT_IDS[s.uidCountry] || '—';
+  const selBtns = docs.map((d, i) =>
+    `<button class="inv-sel-btn${i === activeLohnDoc ? ' active' : ''}" onclick="setLohnDoc(${i})">${_lohnStepNo[d.key].replace('Schritt ', 'S')} ${d.role === 'seller' ? '↗' : '↘'}</button>`
+  ).join('');
+
+  // Pflichtangaben: ig. Erwerb = eingehende IG-Rechnung → gleiche Pflichtangaben wie ic-exempt
+  const rpaTreat = treat === 'ic-acquisition' ? 'ic-exempt' : treat === 'rc' ? 'rc' : treat === 'ic-exempt' ? 'ic-exempt' : 'domestic';
+  const items = getRpaItems(rpaTreat, s.uidCountry);
+
+  el.innerHTML = `<div class="inv-block fade" data-component="buildLohnInvoice">
+    <div class="inv-hdr">
+      <div class="inv-hdr-left">📄 ${_lohnDocTitle[s.key]}</div>
+      <div class="inv-selector">${selBtns}</div>
+    </div>
+    <div class="inv-body"><div class="invoice-preview">
+      <div class="inv-company">${isOut ? coName : partnerName}</div>
+      <div class="inv-addr">${isOut ? coCity : cn(partner)}</div>
+      <div class="inv-to-lbl">Rechnungsempfänger</div>
+      <div class="inv-to">${isOut ? `${partnerName} · ${cn(partner)}` : `${coName} · ${cn(L.myHome)}`}</div>
+      <div class="inv-meta">
+        <div class="inv-meta-item"><div class="inv-ml">Rechnungsnr.</div><div class="inv-mv">RE-2026-0001</div></div>
+        <div class="inv-meta-item"><div class="inv-ml">Datum</div><div class="inv-mv">${new Date().toLocaleDateString('de-AT')}</div></div>
+        <div class="inv-meta-item"><div class="inv-ml">${s.key === 'veredelung' ? 'Leistungsdatum' : 'Lieferdatum'}</div><div class="inv-mv">${new Date().toLocaleDateString('de-AT')}</div></div>
+      </div>
+      <div class="inv-divider"></div>
+      <div class="inv-line"><span>${pos.txt}</span><span class="amt">€ ${fmt(pos.net)}</span></div>
+      <div class="inv-line" style="margin-top:8px"><span>Nettobetrag</span><span class="amt">€ ${fmt(pos.net)}</span></div>
+      <div class="inv-line"><span>${mwstLabel}</span><span class="amt">€ ${fmt(pos.net * r / 100)}</span></div>
+      <div class="inv-total-row">
+        <span>Rechnungsbetrag</span>
+        <span class="total-amt">€ ${fmt(pos.net * (1 + r / 100))}</span>
+      </div>
+      <div class="inv-ust-note">${ustNote}</div>
+      <div class="inv-uid-row">
+        <div class="inv-uid-item"><div class="iuk">${isOut ? 'Meine UID (Aussteller)' : 'Meine UID (Empfänger)'}</div><div class="iuv">${myUid}</div></div>
+        <div class="inv-uid-item"><div class="iuk">UID Gegenpartei</div><div class="iuv">${cn(partner)}-UID ${isOut ? '(prüfen via VIES)' : ''}</div></div>
+        ${s.sap ? `<div class="inv-uid-item"><div class="iuk">SAP Stkz.</div><div class="iuv" style="color:var(--amber)">${isOut ? 'Ausg' : 'Eing'}: ${s.sap}</div></div>` : ''}
+      </div>
+    </div></div>
+  </div>
+  <div style="border-top:1px solid var(--border);margin:16px 0;"></div>
+  <div class="rpa-block fade">
+    <div class="rpa-hdr">
+      <div class="rpa-hdr-left">✅ Rechnungspflichtangaben · ${_lohnStepNo[s.key]}</div>
+    </div>
+    <div class="rpa-body">
+      <div style="font-size:0.7rem;color:var(--tx-3);margin-bottom:4px;padding:0 2px">
+        <span style="color:var(--red);font-family:var(--mono)">✦</span> = Pflicht &nbsp; ○ = Empfehlung
+      </div>
+      ${items.map(it => `<div class="rpa-item">
+        <span class="rpa-mandatory">${it.m ? '✦' : '○'}</span>
+        <span class="rpa-label">${it.lbl} <span class="rpa-ref">${it.ref}</span></span>
+      </div>`).join('')}
+      ${s.note ? `<div class="rpa-item"><span class="rpa-mandatory">✦</span><span class="rpa-label">${s.note}</span></div>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderLohnMelde() {
+  const el = $('tab-melde'); if (!el) return;
+  const L = _lohnLast;
+  if (!L) { _lohnEmpty('tab-melde', 'Analyse nicht verfügbar.'); return; }
+  const st = (k) => L.steps.find(s => s.key === k);
+  const s1 = st('einkauf'), s2 = st('veredelung'), s3 = st('verkauf');
+  const card = (type, cls, country, detail, deadline) => `<div class="melde-item">
+      <span class="mi-type ${cls}">${type}</span>
+      <div class="mi-country">${country}</div>
+      <div class="mi-detail">${detail}</div>
+      <div class="mi-deadline">${deadline}</div>
+    </div>`;
+  const items = [];
+
+  // Einkaufs-Position: ig. Erwerb (beide Varianten) vs. Vorsteuer aus Inlandskauf
+  const einkaufLbl = (kind, r) => (kind === 'ig-acquisition' || kind === 'ig-acquisition-home')
+    ? `ig. Erwerb Rohmaterial (${r}%, Vorsteuer gegengleich)`
+    : `Vorsteuer aus Inlandseinkauf (${r}%)`;
+
+  // ── UVA Heimatland: alles, was unter der Heimat-UID läuft ──
+  const homeTeile = [];
+  if (s1 && s1.uidCountry === L.myHome) homeTeile.push(einkaufLbl(s1.kind, L.homeRate));
+  if (s2) homeTeile.push(s2.kind === 'rc'
+    ? `Reverse Charge Veredelungsleistung (${L.homeRate}%, Saldo 0)`
+    : `Vorsteuer aus Converter-Rechnung (${L.homeRate}%)`);
+  if (L.verbringen?.meldepflichtig && L.verbringen.from === L.myHome) homeTeile.push('ig. Verbringen: fiktive ig. Lieferung (steuerfrei)');
+  if (L.verbringen?.meldepflichtig && L.verbringen.to === L.myHome) homeTeile.push(`ig. Erwerb aus Verbringen (${L.homeRate}%, Saldo 0)`);
+  if (s3 && s3.uidCountry === L.myHome) homeTeile.push(s3.kind === 'ig-sale' ? 'ig. Lieferung Fertigprodukt (0%)' : `Inlandsumsatz (${L.homeRate}%)`);
+  items.push(card('UVA', 'mi-uva', `${flag(L.myHome)} ${cn(L.myHome)}`,
+    `${L.myHomVat ? `UID ${L.myHomVat} · ` : ''}${homeTeile.join(' · ') || 'keine Position'}`,
+    `Frist: ${L.myHome === 'DE' ? '10. Folgemonat' : '15. des zweitfolgenden Monats'}`));
+
+  // ── UVA Veredelungsland (nur wenn abweichend und dort Pflichten bestehen) ──
+  if (L.con !== L.myHome) {
+    const conTeile = [];
+    if (s1 && s1.uidCountry === L.con) conTeile.push(einkaufLbl(s1.kind, L.conRate));
+    if (L.verbringen?.meldepflichtig && L.verbringen.to === L.con) conTeile.push(`ig. Erwerb aus Verbringen (${L.conRate}%, Saldo 0)`);
+    if (L.verbringen?.meldepflichtig && L.verbringen.from === L.con) conTeile.push('ig. Verbringen: fiktive ig. Lieferung (steuerfrei)');
+    if (s3 && s3.uidCountry === L.con) conTeile.push(s3.kind === 'ig-sale' ? 'ig. Lieferung Fertigprodukt (0%)' : `Inlandsumsatz (${L.conRate}%)`);
+    if (conTeile.length) items.push(card('UVA', 'mi-uva', `${flag(L.con)} ${cn(L.con)}`,
+      `${L.myConVat ? `UID ${L.myConVat} · ` : '⚠️ keine UID — Registrierung nötig · '}${conTeile.join(' · ')}`,
+      `Frist: ${L.con === 'DE' ? '10. Folgemonat' : 'nach lokalem Recht'}`));
+  }
+
+  // ── ZM: ig. Lieferung an den Kunden + meldepflichtiges Verbringen ──
+  const zmLaw = (c) => c === 'AT' ? '§ 21 Abs. 3 UStG AT' : c === 'DE' ? '§ 18a UStG' : 'Art. 262 MwStSystRL';
+  let zm = false;
+  if (s3?.kind === 'ig-sale') {
+    zm = true;
+    items.push(card('ZM', 'mi-zm', `${flag(s3.uidCountry)} ${cn(s3.uidCountry)}`,
+      `ig. Lieferung an den ${cn(L.cus)}-Kunden melden (Kunden-UID + Nettobetrag) — Meldung im <strong>Abgangsland</strong>, ${zmLaw(s3.uidCountry)}.`,
+      'Frist: 25. Folgemonat'));
+  }
+  if (L.verbringen?.meldepflichtig) {
+    zm = true;
+    items.push(card('ZM', 'mi-zm', `${flag(L.verbringen.from)} ${cn(L.verbringen.from)}`,
+      `ig. Verbringen ${cn(L.verbringen.from)} → ${cn(L.verbringen.to)} an die <strong>eigene ${cn(L.verbringen.to)}-UID</strong> melden (Art. 17 Abs. 1 MwStSystRL, ${zmLaw(L.verbringen.from)}).`
+      + (L.verbringen.reason === 'no-return' ? `<br><span style="color:var(--tx-3);">${ART17_ABS3_HINT}</span>` : ''),
+      'Frist: 25. Folgemonat'));
+  }
+  if (!zm) items.push(card('ZM', 'mi-none', `${flag(L.myHome)} ${cn(L.myHome)}`,
+    L.litF ? 'Keine ZM-Pflicht — Art. 17 Abs. 2 lit. f (kein ig. Verbringen), keine ig. Lieferung in diesem Vorgang.' : 'Keine ZM-Pflicht in diesem Vorgang.', '—'));
+
+  // ── Intrastat: jede physische Warenbewegung, auch die reine Veredelungsbewegung ──
+  const moves = [];
+  if (!L.inland) moves.push({ from: L.sup, to: L.con, lbl: 'Rohmaterial zur Veredelung' });
+  if (L.litF && L.con !== L.myHome) moves.push({ from: L.con, to: L.myHome, lbl: L.inland ? 'Transport ins eigene Lager' : 'Rücksendung nach Veredelung' });
+  if (!L.litF && s3 && s3.kind !== 'separate' && L.con !== L.cus) moves.push({ from: L.con, to: L.cus, lbl: 'Fertigprodukt an Kunden' });
+  moves.forEach(m => items.push(card('Intrastat', 'mi-int', `${flag(m.from)} → ${flag(m.to)}`,
+    `${m.lbl}: Versendung ab ${cn(m.from)}, Eingang in ${cn(m.to)}. Lohnveredelung wird mit eigenem Code für die Art des Geschäfts gemeldet (4x = Versand zur Veredelung, 5x = Rückversand danach) — auch dann, wenn umsatzsteuerlich kein ig. Verbringen vorliegt. Schwellen je Land prüfen.`,
+    'Frist: 10.–25. Folgemonat (landesabhängig)')));
+
+  // ── Registrierungen ──
+  [...new Set(L.regRisks)].forEach(c => items.push(`<div class="melde-item" style="border-color:rgba(248,81,73,0.25);background:var(--red-dim);">
+      <span class="mi-type" style="background:rgba(248,81,73,0.15);color:var(--red)">REG</span>
+      <div class="mi-country">${flag(c)} ${cn(c)}</div>
+      <div class="mi-detail">Steuerliche Registrierung erforderlich — ohne ${cn(c)}-UID kann der Vorgang nicht korrekt gemeldet werden (${rate(c)}% lokal).</div>
+      <div class="mi-deadline">Vor der ersten Bewegung</div>
+    </div>`));
+
+  el.innerHTML = `<div class="melde-block fade" data-component="buildLohnMelde">
+    <div class="melde-hdr">📅 Meldepflichten · Lohnveredelung</div>
+    <div class="melde-grid">${items.join('')}</div>
   </div>`;
 }
 

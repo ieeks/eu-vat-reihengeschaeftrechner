@@ -30,9 +30,22 @@ Realer PapTrade→EPROHA-Fall (AT-Lieferant, DE-Veredelung, Rückkehr AT) war bi
       statt des Kennzeichens des Abgangslands (**DH** bei DE). `sapFrom()`-Hint in allen drei
       `ig-sale`-Zweigen + `igSaleNote()`; lit.-f-Banner jetzt `litF`- statt `homeHandover`-abhängig.
       Tests LV-10/LV-11 + `s3sap`-Assertion.
-- [ ] **Begründungs-Prosa-Tab** (`ctx.mode===5`, app.js ~12350) auf die `homeHandover`-Lesart
-      eingehen lassen (aktuell generischer lit.-f-Satz, unabhängig von Verfügungsmacht)
-- [ ] Prüfen, ob der Schalter auch **Vergleich-/Meldepflichten-Tab** braucht
+- [x] **Experten-Tabs aus computeLohn()** (27.07.2026) — Begründung, Rechnung & Pflichten und
+      Meldepflichten liefen über die 3-Parteien-Engine und widersprachen dem Ergebnis-Tab
+      (Reihengeschäfts-Prosa, „zurückgesendet" trotz „bleibt", „Keine ZM-Pflicht" trotz ig.
+      Lieferung ab con, Musterrechnung ans falsche Land). Neu: `renderLohnBegruendung()` /
+      `renderLohnInvoice()` / `renderLohnMelde()` aus `_lohnLast`; `STEP_META` + `verbringen`
+      in computeLohn; Regressionslauf `scripts/test-lohn-tabs.mjs` (15 Fälle).
+- [x] **Vergleich-Tab geprüft** — im Modus 5 nicht erreichbar (`setVergleichBtnVisible(false)` in
+      allen analyzeLohn-Zweigen) → kein Handlungsbedarf.
+- [x] **Inland-Zweig ignoriert litF** (27.07.2026 behoben) — bei `sup === con` + Rückkehr ins eigene
+      Lager greift Art. 17 Abs. 2 lit. f NICHT (Ware wurde nie aus der Heimat versandt) → normales
+      ig. Verbringen con → myHome (DH/VE), Verkauf danach separater Vorgang. `verbringen.reason`
+      unterscheidet `not-dispatched` / `no-return`; Tests LV-14…LV-16.
+- [ ] **QuickCheck-Lohn-Selects auf Typeahead** — `.qc-select` wird bei jedem Render neu gebaut,
+      braucht einen eigenen Anbindungspunkt (Hauptpanel ist seit 27.07.2026 umgestellt).
+- [ ] **Lesart „Ware kommt nach Hause zurück, dann Inlandsverkauf"** als eigener Schalter —
+      heute modelliert der Rechner nur „Verfügungsmacht beim Converter → ig. Lieferung ab con".
 
 ---
 
