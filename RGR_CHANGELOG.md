@@ -2,6 +2,39 @@
 
 ---
 
+## v4.3 · 27.07.2026 — Lohnveredelung: Rückkehr-Schalter wirkt jetzt auch bei `sup === con`
+
+Im Inland-Zweig (Lieferant **und** Converter im selben Land) war der Schalter „Kommt die Ware nach
+Veredelung zurück?" **wirkungslos** — beide Stellungen rendern denselben Verkauf ab dem
+Veredelungsland. Dabei ist der Fall steuerlich eigenständig:
+
+- **Art. 17 Abs. 2 lit. f greift hier nicht.** Die Ausnahme setzt voraus, dass die Ware in den
+  Mitgliedstaat zurückgelangt, „von dem aus sie ursprünglich versandt worden war". Bei
+  `sup === con` wurde die Ware nie aus dem Heimatland versandt — es gibt keine Hinbewegung, auf die
+  sich eine Rückkehr beziehen könnte.
+- Der Transport ins eigene Lager ist damit ein **normales ig. Verbringen nach Art. 17 Abs. 1**:
+  fiktive ig. Lieferung im Veredelungsland (EPROHA/DE-UID **DH**, ZM in Deutschland) + fiktiver
+  ig. Erwerb im Heimatland (**VE**). Der spätere Verkauf ab Lager ist ein eigenständiger Vorgang.
+
+Umgesetzt:
+
+- `computeLohn()` Inland-Zweig: bei `litF` neuer Schritt 3 — `kind:'separate'` mit
+  Verbringen-Erläuterung + SAP-Kennzeichen; `regRisk` auf das Veredelungsland, wenn dort keine UID
+  vorliegt (ohne sie ist das Verbringen nicht meldbar).
+- **`verbringen`** trägt jetzt eine `reason` (`not-dispatched` / `no-return` / `null`) und kann in
+  **beide Richtungen** zeigen; ein degeneriertes „Verbringen DE→DE" wird über einen
+  `from !== to`-Guard verworfen (`con === myHome` → Verkauf bleibt separater Vorgang ohne Bewegung).
+- Renderer nachgezogen: Ergebnis-Tab (eigene Schritt-3-Karte im Inland-Zweig für beide
+  `separate`-Varianten), Prosa (`_lohnVerbringenSatz` mit eigener Begründung je `reason`),
+  Meldepflichten (UVA-Kacheln erkennen jetzt beide Richtungen, Intrastat-Bewegung ins eigene Lager).
+- **Tests:** LV-14 (EPROHA DE→DE→AT, Verbringen `DE→AT!`), LV-15 (PL→PL→AT → PL-Registrierung),
+  LV-16 (EPDE, alles im Heimatland → kein Verbringen) — 54 Output-Tests; Lohn-Tab-Lauf auf
+  15 Konstellationen erweitert.
+
+> Vorbestehender Fehler, aufgefallen beim Umbau der Experten-Tabs.
+
+---
+
 ## v4.3 · 27.07.2026 — Modus 5: Experten-Tabs kommen jetzt aus computeLohn()
 
 Im Lohnveredelungs-Modus rechnete nur der **Ergebnis**-Tab mit der Lohnveredelungs-Logik. Die

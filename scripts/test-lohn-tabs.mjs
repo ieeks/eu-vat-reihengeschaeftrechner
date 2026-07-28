@@ -3,7 +3,7 @@
 // Diese Tabs wurden früher von der 3-Parteien-Engine gefüttert und widersprachen dem
 // Ergebnis-Tab (Reihengeschäfts-Prosa, „Keine ZM-Pflicht" trotz ig. Lieferung ab dem
 // Veredelungsland, Musterrechnung ans falsche Land). Seit dem Umbau rendern sie aus
-// computeLohn(). Dieser Lauf prüft für 12 Konstellationen, dass die drei Tabs zur
+// computeLohn(). Dieser Lauf prüft für 15 Konstellationen, dass die drei Tabs zur
 // gewählten Fallgestaltung passen — im Browser-DOM, nicht nur auf Datenebene.
 //
 // Läuft als zweiter Schritt von `npm test`.
@@ -68,5 +68,8 @@ await run('EPROHA FI→PL→DE, bleibt, über mich','EPROHA','FI','PL','DE','fal
 await run('EPDE   DE→DE→AT (sup=con=Heimat)','EPDE','DE','DE','AT','false','true','true');
 await run('EPROHA DE→DE→AT (sup=con, Sitz AT)','EPROHA','DE','DE','AT','false','true','true');
 await run('EPDE   FI→PL→PL, bleibt (Verkauf Inland PL)','EPDE','FI','PL','PL','false','true','true');
-console.log(fail ? `\n❌ ${fail} von 12 Lohn-Tab-Fällen inkonsistent` : '\n✅ Alle 12 Lohn-Tab-Fälle konsistent (Begründung · Rechnung · Meldepflichten)');
+await run('EPROHA DE→DE→AT, zurück (Verbringen DE→AT)','EPROHA','DE','DE','AT','true','true','true');
+await run('EPROHA PL→PL→AT, zurück (Verbringen ab PL)','EPROHA','PL','PL','AT','true','true','true');
+await run('EPDE   DE→DE→AT, zurück (alles Heimat)','EPDE','DE','DE','AT','true','true','true');
+console.log(fail ? `\n❌ ${fail} von 15 Lohn-Tab-Fällen inkonsistent` : '\n✅ Alle 15 Lohn-Tab-Fälle konsistent (Begründung · Rechnung · Meldepflichten)');
 process.exit(fail?1:0);

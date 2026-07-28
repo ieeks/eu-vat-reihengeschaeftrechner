@@ -35,12 +35,13 @@ Realer PapTrade→EPROHA-Fall (AT-Lieferant, DE-Veredelung, Rückkehr AT) war bi
       (Reihengeschäfts-Prosa, „zurückgesendet" trotz „bleibt", „Keine ZM-Pflicht" trotz ig.
       Lieferung ab con, Musterrechnung ans falsche Land). Neu: `renderLohnBegruendung()` /
       `renderLohnInvoice()` / `renderLohnMelde()` aus `_lohnLast`; `STEP_META` + `verbringen`
-      in computeLohn; Regressionslauf `scripts/test-lohn-tabs.mjs` (12 Fälle).
+      in computeLohn; Regressionslauf `scripts/test-lohn-tabs.mjs` (15 Fälle).
 - [x] **Vergleich-Tab geprüft** — im Modus 5 nicht erreichbar (`setVergleichBtnVisible(false)` in
       allen analyzeLohn-Zweigen) → kein Handlungsbedarf.
-- [ ] **Inland-Zweig ignoriert litF** — bei `sup === con` wird immer ein Verkauf ab `con` gerendert,
-      auch wenn „Ware kommt zurück" gewählt ist (dann müsste es wie sonst ein separater Vorgang +
-      Rückverbringen sein). Vorbestehend, in der Praxis selten (Lieferant = Converterland + Rückkehr).
+- [x] **Inland-Zweig ignoriert litF** (27.07.2026 behoben) — bei `sup === con` + Rückkehr ins eigene
+      Lager greift Art. 17 Abs. 2 lit. f NICHT (Ware wurde nie aus der Heimat versandt) → normales
+      ig. Verbringen con → myHome (DH/VE), Verkauf danach separater Vorgang. `verbringen.reason`
+      unterscheidet `not-dispatched` / `no-return`; Tests LV-14…LV-16.
 - [ ] **QuickCheck-Lohn-Selects auf Typeahead** — `.qc-select` wird bei jedem Render neu gebaut,
       braucht einen eigenen Anbindungspunkt (Hauptpanel ist seit 27.07.2026 umgestellt).
 - [ ] **Lesart „Ware kommt nach Hause zurück, dann Inlandsverkauf"** als eigener Schalter —

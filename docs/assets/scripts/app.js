@@ -4095,11 +4095,11 @@ function computeLohn(opts) {
       : `Warenbewegung beginnt in ${cn(c)} → Lieferort ${cn(c)} (Art. 32 MwStSystRL): Meldung nur über eine ${cn(c)}-UID möglich — für eine ig. Lieferung mit ${cn(c)}-UID ist kein SAP-Ausgangskennzeichen hinterlegt`;
   };
 
-  // Meldepflichtiges ig. Verbringen myHome → con (lit. f greift nicht): fiktive ig.
-  // Lieferung im Abgangsland + fiktiver ig. Erwerb im Bestimmungsland.
-  const verbringenSapHint = () => {
-    const out = sapFrom(myHome, 'ic-exempt', 'seller'), inn = sapFrom(con, 'ic-acquisition', 'buyer');
-    return (out && inn) ? ` · SAP: Ausgang ${cn(myHome)} ${out} / Eingang ${cn(con)} ${inn}` : '';
+  // Meldepflichtiges ig. Verbringen (lit. f greift nicht): fiktive ig. Lieferung im
+  // Abgangsland + fiktiver ig. Erwerb im Bestimmungsland.
+  const verbringenSapHint = (from = myHome, to = con) => {
+    const out = sapFrom(from, 'ic-exempt', 'seller'), inn = sapFrom(to, 'ic-acquisition', 'buyer');
+    return (out && inn) ? ` · SAP: Ausgang ${cn(from)} ${out} / Eingang ${cn(to)} ${inn}` : '';
   };
 
   // Schritt 2 (Veredelungsleistung) — EINE Regel für alle Zweige:
@@ -4141,12 +4141,24 @@ function computeLohn(opts) {
   };
   const finish = () => {
     steps.forEach(s => Object.assign(s, STEP_META[s.kind] || {}));
-    // Verbringen eigener Ware myHome → con: nur wenn ich die Ware im Heimatland übernommen
-    // habe (supIsHome + homeHandover) oder sie über mich läuft (!lvDirect). Kommt sie zurück,
-    // deckt Art. 17 Abs. 2 lit. f das Verbringen ab → nicht meldepflichtig.
-    const verbringen = ((supIsHome && homeHandover) || (!inland && !supIsHome && !lvDirect))
-      ? { from: myHome, to: con, meldepflichtig: !litF }
-      : null;
+    // Verbringen eigener Ware. Zwei Konstellationen, zwei Richtungen:
+    //  (a) myHome → con: ich habe die Ware im Heimatland übernommen (supIsHome + homeHandover)
+    //      oder sie läuft über mich (!lvDirect). Kommt sie zurück, deckt Art. 17 Abs. 2 lit. f
+    //      das Verbringen ab → nicht meldepflichtig; sonst meldepflichtig (Grund: no-return).
+    //  (b) con → myHome bei sup === con: Einkauf UND Veredelung finden im selben Land statt,
+    //      die Ware war nie in myHome. Art. 17 Abs. 2 lit. f setzt aber voraus, dass die Ware
+    //      in den Mitgliedstaat zurückgelangt, „von dem aus sie ursprünglich versandt" wurde —
+    //      eine solche Hinbewegung gibt es hier nicht. Der Transport ins eigene Lager ist
+    //      deshalb ein normales ig. Verbringen nach Art. 17 Abs. 1 (Grund: not-dispatched).
+    const _vb =
+      (inland && litF)
+        ? { from: con, to: myHome, meldepflichtig: true, reason: 'not-dispatched' }
+      : ((supIsHome && homeHandover) || (!inland && !supIsHome && !lvDirect))
+        ? { from: myHome, to: con, meldepflichtig: !litF, reason: litF ? null : 'no-return' }
+        : null;
+    // Ein Verbringen setzt eine Bewegung über eine Grenze voraus — sitzt der Converter im
+    // eigenen Sitzstaat, bewegt sich innerstaatlich nichts Meldepflichtiges.
+    const verbringen = (_vb && _vb.from !== _vb.to) ? _vb : null;
     return { company, myHome, sup, con, cus, inland, supIsHome, conIsHome, sameConCus, lvDirect, litF, homeHandover,
              myConVat, myHomVat, mySupVat, conRate, cusRate, homeRate, supRate, verbringen, steps, regRisks };
   };
@@ -4158,7 +4170,23 @@ function computeLohn(opts) {
       taxInfo:`Inlandslieferung ${supRate}% ${cn(sup)}-MwSt · Vorsteuerabzug`,
       sap: sap(sup, 'domestic', 'buyer') });
     steps.push(veredelungStep());
-    if (sameConCus) {
+    if (litF && con === myHome) {
+      // Einkauf, Veredelung und Lager im selben Land → keine Warenbewegung über eine Grenze.
+      // Der spätere Verkauf ist ein eigenständiger Vorgang (Verkaufsland hier nicht abgefragt).
+      steps.push({ key:'verkauf', kind:'separate',
+        title:`Verkauf — separater Vorgang`,
+        taxInfo:`Ware bleibt in ${cn(myHome)} → der spätere Verkauf ab Lager ist ein eigenständiger Liefervorgang (im 3-Parteien-Modus analysieren)` });
+    } else if (litF) {
+      // Ware geht nach der Bearbeitung ins eigene Lager in myHome. lit. f greift hier NICHT
+      // (die Ware wurde nie aus myHome versandt) → meldepflichtiges ig. Verbringen con → myHome;
+      // der spätere Verkauf ab dem Lager ist ein eigenständiger Vorgang.
+      steps.push({ key:'verkauf', kind:'separate',
+        title:`Rückverbringen nach ${cn(myHome)} — Verkauf separater Vorgang`,
+        taxInfo:`ig. Verbringen ${cn(con)} → ${cn(myHome)} meldepflichtig (Art. 17 Abs. 1 MwStSystRL) · späterer Verkauf ab Lager ist eigenständiger Liefervorgang (im 3-Parteien-Modus analysieren)`,
+        note:`Art. 17 Abs. 2 lit. f greift <strong>nicht</strong>: Die Ausnahme setzt voraus, dass die Ware in den Mitgliedstaat zurückgelangt, aus dem sie ursprünglich versandt wurde — Einkauf und Veredelung fanden aber beide in ${cn(con)} statt, eine Hinbewegung aus ${cn(myHome)} gab es nie${verbringenSapHint(con, myHome)}`,
+        regRisk: myConVat ? null : con });
+      if (!myConVat) regRisks.push(con);
+    } else if (sameConCus) {
       steps.push({ key:'verkauf', kind:'inland-sale',
         title:`Verkauf · Inland ${cn(con)}`,
         taxInfo:`Inlandslieferung ${conRate}% ${cn(con)}-MwSt`,
@@ -4378,8 +4406,45 @@ function analyzeLohn() {
       </div>
     </div>`;
 
-    // Schritt 3: Verkauf
+    // Schritt 3: Ware ins eigene Lager (litF) oder Verkauf ab dem Veredelungsland
     const sameConCus = L.sameConCus;
+    const vbI = L.verbringen;
+    const s3I = L.steps.find(s => s.key === 'verkauf');
+    if (s3I?.kind === 'separate') {
+      ihml += vbI
+        ? `<div style="background:var(--surface-2);border:1px solid rgba(251,191,36,0.35);border-radius:10px;padding:14px;margin-bottom:10px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:700;color:var(--amber);margin-bottom:10px;">
+          🚚 Schritt 3 · Rückverbringen ins eigene Lager · ${flag(con)} ${cn(con)} → ${flag(myHome)} ${cn(myHome)}
+        </div>
+        <div style="font-size:0.72rem;color:var(--tx-2);font-family:'IBM Plex Mono',monospace;line-height:1.7;">
+          <div>▶ <strong>ig. Verbringen</strong> ${cn(con)} → ${cn(myHome)} — meldepflichtig (Art. 17 Abs. 1 MwStSystRL)</div>
+          <div>✅ Fiktive ig. Lieferung in ${cn(con)} (0%) + fiktiver ig. Erwerb in ${cn(myHome)} (${rate(myHome)}%, Saldo 0)</div>
+          <div style="margin-top:6px;padding:6px 8px;background:rgba(248,81,73,0.08);border-left:3px solid var(--red);border-radius:4px;font-size:0.68rem;">
+            ⛔ <strong>Art. 17 Abs. 2 lit. f greift nicht:</strong> Die Ausnahme setzt voraus, dass die Ware in den Mitgliedstaat zurückgelangt, <em>aus dem sie ursprünglich versandt wurde</em>. Einkauf und Veredelung fanden beide in ${cn(con)} statt — eine Hinbewegung aus ${cn(myHome)} gab es nie.
+          </div>
+          <div style="margin-top:6px;">📦 Der spätere <strong>Verkauf ab Lager</strong> ist ein eigenständiger Liefervorgang — im 3-Parteien-Modus separat analysieren.</div>
+          ${mySupConVat ? `<div>✅ Deine ${cn(con)}-UID für die Meldung: <strong style="color:var(--teal);">${mySupConVat}</strong></div>`
+                        : `<div>⚠️ Keine ${cn(con)}-UID → <strong>Registrierung in ${cn(con)} erforderlich</strong> (ohne sie ist das Verbringen nicht meldbar)</div>`}
+        </div>
+        <div class="hints" style="margin-top:10px;">
+          ${rH({type:'info',icon:'📝',text:`ZM in <strong>${cn(con)}</strong>: Verbringen an die eigene ${cn(myHome)}-UID melden. Verbringungsregister führen.`})}
+          ${s3I.note ? rH({type:'info',icon:'🏷️',text:s3I.note}) : ''}
+        </div>
+      </div>`
+        : `<div style="background:var(--surface-2);border:1px solid rgba(100,116,139,0.3);border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:600;color:var(--tx-3);margin-bottom:6px;">
+          ℹ️ Schritt 3 · Verkauf — separater Vorgang
+        </div>
+        <div style="font-size:0.72rem;color:var(--tx-3);line-height:1.6;">
+          Einkauf, Veredelung und Lager liegen alle in ${flag(myHome)} <strong>${cn(myHome)}</strong> — es bewegt sich nichts über eine Grenze.
+          Der spätere Verkauf ist ein eigenständiger Liefervorgang und im <strong>3-Parteien-Modus</strong> separat zu analysieren.
+        </div>
+      </div>`;
+      document.getElementById('resultContent').innerHTML = ihml;
+      el.scrollIntoView({ behavior:'smooth', block:'start' });
+      setVergleichBtnVisible(false);
+      return;
+    }
     ihml += `<div style="background:var(--surface-2);border:1px solid rgba(45,212,191,0.3);border-radius:10px;padding:14px;margin-bottom:10px;">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:700;color:var(--teal);margin-bottom:10px;">
         📦 Schritt 3 · Verkauf fertiges Produkt · ${flag(con)} ${cn(con)} → ${flag(cus)} ${cn(cus)}
@@ -10351,6 +10416,17 @@ function runOutputTests() {
     { id:'LV-04', name:'DE→DE→AT EPROHA (sup=con, Sitz AT): Einkauf inländisch, Veredelung ABER RC',
       o:{company:'EPROHA',sup:'DE',con:'DE',cus:'AT',lvDirect:true,litF:false},
       exp:{ inland:true, conIsHome:false, s2kind:'rc', s2rc:true, s3sap:'DH' } },
+    // sup === con: Einkauf UND Veredelung im selben Land. Kommt die Ware danach ins eigene
+    // Lager, greift lit. f NICHT (sie wurde nie aus der Heimat versandt) → ig. Verbringen.
+    { id:'LV-14', name:'DE→DE→AT EPROHA, Ware kommt zurück: ig. Verbringen DE→AT + Verkauf separat',
+      o:{company:'EPROHA',sup:'DE',con:'DE',cus:'AT',lvDirect:true,litF:true},
+      exp:{ inland:true, s3kind:'separate', s3sap:null, verbr:'DE→AT!', reg:[] } },
+    { id:'LV-15', name:'PL→PL→AT EPROHA, Ware kommt zurück: Verbringen ab PL → PL-Registrierung nötig',
+      o:{company:'EPROHA',sup:'PL',con:'PL',cus:'AT',lvDirect:true,litF:true},
+      exp:{ inland:true, s3kind:'separate', verbr:'PL→AT!', reg:['PL'] } },
+    { id:'LV-16', name:'DE→DE→AT EPDE (alles Heimat), Ware bleibt im Lager: kein Verbringen',
+      o:{company:'EPDE',sup:'DE',con:'DE',cus:'AT',lvDirect:true,litF:true},
+      exp:{ inland:true, conIsHome:true, s3kind:'separate', verbr:null, reg:[] } },
     { id:'LV-05', name:'FI→PL→PL EPDE, Ware bleibt: Verkauf Inland PL',
       o:{company:'EPDE',sup:'FI',con:'PL',cus:'PL',lvDirect:true,litF:false},
       exp:{ s3kind:'inland-sale' } },
@@ -13009,8 +13085,12 @@ function _lohnCoName() {
 // Satz zum Verbringen eigener Ware — genau die Fälle, die computeLohn unterscheidet.
 function _lohnVerbringenSatz(L) {
   const v = L.verbringen;
+  const folge = (v) => `Das Verbringen gilt als fiktive innergemeinschaftliche Lieferung in ${cn(v.from)} (Art. 17 Abs. 1 MwStSystRL) mit korrespondierendem fiktiven ig. Erwerb in ${cn(v.to)} und ist in beiden Ländern unter der jeweiligen UID zu erklären.`;
+  if (v && v.meldepflichtig && v.reason === 'not-dispatched') {
+    return `Der Transport des bearbeiteten Materials von ${cn(v.from)} in das eigene Lager in ${cn(v.to)} ist ein <strong>Verbringen eigener Ware</strong>. <strong>Art. 17 Abs. 2 lit. f MwStSystRL greift hier nicht</strong>: Die Ausnahme setzt voraus, dass die Ware in den Mitgliedstaat zurückgelangt, <em>von dem aus sie ursprünglich versandt worden war</em> — Einkauf und Bearbeitung fanden aber beide in ${cn(v.from)} statt, eine Hinbewegung aus ${cn(v.to)} hat es nie gegeben. ${folge(v)}`;
+  }
   if (v && v.meldepflichtig) {
-    return `Die Warenbewegung ${cn(v.from)} → ${cn(v.to)} ist ein <strong>Verbringen eigener Ware</strong>. Da die Ware <strong>nicht</strong> nach ${cn(L.myHome)} zurückkehrt, greift die Ausnahme des <strong>Art. 17 Abs. 2 lit. f MwStSystRL nicht</strong>: Das Verbringen gilt als fiktive innergemeinschaftliche Lieferung in ${cn(v.from)} (Art. 17 Abs. 1 MwStSystRL) mit korrespondierendem fiktiven ig. Erwerb in ${cn(v.to)} und ist dort unter einer eigenen UID zu erklären.`;
+    return `Die Warenbewegung ${cn(v.from)} → ${cn(v.to)} ist ein <strong>Verbringen eigener Ware</strong>. Da die Ware <strong>nicht</strong> nach ${cn(L.myHome)} zurückkehrt, greift die Ausnahme des <strong>Art. 17 Abs. 2 lit. f MwStSystRL nicht</strong>: ${folge(v)}`;
   }
   if (v) {
     return `Die Warenbewegung ${cn(v.from)} → ${cn(v.to)} und zurück ist ein <strong>Verbringen eigener Ware</strong>, gilt aber nach <strong>Art. 17 Abs. 2 lit. f MwStSystRL</strong> nicht als innergemeinschaftliches Verbringen, weil die Ware nach der Bearbeitung in den Ausgangsmitgliedstaat zurückgelangt. Voraussetzung: Lohnveredelungsvertrag und dokumentierte Rücksendung (Verbringungsregister).`;
@@ -13226,6 +13306,7 @@ function renderLohnMelde() {
     ? `Reverse Charge Veredelungsleistung (${L.homeRate}%, Saldo 0)`
     : `Vorsteuer aus Converter-Rechnung (${L.homeRate}%)`);
   if (L.verbringen?.meldepflichtig && L.verbringen.from === L.myHome) homeTeile.push('ig. Verbringen: fiktive ig. Lieferung (steuerfrei)');
+  if (L.verbringen?.meldepflichtig && L.verbringen.to === L.myHome) homeTeile.push(`ig. Erwerb aus Verbringen (${L.homeRate}%, Saldo 0)`);
   if (s3 && s3.uidCountry === L.myHome) homeTeile.push(s3.kind === 'ig-sale' ? 'ig. Lieferung Fertigprodukt (0%)' : `Inlandsumsatz (${L.homeRate}%)`);
   items.push(card('UVA', 'mi-uva', `${flag(L.myHome)} ${cn(L.myHome)}`,
     `${L.myHomVat ? `UID ${L.myHomVat} · ` : ''}${homeTeile.join(' · ') || 'keine Position'}`,
@@ -13236,6 +13317,7 @@ function renderLohnMelde() {
     const conTeile = [];
     if (s1 && s1.uidCountry === L.con) conTeile.push(einkaufLbl(s1.kind, L.conRate));
     if (L.verbringen?.meldepflichtig && L.verbringen.to === L.con) conTeile.push(`ig. Erwerb aus Verbringen (${L.conRate}%, Saldo 0)`);
+    if (L.verbringen?.meldepflichtig && L.verbringen.from === L.con) conTeile.push('ig. Verbringen: fiktive ig. Lieferung (steuerfrei)');
     if (s3 && s3.uidCountry === L.con) conTeile.push(s3.kind === 'ig-sale' ? 'ig. Lieferung Fertigprodukt (0%)' : `Inlandsumsatz (${L.conRate}%)`);
     if (conTeile.length) items.push(card('UVA', 'mi-uva', `${flag(L.con)} ${cn(L.con)}`,
       `${L.myConVat ? `UID ${L.myConVat} · ` : '⚠️ keine UID — Registrierung nötig · '}${conTeile.join(' · ')}`,
@@ -13263,7 +13345,7 @@ function renderLohnMelde() {
   // ── Intrastat: jede physische Warenbewegung, auch die reine Veredelungsbewegung ──
   const moves = [];
   if (!L.inland) moves.push({ from: L.sup, to: L.con, lbl: 'Rohmaterial zur Veredelung' });
-  if (L.litF && !L.inland) moves.push({ from: L.con, to: L.myHome, lbl: 'Rücksendung nach Veredelung' });
+  if (L.litF && L.con !== L.myHome) moves.push({ from: L.con, to: L.myHome, lbl: L.inland ? 'Transport ins eigene Lager' : 'Rücksendung nach Veredelung' });
   if (!L.litF && s3 && s3.kind !== 'separate' && L.con !== L.cus) moves.push({ from: L.con, to: L.cus, lbl: 'Fertigprodukt an Kunden' });
   moves.forEach(m => items.push(card('Intrastat', 'mi-int', `${flag(m.from)} → ${flag(m.to)}`,
     `${m.lbl}: Versendung ab ${cn(m.from)}, Eingang in ${cn(m.to)}. Lohnveredelung wird mit eigenem Code für die Art des Geschäfts gemeldet (4x = Versand zur Veredelung, 5x = Rückversand danach) — auch dann, wenn umsatzsteuerlich kein ig. Verbringen vorliegt. Schwellen je Land prüfen.`,
