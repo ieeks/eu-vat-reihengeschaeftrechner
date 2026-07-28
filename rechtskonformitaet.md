@@ -94,6 +94,44 @@ NL ist — anders als SI/PL/CZ in D1 — eine Behörde, die die liberale Lesart 
 
 ---
 
+### D3 — Lohnveredelung: Verbringen gemeldet statt Art. 17 Abs. 2 lit. e in Anspruch genommen
+
+**Fundstelle:** `computeLohn()` — Feld `verbringen`, `reason: 'no-return'`
+
+**Was das Gesetz sagt:** Art. 17 Abs. 2 zählt Bewegungen auf, die **nicht** als Verbringen
+gelten. Neben lit. f (Bearbeitung mit Rücksendung) nennt **lit. e**:
+
+> „Lieferung dieses Gegenstands durch den Steuerpflichtigen im Gebiet des Mitgliedstaats
+> unter den Bedingungen der **Artikel 138**, 146, 147, 148, 151 und 152"
+
+**Liberale Lesart:** Geht die Ware nach der Veredelung ohnehin als steuerfreie ig. Lieferung
+(Art. 138) ab dem Veredelungsland weiter, sei bereits die Hinbewegung von lit. e erfasst —
+dann läge **kein** Verbringen vor und es bräuchte im Veredelungsland weder eine
+Registrierung noch eine ZM für das Verbringen.
+
+**Konservative Lesart (im Tool umgesetzt):** lit. e setzt voraus, dass die befreite Lieferung
+der **Zweck der Versendung** ist und ihr ohne eigenständige Zwischenverwendung folgt. Bei der
+Lohnveredelung ist der Zweck der Hinbewegung die **Bearbeitung** — dafür ist lit. f die
+speziellere Norm, und die verlangt gerade die Rücksendung. Kommt die Ware nicht zurück,
+fällt die Bewegung auf die Grundregel des Abs. 1 zurück.
+
+**Entscheidung:** Das Tool meldet in diesem Fall ein **ig. Verbringen** (fiktive ig. Lieferung
+im Abgangsland + fiktiver ig. Erwerb im Veredelungsland) und weist eine Registrierungspflicht
+aus, wenn dort keine UID vorliegt. Es folgt damit der herrschenden Verwaltungsauffassung und
+dem Prinzip der konservativen Auslegung (vgl. D1/D2).
+
+**Konsequenz für den Nutzer:** Der Rechner zeigt eher zu viele Pflichten als zu wenige.
+Wer sich auf lit. e stützen will, braucht dafür eine belastbare steuerliche Beurteilung im
+Einzelfall — das Tool nimmt diese Position bewusst **nicht** vorweg.
+
+**Zeitpunkt:** Wo lit. f zunächst greift und später entfällt, weist das Tool die Zeitpunktregel
+des **Art. 17 Abs. 3** aus (Verbringung gilt erst mit Wegfall der Voraussetzung als erfolgt,
+nicht rückwirkend).
+
+**Normtext + Code-Mapping:** `vat-knowledge/eu/art17_verbringen.md`
+
+---
+
 ### F3 — Quick-Fix: manuell gewählte dep-UID ohne tatsächliche Registrierung ⚠️ nicht relevant für Tool
 
 **Fundstelle:** `_applyQuickFix`, Zeilen 936–952

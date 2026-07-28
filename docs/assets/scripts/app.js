@@ -4065,6 +4065,12 @@ function buildVATContext() {
 //  Rückgabe:  { inland, sameConCus, lvDirect, litF, myConVat, myHomVat, …,
 //               steps: [{key,kind,title,taxInfo,sap,note,regRisk}], regRisks: [] }
 // ═══════════════════════════════════════════════════════════════════════════════
+// Art. 17 Abs. 3 MwStSystRL: Fällt eine Voraussetzung des Abs. 2 (hier lit. f) später weg,
+// gilt die Verbringung als zu DIESEM Zeitpunkt erfolgt — nicht rückwirkend zum ursprünglichen
+// Transport. Maßgeblich für die Melde­periode. Gilt nur für reason 'no-return' (lit. f war
+// zunächst einschlägig); bei 'not-dispatched' wurde Abs. 2 nie in Anspruch genommen.
+const ART17_ABS3_HINT = 'Zeitpunkt: Die Verbringung gilt erst zu dem Zeitpunkt als erfolgt, zu dem die Rückkehr-Voraussetzung entfällt (Art. 17 Abs. 3 MwStSystRL) — also mit dem Entschluss zum Verkauf ab dem Veredelungsland, nicht rückwirkend zum ursprünglichen Transport. Danach richtet sich die Melde­periode für UVA und ZM.';
+
 function computeLohn(opts) {
   const { company, sup, con, cus, lvDirect } = opts;
   const litF = opts.litF !== false; // default: Ware kommt zurück (lit. f greift)
@@ -4522,7 +4528,8 @@ function analyzeLohn() {
         : uniqReg.map(c => rH({type:'warn',icon:'📋',text:`Registrierung in <strong>${cn(c)}</strong> beantragen oder Steuerberater konsultieren.`})).join('')}
       ${litF
         ? rH({type:'info',icon:'⚖️',text:`Voraussetzung Art. 17 Abs. 2 lit. f: Ware muss tatsächlich nach ${cn(myHome)} zurückkommen + Lohnveredelungsvertrag + Verbringungsregister dokumentiert.`})
-        : rH({type:'warn',icon:'⚖️',text:`Art. 17 Abs. 2 lit. f greift <strong>nicht</strong> (Ware kommt nicht zurück): Verbringen ${cn(myHome)} → ${cn(con)} ist meldepflichtig (ig. Verbringen Art. 17 Abs. 1) und der anschließende Verkauf ist eine ig. Lieferung <strong>ab ${cn(con)}</strong> — beides läuft über die ${cn(con)}-UID.`})}
+        : rH({type:'warn',icon:'⚖️',text:`Art. 17 Abs. 2 lit. f greift <strong>nicht</strong> (Ware kommt nicht zurück): Verbringen ${cn(myHome)} → ${cn(con)} ist meldepflichtig (ig. Verbringen Art. 17 Abs. 1) und der anschließende Verkauf ist eine ig. Lieferung <strong>ab ${cn(con)}</strong> — beides läuft über die ${cn(con)}-UID.`})
+          + rH({type:'info',icon:'🗓️',text:ART17_ABS3_HINT})}
     </div>`;
 
     document.getElementById('resultContent').innerHTML = shtml;
@@ -4709,7 +4716,8 @@ function analyzeLohn() {
           : `RC Lohnveredelungsleistung (${rate(myHome)}%, Saldo 0) · ${natLaw('rc')}`} ·
         Voranmeldung
       </div>
-      ${!lvDirect && !litFGreift ? `<div><strong style="color:var(--amber);">${flag(myHome)} ${cn(myHome)} (ig. Verbringen):</strong> Verbringen ${cn(myHome)}→${cn(con)} meldepflichtig (Art. 17 MwStSystRL) — lit. f greift nicht</div>` : ''}
+      ${!lvDirect && !litFGreift ? `<div><strong style="color:var(--amber);">${flag(myHome)} ${cn(myHome)} (ig. Verbringen):</strong> Verbringen ${cn(myHome)}→${cn(con)} meldepflichtig (Art. 17 Abs. 1 MwStSystRL) — lit. f greift nicht</div>
+      <div style="color:var(--tx-3);font-size:0.68rem;padding-left:2px;">🗓️ ${ART17_ABS3_HINT}</div>` : ''}
       ${litFGreift ? `<div><strong style="color:var(--teal);">✅ Art. 17 Abs. 2 lit. f:</strong> Kein ig. Verbringen — Ausnahme Lohnveredelung (Ware kommt zurück)</div>` : ''}
     </div>
   </div>`;
@@ -13090,7 +13098,7 @@ function _lohnVerbringenSatz(L) {
     return `Der Transport des bearbeiteten Materials von ${cn(v.from)} in das eigene Lager in ${cn(v.to)} ist ein <strong>Verbringen eigener Ware</strong>. <strong>Art. 17 Abs. 2 lit. f MwStSystRL greift hier nicht</strong>: Die Ausnahme setzt voraus, dass die Ware in den Mitgliedstaat zurückgelangt, <em>von dem aus sie ursprünglich versandt worden war</em> — Einkauf und Bearbeitung fanden aber beide in ${cn(v.from)} statt, eine Hinbewegung aus ${cn(v.to)} hat es nie gegeben. ${folge(v)}`;
   }
   if (v && v.meldepflichtig) {
-    return `Die Warenbewegung ${cn(v.from)} → ${cn(v.to)} ist ein <strong>Verbringen eigener Ware</strong>. Da die Ware <strong>nicht</strong> nach ${cn(L.myHome)} zurückkehrt, greift die Ausnahme des <strong>Art. 17 Abs. 2 lit. f MwStSystRL nicht</strong>: ${folge(v)}`;
+    return `Die Warenbewegung ${cn(v.from)} → ${cn(v.to)} ist ein <strong>Verbringen eigener Ware</strong>. Da die Ware <strong>nicht</strong> nach ${cn(L.myHome)} zurückkehrt, greift die Ausnahme des <strong>Art. 17 Abs. 2 lit. f MwStSystRL nicht</strong>: ${folge(v)} ${ART17_ABS3_HINT}`;
   }
   if (v) {
     return `Die Warenbewegung ${cn(v.from)} → ${cn(v.to)} und zurück ist ein <strong>Verbringen eigener Ware</strong>, gilt aber nach <strong>Art. 17 Abs. 2 lit. f MwStSystRL</strong> nicht als innergemeinschaftliches Verbringen, weil die Ware nach der Bearbeitung in den Ausgangsmitgliedstaat zurückgelangt. Voraussetzung: Lohnveredelungsvertrag und dokumentierte Rücksendung (Verbringungsregister).`;
@@ -13336,7 +13344,8 @@ function renderLohnMelde() {
   if (L.verbringen?.meldepflichtig) {
     zm = true;
     items.push(card('ZM', 'mi-zm', `${flag(L.verbringen.from)} ${cn(L.verbringen.from)}`,
-      `ig. Verbringen ${cn(L.verbringen.from)} → ${cn(L.verbringen.to)} an die <strong>eigene ${cn(L.verbringen.to)}-UID</strong> melden (Art. 17 Abs. 1 MwStSystRL, ${zmLaw(L.verbringen.from)}).`,
+      `ig. Verbringen ${cn(L.verbringen.from)} → ${cn(L.verbringen.to)} an die <strong>eigene ${cn(L.verbringen.to)}-UID</strong> melden (Art. 17 Abs. 1 MwStSystRL, ${zmLaw(L.verbringen.from)}).`
+      + (L.verbringen.reason === 'no-return' ? `<br><span style="color:var(--tx-3);">${ART17_ABS3_HINT}</span>` : ''),
       'Frist: 25. Folgemonat'));
   }
   if (!zm) items.push(card('ZM', 'mi-none', `${flag(L.myHome)} ${cn(L.myHome)}`,

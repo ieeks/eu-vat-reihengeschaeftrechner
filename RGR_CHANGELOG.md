@@ -2,6 +2,34 @@
 
 ---
 
+## v4.3 · 28.07.2026 — Art. 17 MwStSystRL: Normtext in die Wissensbasis + Zeitpunktregel Abs. 3
+
+Der Normtext (RL 2006/112/EG Art. 17 i.d.F. 18.07.2025) lag dem Projekt bisher nicht vor —
+`vat-knowledge/` hatte keine Datei zur Lohnveredelung. Nachgeholt und zwei Erkenntnisse
+daraus umgesetzt:
+
+- **`vat-knowledge/eu/art17_verbringen.md`** (neu) — Normtext Abs. 1/2/3, die drei
+  Tatbestandsmerkmale von lit. f, der vollständige Ausnahmekatalog lit. a–h, Mapping auf das
+  `verbringen`-Feld in `computeLohn()`, SAP-Kennzeichen je Richtung, Testfall-Tabelle.
+  Im Pflichtlektüre-Index (`CLAUDE-vat-knowledge.md`) eingetragen — 17 → **18 Dateien**.
+- **Art. 17 Abs. 3 (Zeitpunktregel) neu im Output:** Fällt die Rückkehr-Voraussetzung später
+  weg, gilt die Verbringung erst **zu diesem Zeitpunkt** als erfolgt — nicht rückwirkend zum
+  ursprünglichen Transport. Das entscheidet über die Melde­periode für UVA und ZM. Der Hinweis
+  erscheint im Ergebnis-Tab, in der Begründung und in der ZM-Kachel der Meldepflichten,
+  **nur** bei `verbringen.reason === 'no-return'` — bei `'not-dispatched'` wurde Abs. 2 nie in
+  Anspruch genommen, dort entsteht die Verbringung mit der Bewegung selbst.
+- **`rechtskonformitaet.md` § D3** (neu) — Art. 17 Abs. 2 **lit. e** dokumentiert: Man könnte
+  argumentieren, dass eine Hinbewegung, der ohnehin eine steuerfreie ig. Lieferung folgt, gar
+  kein Verbringen ist. Das Tool folgt bewusst der konservativen Lesart (lit. f ist die
+  speziellere Norm, Zweck der Hinbewegung ist die Bearbeitung) und meldet ein Verbringen inkl.
+  Registrierungspflicht. Position ist jetzt explizit dokumentiert statt implizit im Code.
+
+Bestätigt hat der Normtext außerdem die Änderung vom 27.07.2026: lit. f verlangt wörtlich die
+Rücksendung „in dem Mitgliedstaat …, **von dem aus er ursprünglich versandt** oder befördert
+worden war" — ohne ursprüngliche Versendung aus dem Heimatland gibt es keinen Anwendungsfall.
+
+---
+
 ## v4.3 · 27.07.2026 — Lohnveredelung: Rückkehr-Schalter wirkt jetzt auch bei `sup === con`
 
 Im Inland-Zweig (Lieferant **und** Converter im selben Land) war der Schalter „Kommt die Ware nach

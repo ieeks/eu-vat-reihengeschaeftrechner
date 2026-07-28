@@ -24,6 +24,7 @@
 | Dreiecksgeschäft AT | `at/ustg_at_dreieck.md` |
 | Dreiecksgeschäft DE | `de/ustae_reihengeschaeft.md` |
 | NL-RC / NL-Dreieck (Art. 12 / Art. 37c Wet OB) | `nl/wet_ob_nl_reihengeschaeft.md` |
+| `computeLohn()` / Modus 5 Lohnveredelung | `eu/art17_verbringen.md` |
 | Quick Fix allgemein | `eu/quick_fixes_2020.md` |
 | IG-Lieferung / Art. 138 | `eu/art138_mwstrl.md` |
 | DE § 3 Abs. 6a / § 13b | `de/ustg_de_3_6a.md` |
