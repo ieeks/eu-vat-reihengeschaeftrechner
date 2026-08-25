@@ -76,6 +76,8 @@ Welche eigene UID-Nummer verwendet wird, folgt dieser Reihenfolge:
 2. **Streckengeschäft (3rd party)** → UID aus dem **Warenempfänger-Land**, sofern wir dort eine
    UID haben — sonst UID des **Buchungskreises** (Fallback: EPDE → DE, EPROHA → AT).
 3. **Incoterm EXW** → UID aus dem **Lieferantenland** (EXW hat Vorrang, siehe Punkt 5).
+   Haben wir im Lieferantenland **keine** UID, greift wieder Stufe 2: **zuerst das
+   Warenempfänger-Land**, erst danach der Buchungskreis.
 
 Aus **UID-Land + Warenempfänger-Land** ergibt sich dann die steuerliche Behandlung:
 
@@ -98,6 +100,34 @@ Beispiel (EPDE, Lieferant in DE/EU, Warenempfänger Slowenien):
 - **ohne EXW** → SI-UID, Inlandslieferung Slowenien → **CB**
 
 Das ist kein Fehler, sondern gewollt — beim SAP-Test unbedingt den Incoterm mitgeben.
+
+### Fallback, wenn wir im Lieferantenland keine UID haben
+
+Die EXW-Regel funktioniert, solange wir im Lieferantenland registriert sind — dann ist es genau
+der Fall des Art. 36a Abs. 2 MwStSystRL (mitgeteilte **Abgangsland**-UID verschiebt die
+Warenbewegung auf unsere Ausgangslieferung, z. B. EXW Polen → PL-UID → **T1**).
+
+Fehlt diese UID, darf **nicht** direkt auf den Buchungskreis DE zurückgefallen werden: Ohne
+Abgangsland-UID bleibt es bei der Grundregel des Art. 36a **Abs. 1** — bewegt ist die
+**Eingangs**lieferung, der ig. Erwerb entsteht im Warenempfänger-Land, und unsere Ausgangs-
+lieferung ist dort eine **ruhende Inlandslieferung**.
+
+Beispiel EPDE, **EXW Lieferant Italien → Warenempfänger Slowenien** (Zeile in der Matrix):
+
+| | UID | tax code sales | warum |
+|---|---|---|---|
+| ~~alt~~ | DE449663039 | ~~DH~~ | Fallback BUKRS DE — unterstellt stillschweigend ein Dreiecksgeschäft |
+| **richtig** | **SI66423562** | **CB** | Ship-to-UID; Dreieck ist gesperrt, weil wir im Bestimmungsland registriert sind |
+
+Grund: **Art. 141 lit. a** setzt voraus, dass der mittlere Unternehmer im Bestimmungsland
+**keine** UID hat. EPDE hat eine SI-UID → kein Dreiecksgeschäft → L2 ist eine slowenische
+Inlandslieferung mit 22 % (**CB**), Eingangsseite ig. Erwerb SI (**EC**). Mit der DE-UID drohte
+zusätzlich der Doppelerwerb nach Art. 41 MwStSystRL / § 3d S. 2 UStG.
+
+**Gegenprobe EPROHA:** dieselbe Konstellation (EXW Lieferant IT → WE Slowenien) bleibt in der
+EPROHA-Matrix korrekt bei AT-UID → **AF**, weil EPROHA in Slowenien *nicht* registriert ist und
+das Dreiecksgeschäft damit offensteht. Gleiche Warenkette, andere Gesellschaft, anderes
+Kennzeichen — die eigene Registrierungslandkarte entscheidet.
 
 ---
 

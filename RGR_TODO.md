@@ -4,6 +4,22 @@ Stand: 20.05.2026
 
 ---
 
+## SAP-Findung „Plants Abroad": EXW-Fallback (25.08.2026)
+
+Praxisfall EPDE · EXW · Lieferant IT · WE Slowenien: Matrix sagte DE-UID → DH, richtig ist
+SI-UID → CB (Dreieck nach Art. 141 lit. a gesperrt, da eigene SI-UID). Matrix + README korrigiert.
+
+- [x] Zeile in `Matrix_erweitert_EPDE.xlsx` korrigiert (SI66423562 · CB · Inlandslieferung)
+- [x] MIRO_Eingang-Zeile (IT → SI, bewegt, EC) + Hinweise-Blatt ergänzt
+- [x] README: Fallback-Regel „ohne UID im Lieferantenland → erst Ship-to, dann BUKRS"
+- [ ] **Mit dem SAP-Team klären:** Kann die Findung den Ship-to-Fallback abbilden, oder bleibt
+      die Zeile ein manueller Prüffall? Betrifft alle EXW-Konstellationen mit Lieferantenland
+      ohne eigene Registrierung (IT, FR, ES, HU, RO …) und Warenempfänger-Land **mit** eigener UID.
+- [ ] Prüfen, ob weitere Zeilen mit `-> BUKRS DE`-Fallback dieselbe Lücke haben (aktuell keine —
+      die Dreieck-Zeilen betreffen Ship-to-Länder ohne EPDE-UID und sind korrekt)
+
+---
+
 ## Liechtenstein (LI) als Zielland — live (10.07.2026)
 
 LI = gemeinsamer Schweizer MWST-Raum (Zollvertrag 1923), CH-Registrierung von EPROHA deckt LI ab.

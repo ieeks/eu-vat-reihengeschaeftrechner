@@ -2,6 +2,36 @@
 
 ---
 
+## v4.3 · 25.08.2026 — Plants-Abroad-Matrix EPDE: EXW-Fallback ohne UID im Lieferantenland
+
+Anlassfall aus der Praxis: **EPDE, EXW, Lieferant Italien, Warenempfänger Slowenien.** Der
+Rechner liefert dafür SI-UID → ig. Erwerb SI (**EC**) und L2 als slowenische Inlandslieferung
+22 % (**CB**) — das Dreiecksgeschäft ist nach Art. 141 lit. a gesperrt, weil EPDE selbst eine
+SI-UID hat. Die SAP-Findung in `Matrix_erweitert_EPDE.xlsx` sagte für dieselbe Zeile
+DE-UID → **DH** und widersprach damit dem Tool.
+
+- **`vat-knowledge/plants_abroad/Matrix_erweitert_EPDE.xlsx`** — Zeile *„Strecke EXW – Lieferant
+  Italien (ohne EPDE-UID) – WE Slowenien"* korrigiert: `uid company code` **SI66423562**,
+  `tax delivered from country` **SI**, `tax code sales` **CB**, `treatment` *Inlandslieferung*,
+  `uid Findung` **„EXW: Lieferantland ohne EPDE-UID → Ship-to SI"** + Begründung in der
+  `derivation note`. Blatt **MIRO_Eingang** um die Eingangsseite dieses Falls ergänzt
+  (Lieferant IT → Ware nach SI, bewegt, **EC**). Blatt **Hinweise**: EXW-Zeile um die
+  Fallback-Regel erweitert.
+- **`vat-knowledge/plants_abroad/README.md`** — UID-Findung Punkt 3 präzisiert (ohne UID im
+  Lieferantenland gilt wieder Stufe 2: erst Ship-to, dann Buchungskreis) und neuer Abschnitt
+  *„Fallback, wenn wir im Lieferantenland keine UID haben"* mit Vorher/Nachher-Tabelle,
+  Art. 141 lit. a / Art. 41-Begründung und Gegenprobe EPROHA.
+- **Keine Code-Änderung** — `app.js` und die VATEngine bleiben unangetastet; der Rechner war in
+  diesem Fall bereits korrekt. Angepasst wurde ausschließlich die SAP-Referenzmatrix.
+
+**Gegenprobe:** Dieselbe Warenkette bleibt bei **EPROHA** korrekt bei AT-UID → **AF**, weil
+EPROHA in Slowenien nicht registriert ist und das Dreieck damit offensteht. Gleiche Kette,
+andere Gesellschaft, anderes Kennzeichen — der Fallback muss die eigene Registrierungslandkarte
+kennen. Bleibt als Prüfpunkt fürs SAP-Team (SAP-Findung ist ship-to-/incoterm-basiert und kennt
+die Transportzuordnung nicht).
+
+---
+
 ## v4.3 · 28.07.2026 — Art. 17 MwStSystRL: Normtext in die Wissensbasis + Zeitpunktregel Abs. 3
 
 Der Normtext (RL 2006/112/EG Art. 17 i.d.F. 18.07.2025) lag dem Projekt bisher nicht vor —
