@@ -25,6 +25,19 @@ Verfügungsmacht/Lieferort und Einführer, und alle drei fragt das Tool bereits 
 
 ---
 
+## Matrix V1.2 — Stand nach Runde 2 (25.08.2026)
+
+Bericht: `vat-knowledge/plants_abroad/PRUEFUNG.md` · Testlauf 57/63
+
+- [x] Runde 1: Zeile-für-Zeile-Prüfung + Testlauf + Bugfix `_importerConsequence()`
+- [x] Fachseite: Z54/Z40/Z59/Z60/Z57 Werte + Labels Z37/50/51 korrigiert
+- [ ] **Fachseite (wichtigster Punkt):** `tax delivered from country` in **Z50, Z51, Z57** auf
+      `CH`/`LI`/`IT` setzen — sonst findet SAP `A0`/`AF` statt der gepflegten `B5`/`IC`
+- [ ] Fachseite: Notiz „Dann DH+Dreieck" in Z37 streichen; Z37/38 als „EPDE holt"/„Kunde holt"
+      benennen; Z38 Miro `VI` vs. „Registrierung erforderlich" auflösen
+- [ ] Fachseite: Kopfregeln B1–B4 (DAP/DDP-Zweig, Incoterm-Spalte teilen, Dreieck lit. c/e,
+      Fakturasperre EXW ohne bestätigtes Lieferantenland)
+
 ## Matrix V1 — offene Punkte aus der Prüfung (25.08.2026)
 
 Vollständiger Bericht: `vat-knowledge/plants_abroad/PRUEFUNG_V1.md`

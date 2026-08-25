@@ -4,7 +4,7 @@
 //  gefahren; verglichen werden Ausgangs-Kennzeichen (tax code sales) und
 //  Eingangs-Kennzeichen (tax code Miro).
 //
-//  Quelle der Sollwerte: vat-knowledge/plants_abroad/Matrix_erweitert_V1.xlsx
+//  Quelle der Sollwerte: vat-knowledge/plants_abroad/Matrix_erweitert_V1_2.xlsx
 //  Aufruf: node scripts/test-matrix.mjs [--verbose]
 // ─────────────────────────────────────────────────────────────────────────────
 import { JSDOM, VirtualConsole } from 'jsdom';
@@ -48,19 +48,19 @@ const STRECKE = [
  [37,'EXW IT→SI (SI-UID)','EPDE','IT','SI','IT','SI','middle','SI','CB','EC'],
  [38,'EXW IT→SI (Kunde holt)','EPDE','IT','SI','IT','SI','customer','DE','KEIN','VI'],
  [39,'EXW BE→FR','EPDE','BE','FR','BE','FR','middle','BE','KEIN','BI'],
- [40,'EXW NL→DE','EPDE','NL','DE','NL','DE','middle','NL','KEIN','NP'],
+ [40,'EXW NL→DE','EPDE','NL','DE','NL','DE','middle','NL','KEIN','NI'],
  [41,'DDP DE→GB','EPDE','DE','GB','DE','GB','middle','DE','KEIN','KEIN','self'],
  [42,'DAP DE→GB','EPDE','DE','GB','DE','GB','supplier','DE','G0','VD','customer'],
  [43,'EXW SI→IT','EPDE','SI','IT','SI','IT','middle','SI','C1','SI'],
  [44,'EXW SI→DE','EPDE','SI','DE','SI','DE','middle','SI','C1','SI'],
  [53,'Strecke DE→AT','EPROHA','DE','AT','DE','AT','supplier','AT','A2','VE'],
- [54,'Strecke DE/FR→DE','EPROHA','FR','DE','FR','DE','supplier','DE','DS','VD'],
+ [54,'Strecke DE→DE (Inland)','EPROHA','DE','DE','DE','DE','supplier','DE','DS','VD'],
  [55,'Strecke FR→DE','EPROHA','FR','DE','FR','DE','supplier','DE','DS','VH'],
  [56,'Dreieck DE→IT','EPROHA','DE','IT','DE','IT','supplier','AT','AF','VE'],
  [57,'Strecke IT→IT','EPROHA','IT','IT','IT','IT','supplier','AT','IC','VT'],
  [58,'Dreieck SI→HU','EPROHA','SI','HU','SI','HU','supplier','AT','AF','VE'],
- [59,'DAP/EXW DE→CH','EPROHA','DE','CH','DE','CH','supplier','DE','D0','P0','customer'],
- [60,'DAP/EXW AT→LI','EPROHA','AT','LI','AT','LI','supplier','AT','A0','V0','customer'],
+ [59,'DAP/EXW DE→CH','EPROHA','DE','CH','DE','CH','supplier','DE','D0','VD','customer'],
+ [60,'DAP/EXW AT→LI','EPROHA','AT','LI','AT','LI','supplier','AT','A0','V2','customer'],
  [61,'EXW DE→DE','EPROHA','DE','DE','DE','DE','middle','DE','DS','VD'],
 ];
 // [Zeile, Fall, dest(Kunde), Warenempfänger, Kunden-UID-Land, Incoterm, sales]
