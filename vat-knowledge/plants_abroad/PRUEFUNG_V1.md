@@ -60,4 +60,80 @@ DAP/DDP-Zeilen mit EU-Ziel (genau der Fall aus B1) · Ausfuhr ab Werk CZ · CH-K
 
 ---
 
+## F · Rückfragen aus dem SAP-Team (25.08.2026)
+
+### F1 · „CH & LI hängt doch am Incoterm DDP — warum die CH-UID? Die Ware geht doch ab AT."
+
+Beides stimmt, es sind zwei verschiedene Vorgänge in einer Zeile. Über den Incoterm entscheidet
+sich, **wer Einführer ist**, und daran hängt der **Lieferort** der Kundenrechnung:
+
+| Incoterm (Verkauf) | Einführer | Lieferort der Kundenrechnung | UID auf der Rechnung | Stkz. |
+|---|---|---|---|---|
+| DAP / EXW | **Kunde** | bleibt **Österreich** (Verfügungsmacht geht vor der Einfuhr über) → steuerfreie Ausfuhr | AT-UID | **A0** |
+| DDP | **EPROHA** | verlagert sich in die **Schweiz** (Einfuhr auf eigene Rechnung, Art. 7 Abs. 3 Bst. a MWSTG) → CH-Inlandslieferung 8,1 % | **CHE-113.857.016 MWST** | **B5** |
+
+Der Warenweg beginnt in beiden Fällen in Österreich — bei DDP steckt die AT-Seite in der
+**Ausfuhr eigener Ware** (intern `A0`, kein Umsatz an den Kunden). Es gibt weiterhin genau **eine**
+Kundenrechnung, und deren Lieferort ist die Schweiz: dort wird mit 8,1 % CH-MWST in CHF
+fakturiert, und auf einer Schweizer Inlandsrechnung hat eine EU-UID nichts zu suchen. Die
+Einfuhrsteuer ist über die CH-Registrierung als Vorsteuer abziehbar (Art. 28 MWSTG).
+
+**LI** liegt im gemeinsamen Schweizer MWST-Raum (Zollvertrag 1923); die CH-Registrierung deckt
+Liechtenstein mit ab → identische Behandlung.
+
+**Konsignationslager CH/LI** ist der Sonderfall *ohne* Incoterm-Abhängigkeit: Liegt die Ware bei
+Übergang der Verfügungsmacht bereits im Schweizer Lager, ist der Lieferort **immer** die Schweiz →
+immer 8,1 % / `B5`. Der Incoterm entscheidet nur, wenn die Ware direkt zum Kunden bewegt wird.
+
+> **Konsequenz für die Findungsregel:** Für Drittlandsziele ist nicht „BUKRS vs. Ship-to"
+> maßgeblich, sondern die Einführerrolle:
+> **Kunde ist Einführer → UID des Abgangslands (A0/D0/G0) · wir sind Einführer → UID des
+> Bestimmungslands, sofern wir dort registriert sind (B5).** Sind wir dort *nicht* registriert
+> (GB, TR, RS, BA), ist DDP nicht buchbar → Registrierung nötig oder auf DAP/EXW umstellen; genau
+> das sagt Zeile 41 korrekt. Die aktuelle Kopfregel „DDP → Land des Buchungskreises" beschreibt
+> das Gegenteil der Zeilen 50/51 (siehe B1/B2).
+
+### F2 · „EXW, Lieferant Italien, keine IT-UID — dann doch BUKRS-UID?"
+
+Der BUKRS-Fallback ist als *letzter* Schritt richtig, greift hier aber einen Schritt zu früh. Die
+Regel selbst sagt: *„mit dem ermittelten Land wird überprüft, ob der Buchungskreis in diesem Land
+eine UID hat"* — diese Prüfung muss nach dem Lieferantenland zuerst auf das **Ship-to-Land**
+laufen, bevor der Buchungskreis zieht:
+
+```
+EXW → Lieferantenland (IT)  → keine UID
+    → Ship-to-Land (SI)     → SI66423562  ✔ nehmen
+    → erst dann BUKRS (DE)
+```
+
+Grund: Die UID ändert nichts daran, **wo die Ware ankommt**. Der Transport endet in Slowenien →
+ig. Erwerb in Slowenien (Art. 40 MwStSystRL), und unsere Weiterlieferung hat ihren Lieferort
+ebenfalls in Slowenien (Art. 31 / § 3 Abs. 7 UStG) → 22 % slowenische MwSt. Das gilt mit deutscher
+UID genauso.
+
+Die einzige Konstruktion, in der die DE-UID zu `DH` (ig. Lieferung) führt, ist das
+**Dreiecksgeschäft** — und das ist nach Art. 141 lit. a gesperrt, weil wir selbst eine SI-UID
+halten. Mit DE-UID bekäme man daher: die SI-Registrierung braucht man für die 22 %-Rechnung
+trotzdem, **zusätzlich** greift Art. 41 MwStSystRL / § 3d S. 2 UStG (Erwerb gilt auch in
+Deutschland als bewirkt, ohne Vorsteuerabzug bis zum Nachweis der Besteuerung in Slowenien).
+Rechner-Ausgabe mit DE-UID: *„Die Dreiecksgeschäfts-Vereinfachung greift hier nicht. Grund: Der
+mittlere Unternehmer verfügt bereits über eine UID im Bestimmungsland Slowenien"* + Doppelerwerb-
+Warnung + L2 unverändert 22 % SI.
+
+> **Merksatz: Der BUKRS-Fallback *ist* der Dreiecksfall.** Er liefert nur dann ein tragfähiges
+> `DH`, wenn wir weder im Lieferanten- noch im Bestimmungsland registriert sind — dann ist die
+> Heimat-UID die Dritt-MS-UID eines echten Art.-141-Dreiecks (Zeilen 27–31). Sobald wir im
+> Bestimmungsland eine UID haben, ist das Dreieck zu und der Fallback erzeugt ein Kennzeichen,
+> das sich nicht verteidigen lässt.
+
+**Gegenprobe:** Dieselbe Kette bei **EPROHA** (EXW, Lieferant IT, WE Slowenien) bleibt korrekt bei
+AT-UID → `AF`, weil EPROHA in Slowenien *nicht* registriert ist. Gleiche Warenkette, andere
+Gesellschaft, anderes Kennzeichen — entscheidend ist die eigene Registrierungslandkarte.
+
+**Und wer abholt, zählt auch:** Holt der slowenische Kunde selbst in Italien ab (Zeile 38), hilft
+keine der beiden UIDs — dann beginnt die bewegte Lieferung bei *uns* in Italien und setzt eine
+IT-Registrierung voraus. Das „kein SAP-Stkz" in Zeile 38 ist insofern richtig.
+
+---
+
 *Testskript:* `scripts/test-matrix.mjs` · *Aufruf:* `npm run check:matrix`
