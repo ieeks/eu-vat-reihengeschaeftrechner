@@ -8,7 +8,8 @@ Stand: 25.08.2026
 
 Vollständiger Bericht liegt außerhalb des Repos. Technische Findings (CI/Deploy,
 Monolith, Dependencies) und USt-Findings wurden gegen den Code nachgeprüft;
-`check:matrix` bestätigt live 55/63.
+`check:matrix` bestätigt live 57/63 (nach Merge von Matrix V1.2; das Review nennt 55/63,
+da es den Stand vor V1.2 geprüft hat).
 
 **Erledigt (siehe Changelog v4.3 · 25.08.2026):**
 - [x] **VAT-H01** — UID-Vorwahl in `renderUidOverrideBlock()` entfernt (Besitz ≠ Mitteilung)
@@ -46,7 +47,8 @@ Monolith, Dependencies) und USt-Findings wurden gegen den Code nachgeprüft;
 **Offen — Release-Governance:**
 - [ ] **TEST-H02 (P0).** `pages.yml` deployt unabhängig von `test.yml` (beide `on: push/main`,
       kein `needs:`/`workflow_run`) → rote Tests verhindern das Live-Gehen nicht.
-- [ ] **TEST-H01/M01 (P0).** `check:matrix` läuft nicht in CI. Die 7 Abweichungen einmal
+- [ ] **TEST-H01/M01 (P0).** `check:matrix` läuft nicht in CI. Die verbleibenden Abweichungen
+      (nach V1.2: 4 abweichend + 1 teilweise) einmal
       klassifizieren (Bug / akzeptiert / veralteter Sollwert), akzeptierte in eine versionierte
       Allowlist, dann `npm run verify` (test + check + check:pages + check:m365 + check:matrix)
       als Pflicht-Gate. Sonst ist CI ab Tag 1 rot.
@@ -91,6 +93,19 @@ Verfügungsmacht/Lieferort und Einführer, und alle drei fragt das Tool bereits 
       Verweis. Falls überhaupt, dann als reiner SAP-Eingabe-Hinweis — **nicht** als Steuerlogik.
 
 ---
+
+## Matrix V1.2 — Stand nach Runde 2 (25.08.2026)
+
+Bericht: `vat-knowledge/plants_abroad/PRUEFUNG.md` · Testlauf 57/63
+
+- [x] Runde 1: Zeile-für-Zeile-Prüfung + Testlauf + Bugfix `_importerConsequence()`
+- [x] Fachseite: Z54/Z40/Z59/Z60/Z57 Werte + Labels Z37/50/51 korrigiert
+- [ ] **Fachseite (wichtigster Punkt):** `tax delivered from country` in **Z50, Z51, Z57** auf
+      `CH`/`LI`/`IT` setzen — sonst findet SAP `A0`/`AF` statt der gepflegten `B5`/`IC`
+- [ ] Fachseite: Notiz „Dann DH+Dreieck" in Z37 streichen; Z37/38 als „EPDE holt"/„Kunde holt"
+      benennen; Z38 Miro `VI` vs. „Registrierung erforderlich" auflösen
+- [ ] Fachseite: Kopfregeln B1–B4 (DAP/DDP-Zweig, Incoterm-Spalte teilen, Dreieck lit. c/e,
+      Fakturasperre EXW ohne bestätigtes Lieferantenland)
 
 ## Matrix V1 — offene Punkte aus der Prüfung (25.08.2026)
 
