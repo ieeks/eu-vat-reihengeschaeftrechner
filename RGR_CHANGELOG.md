@@ -45,6 +45,65 @@ außen vor; er ist dort als offener Klärungspunkt mit dem SAP-Team notiert.
 
 ---
 
+## v4.3 · 25.08.2026 — Matrix V1 geprüft + Abgangsland-Bug im Drittland-Renderer
+
+Die aktuelle Arbeitsfassung der SAP-Findungsmatrix (`Matrix_erweitert_V1.xlsx`, 65 Zeilen, beide
+Gesellschaften in einer Datei) wurde Zeile für Zeile geprüft und komplett durch den Rechner
+gefahren. **55 von 63 prüfbaren Zeilen sind deckungsgleich**; die 8 Abweichungen sind in
+`vat-knowledge/plants_abroad/PRUEFUNG_V1.md` aufgelöst (4 Matrix-Korrekturen, 2 Label-Fehler,
+2 Rechner-Befunde).
+
+- **`scripts/test-matrix.mjs`** (neu) — fährt jede Matrix-Zeile durch `analyze()` (Modus 3),
+  `analyze2()` (Modus 2: AT-Lager + Drop-Shipment) bzw. den `SAP_TAX_MAP`-Lookup (Lagerauftrag ab
+  Werk) und vergleicht `tax code sales` + `tax code Miro`. Bei Abweichung wird automatisch mit den
+  anderen Transportvarianten nachgefahren und ausgegeben, unter welcher Annahme die Matrix-Codes
+  entstehen. Aufruf: `npm run check:matrix` (bewusst **nicht** in `npm test` — die Sollwerte
+  stammen aus einer externen Datei).
+- **Bugfix `_importerConsequence()`** — der Renderer nahm für die ruhende L1 **und** die Ausfuhr
+  das *Sitzland* statt des *Abgangslands*: EPDE PL→CH zeigte `VD` (deutsche Vorsteuer) statt `B7`
+  und `G0` statt „kein MWSKZ"; EPROHA DE→CH zeigte `V2` statt `VD`. Neuer optionaler Parameter
+  `depArg` mit Fallback auf `#dep`; Ausfuhr-Hinweis nennt jetzt das Abgangsland. Keine
+  Engine-Änderung, 54 Output-Tests + 15 Lohn-Fälle grün.
+- **`vat-knowledge/plants_abroad/PRUEFUNG_V1.md`** (neu) — Befunde A1–A8 (Matrix), B1–B4
+  (Findungsregeln in Zeile 1), C (bestätigt korrekt), D1–D3 (Rechner), E (Lücken).
+  Wichtigster Regel-Befund: **„DAP/DDP → Land des Buchungskreises"** bricht, sobald wir im
+  Warenempfänger-Land registriert sind (Dreieck nach Art. 141 lit. a gesperrt → lokale
+  Inlandslieferung statt `DH`). Zweiter: die Incoterm-Spalte trägt zwei Bedeutungen
+  (Einkaufs-Transport bei EU-Zeilen, Einführer-Rolle bei Drittlandszeilen).
+- `Matrix_erweitert_V1.xlsx` im Repo abgelegt; README weist sie als aktuellen Stand aus.
+
+---
+
+## v4.3 · 25.08.2026 — Plants-Abroad-Matrix EPDE: EXW-Fallback ohne UID im Lieferantenland
+
+Anlassfall aus der Praxis: **EPDE, EXW, Lieferant Italien, Warenempfänger Slowenien.** Der
+Rechner liefert dafür SI-UID → ig. Erwerb SI (**EC**) und L2 als slowenische Inlandslieferung
+22 % (**CB**) — das Dreiecksgeschäft ist nach Art. 141 lit. a gesperrt, weil EPDE selbst eine
+SI-UID hat. Die SAP-Findung in `Matrix_erweitert_EPDE.xlsx` sagte für dieselbe Zeile
+DE-UID → **DH** und widersprach damit dem Tool.
+
+- **`vat-knowledge/plants_abroad/Matrix_erweitert_EPDE.xlsx`** — Zeile *„Strecke EXW – Lieferant
+  Italien (ohne EPDE-UID) – WE Slowenien"* korrigiert: `uid company code` **SI66423562**,
+  `tax delivered from country` **SI**, `tax code sales` **CB**, `treatment` *Inlandslieferung*,
+  `uid Findung` **„EXW: Lieferantland ohne EPDE-UID → Ship-to SI"** + Begründung in der
+  `derivation note`. Blatt **MIRO_Eingang** um die Eingangsseite dieses Falls ergänzt
+  (Lieferant IT → Ware nach SI, bewegt, **EC**). Blatt **Hinweise**: EXW-Zeile um die
+  Fallback-Regel erweitert.
+- **`vat-knowledge/plants_abroad/README.md`** — UID-Findung Punkt 3 präzisiert (ohne UID im
+  Lieferantenland gilt wieder Stufe 2: erst Ship-to, dann Buchungskreis) und neuer Abschnitt
+  *„Fallback, wenn wir im Lieferantenland keine UID haben"* mit Vorher/Nachher-Tabelle,
+  Art. 141 lit. a / Art. 41-Begründung und Gegenprobe EPROHA.
+- **Keine Code-Änderung** — `app.js` und die VATEngine bleiben unangetastet; der Rechner war in
+  diesem Fall bereits korrekt. Angepasst wurde ausschließlich die SAP-Referenzmatrix.
+
+**Gegenprobe:** Dieselbe Warenkette bleibt bei **EPROHA** korrekt bei AT-UID → **AF**, weil
+EPROHA in Slowenien nicht registriert ist und das Dreieck damit offensteht. Gleiche Kette,
+andere Gesellschaft, anderes Kennzeichen — der Fallback muss die eigene Registrierungslandkarte
+kennen. Bleibt als Prüfpunkt fürs SAP-Team (SAP-Findung ist ship-to-/incoterm-basiert und kennt
+die Transportzuordnung nicht).
+
+---
+
 ## v4.3 · 28.07.2026 — Art. 17 MwStSystRL: Normtext in die Wissensbasis + Zeitpunktregel Abs. 3
 
 Der Normtext (RL 2006/112/EG Art. 17 i.d.F. 18.07.2025) lag dem Projekt bisher nicht vor —

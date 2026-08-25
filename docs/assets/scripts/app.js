@@ -5954,9 +5954,14 @@ function _thirdCountryNote(code, direction) {
   return '';
 }
 
-function _importerConsequence(country, direction, movingL1, roleArg) {
+function _importerConsequence(country, direction, movingL1, roleArg, depArg) {
   const co = currentCompany;
   const home = COMPANIES[co].home;
+  // Abgangsland der Kette. Bei einer Ausfuhr hängen BEIDE Belege am Abgangsland,
+  // nicht am Sitzland: Ist die ruhende L1 z.B. eine polnische Inlandslieferung,
+  // ist die Vorsteuer polnisch (B7) und nicht deutsch (VD); die Ausfuhr selbst ist
+  // im Abgangsland steuerfrei (ohne dortige Registrierung → gar kein MWSKZ).
+  const dep = depArg || document.getElementById('dep')?.value || home;
   // role kann überschrieben werden (z.B. 2P: 'supplier' existiert nicht → auf 'self' geklemmt)
   const role = roleArg || importerRole;
   const line = (icon, t) => `<div style="display:flex;gap:6px;align-items:baseline;margin-top:3px;"><span style="flex-shrink:0;">${icon}</span><span>${t}</span></div>`;
@@ -5985,8 +5990,8 @@ function _importerConsequence(country, direction, movingL1, roleArg) {
       if (movingL1 === false) {
         // Letzte Stufe transportiert → L2 = bewegte Ausfuhr; L1 ruhend im Heimatland.
         return line('🛃', `<strong>Kunde</strong> ist Einführer (EXW/FCA/DAP) — du lieferst <strong>0 % Ausfuhr</strong> (bewegte L2), „unverzollt".`)
-             + stk('Eingangsrechnung (Einkauf L1)', sc(home, 'domestic', 'buyer'), `Vorsteuer ${cn(home)} ${rate(home)} % (L1 ruhend)`)
-             + stk('Ausgangsrechnung (Ausfuhr L2 0 %)', sc(home, 'export', 'seller'), 'Ausfuhr')
+             + stk('Eingangsrechnung (Einkauf L1)', sc(dep, 'domestic', 'buyer'), `Vorsteuer ${cn(dep)} ${rate(dep)} % (L1 ruhend)`)
+             + stk('Ausgangsrechnung (Ausfuhr L2 0 %)', sc(dep, 'export', 'seller'), `Ausfuhr ab ${cn(dep)}`)
              + details(line('ℹ️', `0 % Ausfuhr (${expLaw}) — ATLAS/AES-Ausgangsvermerk aufbewahren. Kunde zahlt ${importHint}.`));
       }
       // 2P / unbekannte Stufe: eigene Ware, kein Einkauf L1 → nur Ausgangsrechnung.
@@ -6002,7 +6007,7 @@ function _importerConsequence(country, direction, movingL1, roleArg) {
               : country === 'GB' ? 'UK VAT Registration (HMRC)'
               : 'Steuerregistrierung/Fiskalvertreter';
     return line('🛃', `<strong>Du</strong> bist Einführer (DDP) in ${cn(country)} — ${reg} nötig.`)
-         + stk('EU-Ausfuhr (eigene Ware)', sc(home, 'export', 'seller'), 'Ausfuhr 0 %')
+         + stk('EU-Ausfuhr (eigene Ware)', sc(dep, 'export', 'seller'), `Ausfuhr 0 % ab ${cn(dep)}`)
          + stk(`Kundenrechnung (${cn(country)}-Inland)`, sc(country, 'domestic', 'seller'), country === 'CH' ? '8,1 % CH-MWST' : 'lokal')
          + details(line('ℹ️', country === 'CH'
              ? `Anmeldung beim BAZG, EUSt 8,1 % als CH-Vorsteuer abziehbar (Art. 28 MWSTG). Kundenrechnung mit 8,1 % CH-MWST, Lieferort Schweiz.`

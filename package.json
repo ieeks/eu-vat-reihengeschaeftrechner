@@ -11,6 +11,7 @@
     "check:pages": "node scripts/serve.mjs --check-pages",
     "gen:m365": "node scripts/gen-m365-knowledge.mjs",
     "check:m365": "node scripts/gen-m365-knowledge.mjs --check",
+    "check:matrix": "node scripts/test-matrix.mjs",
     "test": "node scripts/test.mjs && node scripts/test-lohn-tabs.mjs"
   },
   "devDependencies": {
