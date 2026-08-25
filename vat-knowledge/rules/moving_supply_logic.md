@@ -23,14 +23,31 @@ uidOverride && vatIds[uidOverride] !== undefined
 
 ### Automatische Logik (kein Override)
 ```
-!intermediaryResidentInDep && !hasDepVat
-  → lit. c (Umkehrschluss) → movingIndex = chainIndex - 1
+!intermediaryResidentInDep
+  → Grundregel Abs. 1 → movingIndex = chainIndex - 1
   → quickFixApplied: false, quickFixVariant: 'lit-c'
+  → depVatAvailableNotCommunicated: true, wenn dep-UID vorhanden (Hinweistext)
 
-sonst (ansässig ODER dep-UID vorhanden)
+sonst (im Abgangsland ansässig)
   → lit. b → movingIndex = chainIndex
-  → _litBVatCountry: uidOverride > dep(wenn resident+hasDepVat) > dest > null
+  → _litBVatCountry: dep (wenn hasDepVat), sonst null
 ```
+
+> **Besitz ≠ Mitteilung.** Art. 36a Abs. 2 verlangt, dass der Zwischenhändler dem
+> Lieferanten die Abgangsland-UID **tatsächlich mitgeteilt** hat. Das bloße
+> Vorhandensein einer dep-UID in den Stammdaten löst die Ausnahme daher NICHT aus —
+> die Mitteilung ist eine Tatsache, die nur über `uidOverride` (UI: „UID-Wahl
+> Art. 36a") eingegeben werden kann. Ohne Wahl gilt die Grundregel Abs. 1.
+>
+> Entsprechend gibt es **keine Vorauswahl** in `renderUidOverrideBlock()`; die
+> Optionsliste startet zwar mit der dep-UID (sie ist die rechtlich bemerkenswerte),
+> aktiv ist aber keine, bis der Anwender klickt.
+>
+> Die im lit.-b-Text genannte UID muss die Zuordnung auch tragen: benannt wird nur
+> die dep-/Ansässigkeits-UID, keine Ersatz-UID aus dem Bestimmungsland.
+>
+> Regressionstests: `RC-HU-DE-LITC` (keine dep-UID) · `RC-HU-DE-BESITZ` (dep-UID
+> vorhanden, nicht mitgeteilt → Abs. 1) · `RC-HU-DE-LITA` (mitgeteilt → Abs. 2).
 
 ## Return-Objekte
 Jedes Ergebnis enthält exakt:

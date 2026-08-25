@@ -1,6 +1,73 @@
 # RGR TODO — Reihengeschäftsrechner v4.3
 
-Stand: 20.05.2026
+Stand: 25.08.2026
+
+---
+
+## Externes Code- & USt-Review 25.08.2026 (Commit 7ac7499)
+
+Vollständiger Bericht liegt außerhalb des Repos. Technische Findings (CI/Deploy,
+Monolith, Dependencies) und USt-Findings wurden gegen den Code nachgeprüft;
+`check:matrix` bestätigt live 55/63.
+
+**Erledigt (siehe Changelog v4.3 · 25.08.2026):**
+- [x] **VAT-H01** — UID-Vorwahl in `renderUidOverrideBlock()` entfernt (Besitz ≠ Mitteilung)
+- [x] **BUG-H01** — `_applyQuickFix()`-Fallback: ohne Ansässigkeit im Abgangsland gilt Abs. 1;
+      Begründungstext benennt nur noch die UID, die die Zuordnung trägt
+- [x] **VAT-H05** — Incoterm-Gestaltungstipp ersetzt (Art. 36a Abs. 3, EMAG-Fehlzitat raus)
+- [x] Regressionstest `RC-HU-DE-BESITZ` (dep-UID vorhanden, nicht mitgeteilt)
+
+**Offen — fachlich, mit Steuerberater klären:**
+- [ ] **VAT-H02 · Belgien (P0).** `_checkRCBlock(BE)` sperrt RC, sobald eine BE-UID ohne
+      BE-Betriebsstätte vorliegt („Direktregistrierung ohne Betriebsstätte → kein RC").
+      Art. 51 § 2 Nr. 5 WBTW knüpft aber gerade an die **Nicht**-Niederlassung des Lieferanten
+      an — die Bedingung, die der Code als Sperrgrund führt, ist dort Voraussetzung **für**
+      den RC. Anders als bei D1 (`rechtskonformitaet.md`) gibt es für BE **keinen
+      dokumentierten Beratungsbeleg**; `vat-knowledge/rules/rc_country_rules.md` paraphrasiert
+      nur den Code. EPDE hat genau diese Konstellation (BE-UID, Betriebsstätte nur DE) → Pfad
+      ist aktiv. Konkrete Frage: *Blockiert eine belgische Direktregistrierung ohne
+      Betriebsstätte den RC nach Art. 51 § 2 Nr. 5 WBTW, oder greift er beim periodisch
+      erklärenden BE-Abnehmer trotzdem?* Bei „RC greift" ist es eine Fehlklassifikation mit
+      21 % Betrag. **Vorher nichts ändern** — die konservative Linie ist bewusst gewählt.
+- [ ] **VAT-M01 · Italien.** Gleiche Frage für `_checkRCBlock(IT)`. Aktuell latent, weil keine
+      IT-UID in den Stammdaten — wird akut, sobald eine ergänzt wird.
+- [ ] **VAT-H03 · Dreieck.** Kein Umbau nötig: `rechtskonformitaet.md § D1` dokumentiert die
+      konservative Wahl inkl. Gegenbelegen (VwGH Ro 2020/15/0003, Rz 4150 UStR, Quick-Fixes
+      Exp. Notes Bsp. 8). Offen ist nur das **Wording**: die UI schreibt „Art. 141 lit. a →
+      Vereinfachung blockiert" und „B nicht registriert ✓", stellt interne Policy also als
+      zwingendes Gesetz dar. Als Policy kennzeichnen, Legal-Ergebnis davon trennen.
+- [ ] **VAT-H04 · Art. 138.** Modellgrenze, kein Bug: der Rechner kennt die validierte
+      Kunden-UID nicht. „0 % steuerfrei" mit Vorbehalt labeln („dem Grunde nach"), statt ein
+      UID-/VIES-/ZM-Statusmodell zu bauen.
+- [ ] **VAT-M04 · Rechtsgrundlagen.** `_applyQuickFix()` gibt weiterhin `§ 3 Abs. 6a UStG` (DE)
+      aus, auch für EPROHA — verletzt Regel 2 („AT: Art. nicht §"). Nationale Referenzen über
+      `natLaw()`/Company-Jurisdiction zur Renderzeit setzen.
+
+**Offen — Release-Governance:**
+- [ ] **TEST-H02 (P0).** `pages.yml` deployt unabhängig von `test.yml` (beide `on: push/main`,
+      kein `needs:`/`workflow_run`) → rote Tests verhindern das Live-Gehen nicht.
+- [ ] **TEST-H01/M01 (P0).** `check:matrix` läuft nicht in CI. Die 7 Abweichungen einmal
+      klassifizieren (Bug / akzeptiert / veralteter Sollwert), akzeptierte in eine versionierte
+      Allowlist, dann `npm run verify` (test + check + check:pages + check:m365 + check:matrix)
+      als Pflicht-Gate. Sonst ist CI ab Tag 1 rot.
+- [ ] **Hintertür:** `hooks/post-commit` → `sync-repos.sh` deployt bei **jedem lokalen Commit**
+      an GitHub Actions vorbei. Ein CI-Gate greift dort nicht — Hook muss `npm run verify`
+      vorschalten und bei Fehlschlag abbrechen, sonst ist das Gate wirkungslos.
+- [ ] **`check:m365` ist auf `main` rot** (verifiziert 25.08.2026 gegen unveränderten Stand):
+      `copilot-m365/wissensbasis-epde.md` ist veraltet → `node scripts/gen-m365-knowledge.mjs`.
+      Fällt nur niemandem auf, weil der Check nicht in CI läuft — genau der Punkt von TEST-M01.
+      Bewusst **nicht** in diesem Patch mitgeregeneriert (fremder Diff-Anteil).
+- [ ] **TEST-M03/SEC-M04/DEP-M02:** `npm ci` statt `npm install`; `.env*` in `.gitignore`;
+      Dependabot für npm + Actions. `form-data 4.0.5` (dev-only, transitiv über jsdom) auf
+      4.0.6+ heben — bei Gelegenheit, kein Sicherheitsvorfall.
+- [ ] **BUG-M02:** Der Test-Harness liest nur `#testSummary.textContent` und meldet „1 von 22
+      fehlgeschlagen", ohne zu sagen **welcher** Test — bei der Arbeit an diesem Patch musste
+      der fehlgeschlagene Fall von Hand aus dem DOM geholt werden. Strukturierte Resultate +
+      Exit-Codes. (Nebenbefund: die Erfolgs- und die Fehlermeldung zählen unterschiedliche
+      Grundgesamtheiten — „56 bestanden" vs. „von 22".)
+- [ ] **DOC-L01/L02:** README nennt „44 Smoke · 13 Render · 8 Output · 12 Invarianten" (real:
+      56 Output + 15 Lohn-Tabs) und einmal 16, einmal 19 `vat-knowledge/`-Dateien — real sind
+      es **26**. Zahlen generieren oder weglassen.
 
 ---
 

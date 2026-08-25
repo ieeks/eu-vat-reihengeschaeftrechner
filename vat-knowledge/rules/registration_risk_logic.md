@@ -49,8 +49,18 @@ rcApplicable && rcBlockReason && !rcBlocked && iAmTheSeller
 ### (F) resting-buyer-no-uid — severity: 'error'
 Ruhende Lieferung, ich bin Käufer, fremdes Land, keine UID dort.
 → Lieferant fakturiert lokale MwSt, kein Vorsteuerabzug möglich.
-Bietet Optionen: Incoterm ändern, Warenfluss unterbrechen, Registrierung,
-Dreiecksgeschäft (wenn ≥ 3 verschiedene MS beteiligt).
+Bietet Optionen: Transportorganisation ändern, Warenfluss unterbrechen,
+Registrierung, Dreiecksgeschäft (wenn ≥ 3 verschiedene MS beteiligt).
+
+> **Kein Incoterm-Wechsel als Gestaltungstipp.** Art. 36a Abs. 3 stellt darauf ab,
+> wer die Ware selbst oder **auf seine Rechnung** versendet — nicht auf die
+> vereinbarte Klausel. Der frühere Text („auf DAP/DDP umstellen → Transport liegt
+> rechtlich beim Lieferanten, auch wenn du die Spedition koordinierst") war
+> irreführend und stützte sich zudem auf eine Fehlzitierung von EuGH C-245/04
+> (EMAG entschied, dass in der Kette nur EINE Lieferung bewegt sein kann, nicht
+> dass Incoterms die Zuordnung bestimmen). Die Option verlangt jetzt die
+> tatsächliche Änderung der Transportveranlassung und wird nur noch angezeigt,
+> wenn wir aktuell selbst veranlassen (`ctx.transport === 'middle'`).
 
 ## triangleMitigatesReg
 ```js

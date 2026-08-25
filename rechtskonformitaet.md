@@ -1,6 +1,6 @@
-# Rechtskonformität & Design-Entscheidungen — Reihengeschäftsrechner v4.2
+# Rechtskonformität & Design-Entscheidungen — Reihengeschäftsrechner v4.3
 
-Stand: 06.04.2026  
+Stand: 25.08.2026 · geprüfter Code-Stand: Branch `claude/codex-code-review-kc11sc`  
 Quellen:
 - Österreichisches BMF-Schulungsunterlagen August 2024 (PDF)
 - EU-Mehrwertsteuerrichtlinie 2006/112/EG (Primärrecht, EU.html)
@@ -14,6 +14,8 @@ Quellen:
 | Punkt | Tool | Rechtsgrundlage |
 |---|---|---|
 | Quick-Fix Standardregel: Zwischenhändler transportiert, gibt keine dep-UID | L1 bewegte Lieferung (Lieferung AN den Zwischenhändler) | Art. 36a Abs. 1 RL 2006/112/EG / § 3 Abs. 15 Z1 lit. c UStG |
+| **Besitz einer dep-UID ≠ Mitteilung** — löst Abs. 2 nicht aus (korrigiert 25.08.2026) | keine UID-Vorauswahl in der UI; `_applyQuickFix()` fällt ohne Ansässigkeit im Abgangsland auf Abs. 1 zurück | Art. 36a Abs. 2 RL 2006/112/EG („**mitgeteilt** hat") / § 3 Abs. 15 Z1 lit. b UStG |
+| **Incoterm bestimmt die Transportzuordnung nicht** — maßgeblich ist Versendung auf eigene Rechnung (korrigiert 25.08.2026) | Risiko-Option heißt „Transportorganisation ändern" mit ausdrücklichem Vorbehalt; EMAG-Fehlzitat entfernt | Art. 36a Abs. 3 RL 2006/112/EG |
 | Quick-Fix Ausnahme: dep-UID mitgeteilt | L2 bewegte Lieferung (Lieferung DURCH den Zwischenhändler) | Art. 36a Abs. 2 RL 2006/112/EG |
 | Quick-Fix: Ansässigkeits-/Ziel-/Sonstige-UID (nicht dep) | L1 bewegte Lieferung — Grundregel bleibt (Eingangslieferung) | Art. 36a Abs. 1 RL 2006/112/EG |
 | Erster Lieferer / letzter Abnehmer können nicht Zwischenhändler sein | korrekt — Art. 36a gilt nur für mittlere Partei | Art. 36a Abs. 3 RL 2006/112/EG |
