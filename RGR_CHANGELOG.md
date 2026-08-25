@@ -2,6 +2,29 @@
 
 ---
 
+## v4.3 · 25.08.2026 — Matrix V1.2: zweite Prüfrunde (57/63)
+
+Die Fachseite hat die Wertkorrekturen aus Runde 1 eingearbeitet (`Matrix_erweitert_V1_2.xlsx`).
+Nachgeprüft und erneut komplett durch den Rechner gefahren: **57 von 63 Zeilen deckungsgleich**
+(vorher 55).
+
+- **Erledigt:** Z54 Abgangsland `FR`→`DE` · Z40 Miro `NP`→`NI` · Z59 `P0`→`VD` · Z60 `V0`→`V2` ·
+  Z57 Kunden-UID `ATxxx`→`ITxxx` · Treatment-Labels in Z37/50/51.
+- **Halb erledigt — der Findungs-Hebel fehlt noch:** Z50/51/57 tragen weiterhin
+  `tax delivered from country = AT`, obwohl die Ware beim Übergang der Verfügungsmacht bereits im
+  Bestimmungsland ist (Eigenimport CH/LI bzw. IT-Inland). Mit `AT` findet SAP Ausfuhr (`A0`) bzw.
+  ig. Lieferung (`AF`) — die gepflegten `B5`/`IC` werden so nie erreicht.
+- **Offen:** Notiz „Dann DH+Dreieck" in Z37 (Art. 141 lit. a ist durch die eigene SI-UID gesperrt) ·
+  gleiche Benennung von Z37/38 · Widerspruch in Z38 (`kein SAP-Stkz` + Miro `VI`, das eine
+  IT-Registrierung voraussetzt) · Kopfregeln B1–B4 unverändert.
+- **Testlauf:** Die vier verbleibenden Drittlandsabweichungen (Z41/42/59/60) sind **kein**
+  Matrixfehler — die Zeilen sind konsistent nach der Einführerrolle gepflegt, der Rechner leitet
+  zusätzlich aus der Transportzuordnung ab. Genau der Beleg für Befund B2.
+- `PRUEFUNG_V1.md` → **`PRUEFUNG.md`** (lebendes Dokument mit Status-Tabelle und Historie);
+  `scripts/test-matrix.mjs` auf die V1.2-Sollwerte gehoben; README weist V1.2 als aktuellen Stand aus.
+
+---
+
 ## v4.3 · 25.08.2026 — EXW: Rolle statt Incoterm im Einführer-Toggle + zollrechtliche Ausführer-Falle
 
 Bestandsaufnahme vorweg: EXW war im Tool nie eine eigene Eingabe. Die umsatzsteuerlich
