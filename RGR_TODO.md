@@ -4,6 +4,42 @@ Stand: 20.05.2026
 
 ---
 
+## Matrix V1 — offene Punkte aus der Prüfung (25.08.2026)
+
+Vollständiger Bericht: `vat-knowledge/plants_abroad/PRUEFUNG_V1.md`
+
+- [x] Zeile-für-Zeile-Prüfung + Rechner-Testlauf (`npm run check:matrix`, 55/63 deckungsgleich)
+- [x] Bugfix `_importerConsequence()`: Abgangsland statt Sitzland für ruhende L1 + Ausfuhr
+- [ ] **Rechner (D2):** Kunde holt im Abgangsland ab, dort keine eigene UID → Rechner warnt
+      „Registrierungspflicht", zeigt aber trotzdem `DH`. SAP-Badge in diesem Fall unterdrücken
+      bzw. als „kein MWSKZ (Registrierung fehlt)" ausgeben — die Matrix ist hier ehrlicher.
+- [ ] **Rechner (D3):** Drop-Ship AT-Kunde **ohne** fremde EU-UID (Matrix-Zeile 63 → `A2`) ist
+      nicht als eigener Fall schaltbar; aktuell nur `AF` + Hinweis „sonst 20 % AT".
+- [ ] **Matrix-Korrekturen an die Fachseite geben:** Z54 (Abgangsland FR/DE), Z40 (`NP`→`NI`),
+      Z59 (`P0`→`VD`), Z60 (`V0`→`V2`), Z57 (Abgangsland `IT`, Kunden-UID `ITxxx`),
+      Z37/50/51 (Treatment-Labels), Z37/38 (Benennung „wer holt ab")
+- [ ] **Regelwerk:** DAP/DDP im Ship-to-Zweig führen; Incoterm-Spalte in Einkauf/Verkauf trennen;
+      Dreiecks-Definition um Art. 141 lit. c + lit. e ergänzen; Fakturasperre für EXW-Aufträge
+      ohne bestätigtes Lieferantenland (Mondi/SAPPI)
+
+---
+
+## SAP-Findung „Plants Abroad": EXW-Fallback (25.08.2026)
+
+Praxisfall EPDE · EXW · Lieferant IT · WE Slowenien: Matrix sagte DE-UID → DH, richtig ist
+SI-UID → CB (Dreieck nach Art. 141 lit. a gesperrt, da eigene SI-UID). Matrix + README korrigiert.
+
+- [x] Zeile in `Matrix_erweitert_EPDE.xlsx` korrigiert (SI66423562 · CB · Inlandslieferung)
+- [x] MIRO_Eingang-Zeile (IT → SI, bewegt, EC) + Hinweise-Blatt ergänzt
+- [x] README: Fallback-Regel „ohne UID im Lieferantenland → erst Ship-to, dann BUKRS"
+- [ ] **Mit dem SAP-Team klären:** Kann die Findung den Ship-to-Fallback abbilden, oder bleibt
+      die Zeile ein manueller Prüffall? Betrifft alle EXW-Konstellationen mit Lieferantenland
+      ohne eigene Registrierung (IT, FR, ES, HU, RO …) und Warenempfänger-Land **mit** eigener UID.
+- [ ] Prüfen, ob weitere Zeilen mit `-> BUKRS DE`-Fallback dieselbe Lücke haben (aktuell keine —
+      die Dreieck-Zeilen betreffen Ship-to-Länder ohne EPDE-UID und sind korrekt)
+
+---
+
 ## Liechtenstein (LI) als Zielland — live (10.07.2026)
 
 LI = gemeinsamer Schweizer MWST-Raum (Zollvertrag 1923), CH-Registrierung von EPROHA deckt LI ab.
