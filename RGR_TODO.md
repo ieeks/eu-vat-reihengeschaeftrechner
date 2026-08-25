@@ -4,6 +4,26 @@ Stand: 20.05.2026
 
 ---
 
+## Matrix V1 — offene Punkte aus der Prüfung (25.08.2026)
+
+Vollständiger Bericht: `vat-knowledge/plants_abroad/PRUEFUNG_V1.md`
+
+- [x] Zeile-für-Zeile-Prüfung + Rechner-Testlauf (`npm run check:matrix`, 55/63 deckungsgleich)
+- [x] Bugfix `_importerConsequence()`: Abgangsland statt Sitzland für ruhende L1 + Ausfuhr
+- [ ] **Rechner (D2):** Kunde holt im Abgangsland ab, dort keine eigene UID → Rechner warnt
+      „Registrierungspflicht", zeigt aber trotzdem `DH`. SAP-Badge in diesem Fall unterdrücken
+      bzw. als „kein MWSKZ (Registrierung fehlt)" ausgeben — die Matrix ist hier ehrlicher.
+- [ ] **Rechner (D3):** Drop-Ship AT-Kunde **ohne** fremde EU-UID (Matrix-Zeile 63 → `A2`) ist
+      nicht als eigener Fall schaltbar; aktuell nur `AF` + Hinweis „sonst 20 % AT".
+- [ ] **Matrix-Korrekturen an die Fachseite geben:** Z54 (Abgangsland FR/DE), Z40 (`NP`→`NI`),
+      Z59 (`P0`→`VD`), Z60 (`V0`→`V2`), Z57 (Abgangsland `IT`, Kunden-UID `ITxxx`),
+      Z37/50/51 (Treatment-Labels), Z37/38 (Benennung „wer holt ab")
+- [ ] **Regelwerk:** DAP/DDP im Ship-to-Zweig führen; Incoterm-Spalte in Einkauf/Verkauf trennen;
+      Dreiecks-Definition um Art. 141 lit. c + lit. e ergänzen; Fakturasperre für EXW-Aufträge
+      ohne bestätigtes Lieferantenland (Mondi/SAPPI)
+
+---
+
 ## SAP-Findung „Plants Abroad": EXW-Fallback (25.08.2026)
 
 Praxisfall EPDE · EXW · Lieferant IT · WE Slowenien: Matrix sagte DE-UID → DH, richtig ist

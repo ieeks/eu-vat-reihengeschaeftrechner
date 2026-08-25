@@ -1,5 +1,12 @@
 # Begleitdokument zu den Test-Matrizen „Plants Abroad" (EPDE & EPROHA)
 
+> **Aktueller Stand (25.08.2026): `Matrix_erweitert_V1.xlsx`** — eine Datei für beide
+> Gesellschaften (EPDE Zeilen 3–44, EPROHA 45–65), mit den neuen Spalten `Dreiecksgeschäft`,
+> `L/S` (Lager/Strecke), gefülltem `tax code Miro` und den Findungsregeln als Kommentar in
+> Zeile 1. Die getrennten Dateien `Matrix_erweitert_EPDE.xlsx` / `Matrix_erweitert_EPROHA.xlsx`
+> sind der Vorstand und bleiben zum Vergleich liegen.
+> Prüfbericht + Rechner-Testlauf: [`PRUEFUNG_V1.md`](PRUEFUNG_V1.md) · `npm run check:matrix`
+
 **Zweck dieses Dokuments:** Erklärung der beiden Excel-Dateien für die Buchhaltung / den
 Steuerbereich — was darin steht, wie die Werte zustande kommen und was damit geprüft werden soll.
 
