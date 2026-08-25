@@ -4,6 +4,27 @@ Stand: 20.05.2026
 
 ---
 
+## EXW / Incoterms — live (25.08.2026)
+
+Bewusste Grundsatzentscheidung: **kein eigener Incoterm-State.** Incoterms haben keine eigene
+umsatzsteuerliche Wirkung — sie sind nur Indiz für Transportveranlasser (Art. 36a),
+Verfügungsmacht/Lieferort und Einführer, und alle drei fragt das Tool bereits einzeln ab.
+
+- [x] Einführer-Toggle zeigt die **Rolle** (Wir/Kunde/Lieferant), Incoterm nur als Zusatz
+      — Sammel-Label „Kunde (DAP/EXW)" entfernt (EXW ↔ DAP sind bei der Transportzuordnung Gegensätze)
+- [x] Indiz-Note unter dem Toggle (nur 3P/4P): Transportzuordnung kommt aus dem Transport-Feld
+- [x] `_exwExportHint()` — EXW mit Drittlandskunde: Ausführer muss EU-ansässig sein
+      (Art. 1 Nr. 19 UZK-DA), Empfehlung FCA; in allen 2P- und 3P-Drittland-Exportpfaden
+- [x] Tests `OT-M2-EXW-EXPORT`, `OT-3RD-IMPORTER-TOGGLE-LABELS`
+- [ ] **Offen (SAP):** Die SAP-Findung modelliert EXW als eigenes Feld und dreht die UID aufs
+      **Lieferantenland** (`vat-knowledge/plants_abroad/README.md` Punkt 5 — EPDE, Lieferant DE,
+      Ship-to SI: mit EXW → `DH`, ohne → `CB`). `buildSapInputHint`/`SAP_CUSTTAX_MAP` kennen diese
+      Dimension nicht → für denselben Fall können Tool und SAP abweichende MWSKZ ergeben.
+      Erst mit dem SAP-Team klären (Punkt 10 ebenda), dann ggf. als reiner SAP-Eingabe-Hinweis
+      abbilden — **nicht** als Steuerlogik.
+
+---
+
 ## Liechtenstein (LI) als Zielland — live (10.07.2026)
 
 LI = gemeinsamer Schweizer MWST-Raum (Zollvertrag 1923), CH-Registrierung von EPROHA deckt LI ab.

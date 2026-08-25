@@ -224,7 +224,7 @@ let activeRpaSupply   = 0;
 let uidPanelOpen      = false;
 let dropShipDest      = null;   // Mode 2: Warenempfänger-Land bei Drop-Shipment (null = kein Drop-Shipment)
 let mode2CustUid      = null;   // Mode 2 Drittland-Kunde: Land der vom Kunden vorgelegten EU-UID (null = keine EU-UID)
-let importerRole      = 'self';  // Drittland-Einfuhr: wer ist Einführer? 'self' (wir/DDP) | 'customer' (DAP/EXW) | 'supplier' (Lieferant DDP)
+let importerRole      = 'self';  // Drittland-Einfuhr: wer ist Einführer? 'self' (wir/DDP) | 'customer' (EXW/FCA/DAP) | 'supplier' (Lieferant DDP)
 let mode2Incoterm     = 'dap';   // Mode 2 Drittland-Export (CH/GB): gewählter Incoterm-Fall 'dap' (DAP/EXW, Normalfall) | 'ddp' (Option)
 
 // Country helpers
@@ -4907,6 +4907,9 @@ function analyze2() {
     html += rH({type:'info', icon:'△', text:`Dreiecksgeschäft nicht anwendbar – Schweiz ist kein EU-Mitglied.`});
     html += `</div>`;
 
+    // EXW-Ausführerfalle: CH-Kunde kann nicht Ausführer der EU-Anmeldung sein.
+    if (isAbholung) html += `<div class="hints">${_exwExportHint('CH')}</div>`;
+
     // Konsignationslager CH — thematisch DDP-Welt (EPROHA = Einführer + CH-Registrierung).
     // Nur bei DDP prominent; bei DAP/EXW (Kunde = Einführer) nur dezenter Verweis.
     if (mode2Incoterm === 'ddp') {
@@ -4928,6 +4931,9 @@ function analyze2() {
     html += rH({type:'info', icon:'📄', text:`CH/LI-EU Freihandelsabkommen (FHA 1972): Bei EU-Ursprungsware kann Zoll entfallen – Ursprungsnachweis <strong>EUR.1</strong> oder Lieferantenerklärung erforderlich.`});
     html += rH({type:'info', icon:'△', text:`Dreiecksgeschäft nicht anwendbar – Liechtenstein ist kein EU-Mitglied.`});
     html += `</div>`;
+
+    // EXW-Ausführerfalle: LI-Kunde kann nicht Ausführer der EU-Anmeldung sein.
+    if (isAbholung) html += `<div class="hints">${_exwExportHint('LI')}</div>`;
 
     // Konsignationslager im Schweizer MWST-Raum — wie CH nur bei DDP prominent.
     if (mode2Incoterm === 'ddp') {
@@ -5096,6 +5102,7 @@ function analyze2() {
     }
     if (isAbholung) {
       html += rH({type:'warn', icon:'🚗', text:`<strong>Abholung durch Kunden (EXW):</strong> Lieferort = AT-Lager. EPROHA hat keine Kontrolle über die Ausfuhr — Ausfuhrbestätigung vom Kunden/Spediteur einfordern! Ohne ATLAS-Nachweis → 20% AT-MwSt-Risiko.`});
+      html += _exwExportHint('GB');
     }
 
   // ── AT → Drittland (TR/RS/BA/RU u.a., außer CH/GB mit Sonderpfad) — Ausfuhr ──
@@ -5120,6 +5127,7 @@ function analyze2() {
     }
     if (isAbholung) {
       html += rH({type:'warn', icon:'🚗', text:`<strong>Abholung durch Kunden (EXW):</strong> Lieferort = AT-Lager. EPROHA hat keine Kontrolle über die Ausfuhr — Ausfuhrbestätigung vom Kunden/Spediteur einfordern! Ohne ATLAS-Nachweis → 20% AT-MwSt-Risiko.`});
+      html += _exwExportHint(dest);
     }
 
   // ── AT → EU-Kunde + Drop-Shipment (Reihengeschäft / Dreiecksgeschäft) ──────
@@ -5661,7 +5669,7 @@ function buildCHExportBanner(ctx, eng) {
 
   // CH-Einfuhr
   html += rH({type:'info', icon:'🏔️', text:
-    `<strong>CH-seitig: Einfuhr durch Käufer (DAP/EXW)</strong> oder durch dich (DDP)<br>` +
+    `<strong>CH-seitig: Einfuhr durch Käufer (EXW/FCA/DAP)</strong> oder durch dich (DDP)<br>` +
     `DAP/EXW: CH-Käufer meldet beim BAZG an, zahlt 8,1% EUSt + Zoll — du hast keine CH-Pflichten.<br>` +
     `DDP: Du meldest an → CH-MWST-Registrierung ${myCHVat ? `(vorhanden: <strong>${myCHVat}</strong>)` : '<strong>erforderlich!</strong>'} + Steuervertreter (Art. 67 MWSTG).`
   });
@@ -5827,6 +5835,9 @@ function buildCHExportResult(ctx, eng) {
     Bei EU-Ursprungsware kann Zoll entfallen → <strong>EUR.1 Warenverkehrsbescheinigung</strong> oder Lieferantenerklärung erforderlich.`
   });
 
+  // Kunde holt selbst ab → EXW-Ausführerfalle (dest = CH oder LI).
+  if (getCanonicalTransport() === 'customer') html += _exwExportHint(dest);
+
   html += `</div>`;
   html += _importerToggle('CH', 'export', movingL1);
   html += buildLegalRefs(['chain'], true);
@@ -5893,7 +5904,7 @@ function buildGBExportResult(ctx, eng) {
   }
 
   if (expertMode) html += rH({type:'info', icon:'🇬🇧', text:
-    `<strong>GB-seitig: Einfuhr durch UK-Käufer (DAP/EXW) oder durch dich (DDP)</strong><br>
+    `<strong>GB-seitig: Einfuhr durch UK-Käufer (EXW/FCA/DAP) oder durch dich (DDP)</strong><br>
     DAP/EXW: UK-Käufer meldet bei HMRC an, zahlt 20% UK Import VAT + Zoll — keine UK-Pflichten für dich.<br>
     DDP: Du meldest in UK an → <strong>UK VAT Registration bei HMRC erforderlich</strong> (du hast keine → DDP vermeiden).`
   });
@@ -5907,6 +5918,9 @@ function buildGBExportResult(ctx, eng) {
     NI hat EU-MwSt-Sonderstatus — Lieferungen EU↔NI = IG-Lieferungen (EU-Engine verwenden, nicht GB-Pfad).<br>
     GB-Pfad gilt nur für England, Schottland, Wales.`
   });
+
+  // Kunde holt selbst ab → EXW-Ausführerfalle.
+  if (getCanonicalTransport() === 'customer') html += _exwExportHint('GB');
 
   html += `</div>`;
   html += _importerToggle('GB', 'export', movingL1);
@@ -5963,20 +5977,20 @@ function _importerConsequence(country, direction, movingL1, roleArg) {
       // 3P-Kette: Einkauf (L1) und Verkauf (L2) hängen davon ab, welche Lieferung bewegt ist.
       if (movingL1 === true) {
         // Vorlieferant transportiert → L1 = bewegte Ausfuhr; meine L2 ist Inland im Drittland.
-        return line('🛃', `<strong>Kunde</strong> ist Einführer (DAP/EXW). Bewegte Ausfuhr = <strong>L1 (Vorlieferant)</strong>; deine Weiterlieferung L2 ist Inlandslieferung in ${cn(country)}.`)
+        return line('🛃', `<strong>Kunde</strong> ist Einführer (EXW/FCA/DAP). Bewegte Ausfuhr = <strong>L1 (Vorlieferant)</strong>; deine Weiterlieferung L2 ist Inlandslieferung in ${cn(country)}.`)
              + stk('Eingangsrechnung (Einkauf L1)', null, '0 % — bewegte Ausfuhr, kein Vorsteuerabzug')
              + stk('Ausgangsrechnung (Verkauf L2)', sc(country, 'domestic', 'seller'), `${cn(country)}-Inland`)
              + details(line('ℹ️', `Bei Transport durch den Vorlieferant ist L1 die steuerfreie Ausfuhr — Ausgangsvermerk dort anfordern. Deine L2 ist im Bestimmungsland ${cn(country)} steuerbar → ggf. dortige Registrierung. Kunde trägt ${importHint}.`));
       }
       if (movingL1 === false) {
         // Letzte Stufe transportiert → L2 = bewegte Ausfuhr; L1 ruhend im Heimatland.
-        return line('🛃', `<strong>Kunde</strong> ist Einführer (DAP/EXW) — du lieferst <strong>0 % Ausfuhr</strong> (bewegte L2), „unverzollt".`)
+        return line('🛃', `<strong>Kunde</strong> ist Einführer (EXW/FCA/DAP) — du lieferst <strong>0 % Ausfuhr</strong> (bewegte L2), „unverzollt".`)
              + stk('Eingangsrechnung (Einkauf L1)', sc(home, 'domestic', 'buyer'), `Vorsteuer ${cn(home)} ${rate(home)} % (L1 ruhend)`)
              + stk('Ausgangsrechnung (Ausfuhr L2 0 %)', sc(home, 'export', 'seller'), 'Ausfuhr')
              + details(line('ℹ️', `0 % Ausfuhr (${expLaw}) — ATLAS/AES-Ausgangsvermerk aufbewahren. Kunde zahlt ${importHint}.`));
       }
       // 2P / unbekannte Stufe: eigene Ware, kein Einkauf L1 → nur Ausgangsrechnung.
-      return line('🛃', `<strong>Kunde</strong> ist Einführer (DAP/EXW) — du lieferst <strong>0 % Ausfuhr</strong>, „unverzollt".`)
+      return line('🛃', `<strong>Kunde</strong> ist Einführer (EXW/FCA/DAP) — du lieferst <strong>0 % Ausfuhr</strong>, „unverzollt".`)
            + stk('Ausgangsrechnung (Ausfuhr 0 %)', sc(home, 'export', 'seller'), 'Ausfuhr')
            + details(line('ℹ️', `0 % Ausfuhr (${expLaw}) — ATLAS/AES-Ausgangsvermerk aufbewahren. Kunde zahlt ${importHint}.`));
     }
@@ -5999,7 +6013,7 @@ function _importerConsequence(country, direction, movingL1, roleArg) {
 
   // ── IMPORT: Drittland → EU `country` ──
   if (role === 'customer') {
-    return line('🛃', `<strong>Kunde</strong> ist Einführer (DAP/EXW) — deine Lieferung <strong>vor der Einfuhr</strong> (außerhalb EU), „unverzollt".`)
+    return line('🛃', `<strong>Kunde</strong> ist Einführer (EXW/FCA/DAP) — deine Lieferung <strong>vor der Einfuhr</strong> (außerhalb EU), „unverzollt".`)
          + stk('Ausgangsrechnung', sc(home, 'not-taxable', 'seller'), 'nicht steuerbar')
          + stk('Eingangsrechnung', sc(home, 'rc-purchase', 'buyer'), 'Drittlandseinkauf 0 %, Typ P0')
          + details(line('ℹ️', `Lieferort außerhalb der EU (vor Einfuhr) → nicht steuerbar, kein deutscher Ausgangsumsatz. Der Kunde meldet die Einfuhr an und zahlt Einfuhr-USt ${rate(country)} % in ${cn(country)}.`));
@@ -6024,19 +6038,47 @@ function _importerConsequence(country, direction, movingL1, roleArg) {
          + line('🧩', `Weiterverkauf mit ${cn(country)}-USt → Buchung im ${cn(country)}-Ledger → dort ein ${cn(country)}-Pendant zu P0 nötig; aktuell nicht in SAP angelegt.`));
 }
 
+// ── EXW mit Drittlandskunde: zollrechtliche Ausführer-Falle ────────────────
+//  Reiner Hinweis-Renderer, KEINE Steuerlogik. Trigger am Call-Site: Kunde holt
+//  selbst ab (Transport = Kunde / „Abholung“) UND das Bestimmungsland ist Drittland.
+//  Der Ausführer der EU-Ausfuhranmeldung muss in der EU ANSÄSSIG sein
+//  (Art. 1 Nr. 19 UZK-DA i.d.F. VO (EU) 2018/1063) — ein Kunde im Drittland kann
+//  diese Rolle nicht ausfüllen. Praxislösung: FCA statt EXW, dann bleibt der
+//  Ausgangsvermerk/MRN (= Nachweis für die 0 % Ausfuhr) in unserer Hand.
+function _exwExportHint(country) {
+  const isAT = COMPANIES[currentCompany].home === 'AT';
+  const proof = isAT ? '§ 7 Abs. 3 UStG AT' : '§ 6 Abs. 4 UStG i.V.m. §§ 9 ff. UStDV';
+  return rH({type:'warn', icon:'📜', text:
+    `<strong>EXW mit Kunde in ${cn(country)}: zollrechtlich problematisch</strong><br>` +
+    `Der <strong>Ausführer</strong> der EU-Ausfuhranmeldung muss in der EU <strong>ansässig</strong> sein (Art. 1 Nr. 19 UZK-DA i.d.F. VO (EU) 2018/1063). Dein Kunde in ${cn(country)} kann diese Rolle nicht übernehmen — er bräuchte einen in der EU ansässigen <strong>indirekten Vertreter</strong>.<br>` +
+    `→ Empfehlung: statt EXW <strong>FCA</strong> vereinbaren. Dann bleibst du Ausführer, die Anmeldung läuft über deine <strong>EORI</strong>, und der <strong>Ausgangsvermerk/MRN</strong> bleibt in deiner Hand — er ist dein Nachweis für die 0 %-Ausfuhr (${proof}).`
+  });
+}
+
 function _importerToggle(country, direction, movingL1, twoParty) {
+  // Der Toggle wählt eine ROLLE (wer ist Einführer), keinen Incoterm. Die Incoterm-
+  // Kürzel stehen nur als Indiz daneben: EXW/FCA (Kunde holt ab) und DAP (wir liefern
+  // zu) führen für die EINFUHR gleichermaßen zum Kunden als Einführer, sind für die
+  // TRANSPORTZUORDNUNG (Art. 36a MwStSystRL) aber gegensätzlich. Die kommt aus dem
+  // Transport-Feld — deshalb kein gemeinsames „Kunde (DAP/EXW)“-Label mehr.
   // 2P (eigene Ware ab Lager, kein Vorlieferant in der Kette): nur Wir/Kunde — keine Lieferant-DDP-Option.
   const opts = twoParty
-    ? [{v:'self',l:'Wir (DDP)'},{v:'customer',l:'Kunde (DAP/EXW)'}]
-    : [{v:'self',l:'Wir (DDP)'},{v:'customer',l:'Kunde (DAP/EXW)'},{v:'supplier',l:'Lieferant (DDP)'}];
+    ? [{v:'self',l:'Wir',h:'DDP'},{v:'customer',l:'Kunde',h:'EXW/FCA/DAP'}]
+    : [{v:'self',l:'Wir',h:'DDP'},{v:'customer',l:'Kunde',h:'EXW/FCA/DAP'},{v:'supplier',l:'Lieferant',h:'DDP'}];
   // Wenn aus einem 3P-Kontext 'supplier' im State steht, im 2P auf 'self' klemmen (Option wird nicht angezeigt).
   const effRole = (twoParty && importerRole === 'supplier') ? 'self' : importerRole;
   const btns = opts.map(o =>
-    `<button class="t-opt${effRole===o.v?' active':''}" style="display:inline-flex;width:auto;margin:0 6px 6px 0;" onclick="setImporter('${o.v}')"><span class="t-label">${o.l}</span></button>`).join('');
+    `<button class="t-opt${effRole===o.v?' active':''}" style="display:inline-flex;width:auto;margin:0 6px 6px 0;" onclick="setImporter('${o.v}')"><span class="t-label">${o.l}<span style="color:var(--tx-2);font-weight:400;"> · ${o.h}</span></span></button>`).join('');
+  // Nur in der Kette (3P/4P) kann der Incoterm dem Transport-Feld widersprechen —
+  // im 2P gibt es nur eine Lieferung, da wäre der Hinweis Rauschen.
+  const incoNote = twoParty ? '' : `<div style="color:var(--tx-2);font-size:0.68rem;margin-top:8px;line-height:1.6;">
+      ℹ️ Die Incoterms sind hier nur ein <strong>Indiz für den Einführer</strong>. <strong>EXW/FCA</strong> (Kunde holt ab) und <strong>DAP</strong> (du lieferst zu) landen beim selben Einführer, ergeben aber eine <strong>andere Transportzuordnung</strong> (Art. 36a MwStSystRL) — die stellst du separat im Feld <strong>Transport</strong> ein.
+    </div>`;
   return `<div class="hint hint-info" data-component="importerToggle" style="flex-direction:column;align-items:flex-start;margin-bottom:12px;">
     <div style="font-weight:700;margin-bottom:6px;">🛃 Wer ist Einführer (Importer of Record)?</div>
     <div style="margin-bottom:8px;">${btns}</div>
     <div>${_importerConsequence(country, direction, movingL1, effRole)}</div>
+    ${incoNote}
   </div>`;
 }
 
@@ -6115,6 +6157,9 @@ function buildThirdExportResult(ctx, eng, third) {
   if (!movingL1) {
     html += rH({type:'info', icon:'📦', text:`<strong>L1 (ruhend in ${cn(dep)}): ${rate(dep)}% ${cn(dep)}-MwSt</strong> — Lieferort = ${cn(dep)} (vor Transport). Normale Inlandsrechnung.`});
   }
+  // Kunde holt selbst ab → EXW-Ausführerfalle.
+  if (getCanonicalTransport() === 'customer') html += _exwExportHint(third);
+
   html += `</div>`;
   html += _importerToggle(third, 'export', movingL1);
   html += buildLegalRefs(['chain'], true);
@@ -6407,7 +6452,7 @@ function drittlandRegCountry(ctx) {
   const depNonEU  = ctx.dep  && isNonEU(ctx.dep);
   const destNonEU = ctx.dest && isNonEU(ctx.dest);
   if (!depNonEU && !destNonEU) return null;          // kein Drittlandsfall
-  // Kunde ist Einführer (DAP/EXW): unsere Lieferung ist 0% Ausfuhr bzw. liegt vor der
+  // Kunde ist Einführer (EXW/FCA/DAP): unsere Lieferung ist 0% Ausfuhr bzw. liegt vor der
   // Einfuhr (nicht steuerbar) → nie ein Registrierungsproblem für uns.
   if (importerRole === 'customer') return null;
   // LI wird über die CH-Registrierung abgedeckt (gemeinsamer Schweizer MWST-Raum).
@@ -6442,7 +6487,7 @@ function buildDrittlandStatus(ctx) {
   if (regCountry) {
     const r = _drittlandRegRate(regCountry);
     const rateTxt = r ? ` (${r}%)` : '';
-    const altCustomer = `oder <strong>Kunde als Einführer</strong> (DAP/EXW) wählen — dann ist deine Lieferung ${isImport ? 'vor der Einfuhr nicht steuerbar' : '0% Ausfuhr'} und keine Registrierung für dich nötig`;
+    const altCustomer = `oder <strong>Kunde als Einführer</strong> (EXW/FCA/DAP) wählen — dann ist deine Lieferung ${isImport ? 'vor der Einfuhr nicht steuerbar' : '0% Ausfuhr'} und keine Registrierung für dich nötig`;
     let how;
     if (isImport) {
       how = `Du machst eine <strong>Inlandslieferung in ${cn(regCountry)}</strong> (nach der Einfuhr) — ohne ${cn(regCountry)}-UID ist sie nicht abwickelbar.<br>→ <strong>Registrierung in ${cn(regCountry)}</strong> beantragen, ${altCustomer}.`;
@@ -6471,7 +6516,7 @@ function buildDrittlandStatus(ctx) {
   // GRÜN: kein Registrierungsproblem
   let why;
   if (importerRole === 'customer') {
-    why = `Der <strong>Kunde ist Einführer</strong> (DAP/EXW) — deine Lieferung ist ${isImport ? 'vor der Einfuhr nicht steuerbar' : '0% Ausfuhr'}; keine Registrierung im ${isImport ? 'Bestimmungsland' : 'Drittland'} für dich.`;
+    why = `Der <strong>Kunde ist Einführer</strong> (EXW/FCA/DAP) — deine Lieferung ist ${isImport ? 'vor der Einfuhr nicht steuerbar' : '0% Ausfuhr'}; keine Registrierung im ${isImport ? 'Bestimmungsland' : 'Drittland'} für dich.`;
   } else if (importerRole === 'supplier') {
     why = isImport
       ? `Der <strong>Lieferant ist Einführer</strong> (DDP) und liefert dir ${cn(ctx.dest)}-inländisch; deine Anschlusslieferung ist mit ${cn(ctx.dest)}-UID (${myVat(ctx.dest)}) abwickelbar.`
@@ -9903,6 +9948,44 @@ const OUTPUT_TESTS = [
     ],
   },
 
+  {
+    id: 'OT-M2-EXW-EXPORT',
+    name: 'EPROHA AT→CH Abholung: EXW-Ausführerfalle (Art. 1 Nr. 19 UZK-DA) + FCA-Empfehlung',
+    setup() {
+      currentCompany = 'EPROHA';
+      MY_VAT_IDS = COMPANIES['EPROHA'].vatIds;
+      currentMode = 2;
+      selectedTransport = 'customer';
+      const setV = (id, val) => {
+        let el = document.getElementById(id);
+        if (!el) { el = document.createElement('select'); el.id = id; el.style.display='none'; document.body.appendChild(el); }
+        el.innerHTML = `<option value="${val}" selected>${val}</option>`;
+      };
+      setV('cp-0','AT'); setV('cp-1','CH');
+      setV('s1','AT'); setV('s2','CH'); setV('s3','CH'); setV('s4','CH');
+      setV('dep','AT'); setV('dest','CH');
+    },
+    run() { analyze2(); },
+    expect: [
+      { contains: 'Art. 1 Nr. 19 UZK-DA', desc: 'Ausführer muss EU-ansässig sein' },
+      { contains: 'indirekten Vertreter', desc: 'Alternative für den Drittlandskunden' },
+      { contains: 'statt EXW <strong>FCA</strong>', desc: 'FCA-Praxisempfehlung' },
+    ],
+  },
+  {
+    id: 'OT-3RD-IMPORTER-TOGGLE-LABELS',
+    name: 'Einführer-Toggle (3P): Rollen-Label + Incoterm nur als Indiz, kein „Kunde (DAP/EXW)"',
+    setup() { currentCompany='EPROHA'; MY_VAT_IDS=COMPANIES['EPROHA'].vatIds; currentMode=3; importerRole='customer'; },
+    run() { document.getElementById('resultContent').innerHTML = _importerToggle('CH','export',false); },
+    expect: [
+      { contains: 'Indiz für den Einführer', desc: 'Incoterm-Abgrenzung zur Transportzuordnung' },
+      { contains: 'Art. 36a MwStSystRL', desc: 'Verweis auf das Transport-Feld' },
+      { contains: 'EXW/FCA/DAP', desc: 'Incoterm-Kürzel als Zusatz am Kunde-Button' },
+    ],
+    notExpect: [
+      { contains: 'Kunde (DAP/EXW)', desc: 'altes Sammel-Label darf nicht zurückkommen' },
+    ],
+  },
   {
     id: 'OT-M2-03',
     name: 'EPROHA AT Abholung (Transport=C/EXW): Gelangensbestätigung-Hinweis im Output',

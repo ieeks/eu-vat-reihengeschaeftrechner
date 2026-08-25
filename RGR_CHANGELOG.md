@@ -2,6 +2,49 @@
 
 ---
 
+## v4.3 · 25.08.2026 — EXW: Rolle statt Incoterm im Einführer-Toggle + zollrechtliche Ausführer-Falle
+
+Bestandsaufnahme vorweg: EXW war im Tool nie eine eigene Eingabe. Die umsatzsteuerlich
+maßgeblichen Fakten (Transportveranlasser Art. 36a, Verfügungsmacht/Lieferort, Einführer im
+Drittland) werden bereits einzeln abgefragt — ein Incoterm-Picker daneben bliebe redundant und
+könnte dem Transport-Feld widersprechen. Der Incoterm bleibt deshalb bewusst **kein** eigener
+State. Zwei Schwächen der bisherigen Darstellung sind aber behoben:
+
+- **Einführer-Toggle (`_importerToggle`) zeigt jetzt die Rolle, nicht den Incoterm.** Buttons
+  heißen **Wir · DDP** / **Kunde · EXW/FCA/DAP** / **Lieferant · DDP** — das Incoterm-Kürzel steht
+  nur noch als gedämpfter Zusatz daneben. Grund: das alte Sammel-Label „Kunde (DAP/EXW)" hat zwei
+  Gegensätze verschmolzen. Für die **Einfuhr** sind EXW und DAP gleich (der Kunde verzollt), für die
+  **Transportzuordnung** sind sie entgegengesetzt (EXW = Kunde holt ab, DAP = wir liefern zu). In
+  der Kette konnte der Nutzer so „Kunde (DAP/EXW)" wählen, während das Transport-Feld auf
+  „A — Lieferant" stand, ohne dass irgendwo ein Widerspruch sichtbar wurde.
+- **Neue Indiz-Note unter dem Toggle — nur in der Kette (3P/4P), nicht im 2P.** Sie sagt
+  ausdrücklich, dass die Incoterms hier nur ein Indiz für den Einführer sind und die
+  Transportzuordnung (Art. 36a MwStSystRL) aus dem **Transport**-Feld kommt. Im 2P-Modus gibt es
+  nur eine Lieferung — dort wäre der Hinweis Rauschen.
+- **`_exwExportHint(country)` (neu) — EXW mit Drittlandskunde ist zollrechtlich problematisch.**
+  Der Ausführer der EU-Ausfuhranmeldung muss in der EU **ansässig** sein (Art. 1 Nr. 19 UZK-DA
+  i.d.F. VO (EU) 2018/1063); ein Kunde in CH/GB/TR/… kann diese Rolle nicht übernehmen, er
+  bräuchte einen in der EU ansässigen indirekten Vertreter. Praxisempfehlung im Output: statt EXW
+  **FCA** vereinbaren — dann bleiben Ausführerstellung, EORI und **Ausgangsvermerk/MRN** (= der
+  Nachweis für die 0 %-Ausfuhr, § 7 Abs. 3 UStG AT bzw. § 6 Abs. 4 UStG i.V.m. §§ 9 ff. UStDV) in
+  der eigenen Hand. Bisher warnte das Tool bei Abholung nur über den fehlenden Ausfuhrnachweis,
+  nie über die Ausführerstellung selbst.
+- **Call-Sites** (Trigger überall: Kunde holt ab **und** Bestimmungsland ist Drittland):
+  2P `analyze2()` → CH · LI · GB · generisches Drittland (TR/RS/BA/RU);
+  3P `buildCHExportResult` (CH+LI) · `buildGBExportResult` · `buildThirdExportResult`
+  über `getCanonicalTransport() === 'customer'`. EU-Ziele bleiben unberührt.
+- **Prosa vereinheitlicht:** 12× `(DAP/EXW)` → `(EXW/FCA/DAP)` in `_importerConsequence`,
+  `drittlandReg*` und den statischen CH/GB-Blöcken — unter allen dreien ist der Kunde Einführer.
+- **Tests:** `OT-M2-EXW-EXPORT` (2P AT→CH Abholung: UZK-DA-Zitat + FCA-Empfehlung) und
+  `OT-3RD-IMPORTER-TOGGLE-LABELS` (Indiz-Note vorhanden, altes Label `Kunde (DAP/EXW)` per
+  `notExpect` ausgeschlossen). 54 → **56 Output-Tests**, `npm test` grün.
+
+**Keine Steuerlogik geändert** — reine Renderer/Label-Ebene. Der SAP-seitige EXW-Sonderfall
+(UID aus dem Lieferantenland, `vat-knowledge/plants_abroad/README.md` Punkt 5) bleibt bewusst
+außen vor; er ist dort als offener Klärungspunkt mit dem SAP-Team notiert.
+
+---
+
 ## v4.3 · 28.07.2026 — Art. 17 MwStSystRL: Normtext in die Wissensbasis + Zeitpunktregel Abs. 3
 
 Der Normtext (RL 2006/112/EG Art. 17 i.d.F. 18.07.2025) lag dem Projekt bisher nicht vor —
