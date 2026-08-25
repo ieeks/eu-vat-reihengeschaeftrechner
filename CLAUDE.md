@@ -160,6 +160,39 @@ Ruhend → Lieferort-UID
 Fallback → companyHome
 ```
 
+## Art. 36a — Besitz ≠ Mitteilung (Session 24)
+
+**`renderUidOverrideBlock()` belegt NICHTS vor.** Abs. 2 (dep-UID → Ausgangslieferung
+bewegt) setzt voraus, dass die Abgangsland-UID dem Vorlieferanten **tatsächlich
+mitgeteilt** wurde — das ist eine Tatsache über den konkreten Umsatz, keine
+Stammdateneigenschaft. Früher setzte der Renderer ungefragt `uidOverride = dep`,
+sobald eine dep-UID existierte, und verschob damit die bewegte Lieferung ohne Klick
+von L1 auf L2. Jetzt: keine Option aktiv bis zum Klick, Header „— offen", Leitfrage
+„Welche UID hast du dem Vorlieferanten für diesen Umsatz mitgeteilt?".
+**Nicht wieder eine Default-Wahl einführen** — die dep-UID darf in der Liste zuerst
+stehen (sie ist die rechtlich bemerkenswerte), aber nicht vorausgewählt sein.
+
+**`_applyQuickFix()` spiegelt das:** Grundregel-Zweig hängt an
+`!intermediaryResidentInDep` allein — der bloße Besitz einer dep-UID löst lit. b
+**nicht** aus. `depVatAvailableNotCommunicated` markiert „UID da, Mitteilung offen"
+für den Hinweistext. Im lit.-b-Zweig wird nur die UID benannt, die die Zuordnung
+trägt (dep/Ansässigkeit) — keine Ersatz-UID aus dem Bestimmungsland, sonst begründet
+der Text die Zuordnung mit etwas, das sie nicht ausgelöst hat.
+
+> **QuickCheck-Grenze:** `buildQuickCheck4()`/`buildQuickCheck()` verdrahten
+> `uidOverride: null` fest und können die Mitteilung nicht ausdrücken → dort gilt
+> immer die Grundregel Abs. 1. Für den Fall „dep-UID mitgeteilt" den Hauptmodus mit
+> expliziter UID-Wahl verwenden. Testabdeckung: `RC-HU-DE-LITC` (keine dep-UID) ·
+> `RC-HU-DE-BESITZ` (vorhanden, nicht mitgeteilt) · `RC-HU-DE-LITA` (mitgeteilt).
+
+**Incoterm ist kein Gestaltungsmittel für die Transportzuordnung.** Der Risiko-Renderer
+(Abschnitt F, `resting-buyer-no-uid`) empfiehlt „Transportorganisation ändern", nicht
+„Incoterm ändern": Art. 36a Abs. 3 stellt darauf ab, wer **auf eigene Rechnung**
+versendet. Der frühere Text („DAP/DDP → Transport liegt beim Lieferanten, auch wenn du
+die Spedition koordinierst") war falsch und zitierte EuGH C-245/04 EMAG fehlerhaft
+(EMAG: nur **eine** Lieferung in der Kette ist bewegt — nichts zu Incoterms).
+Option nur noch bei `ctx.transport === 'middle'`.
+
 ## UI-State Helper
 ```
 getState()            → liest UI-Status gesammelt

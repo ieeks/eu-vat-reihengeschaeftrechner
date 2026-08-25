@@ -2,6 +2,64 @@
 
 ---
 
+## v4.3 · 25.08.2026 — Art. 36a: Besitz ≠ Mitteilung (UID-Vorwahl entfernt) + Incoterm-Tipp korrigiert
+
+Aufarbeitung aus dem externen Code- & USt-Review vom 25.08.2026 (Findings VAT-H01,
+BUG-H01, VAT-H05). Drei Stellen unterstellten eine Tatsache, die das Tool nicht kennt.
+Kein neues Steuerrecht — die Engine rechnet jetzt die Grundregel, wo sie vorher die
+Ausnahme geraten hat.
+
+- **Keine UID-Vorauswahl mehr (`renderUidOverrideBlock`).** Bisher setzte der Renderer
+  ungefragt `uidOverride` auf die **Abgangsland-UID**, sobald eine vorhanden war —
+  ein Klick war nie nötig. Art. 36a Abs. 2 verlangt aber, dass die dep-UID dem
+  Vorlieferanten **tatsächlich mitgeteilt** wurde; der bloße Besitz genügt nicht.
+  Damit verschob das Tool die bewegte Lieferung ohne Zutun des Anwenders von L1 auf
+  L2. Jetzt ist bis zum Klick **keine** Option aktiv, der Panel-Header trägt
+  „— offen", und der Fußtext nennt die geltende Grundregel Abs. 1. Neue Leitfrage
+  über der Liste: „Welche UID hast du dem Vorlieferanten für diesen Umsatz
+  mitgeteilt?"
+- **`_applyQuickFix()`-Fallback korrigiert (VATEngine).** Die automatische Logik fiel
+  nur bei `!intermediaryResidentInDep && !hasDepVat` auf die Grundregel zurück —
+  wer im Abgangsland nicht ansässig war, aber dort eine UID **besaß**, landete auf
+  lit. b (L2 bewegend). Bedingung ist jetzt `!intermediaryResidentInDep`: ohne
+  Ansässigkeit im Abgangsland gilt Abs. 1, solange keine Mitteilung bestätigt ist
+  (`uidOverride === dep` wird weiterhin vorrangig behandelt). Neues Feld
+  `depVatAvailableNotCommunicated`; der Begründungstext unterscheidet „hat keine
+  dep-UID" von „hat eine, aber keine Mitteilung bestätigt" und verweist auf die
+  UID-Wahl.
+- **Begründung passt jetzt zur Entscheidung.** `_litBVatCountry` benannte im lit.-b-Zweig
+  ersatzweise die **Bestimmungsland**-UID (oder „keine passende UID"), obwohl die
+  Zuordnung an der dep-/Ansässigkeits-UID hing — der Rechner rechnete in die eine
+  Richtung und begründete mit der anderen. Benannt wird nur noch die UID, die die
+  Zuordnung trägt; `hasDestVat` entfällt (war nur noch dafür da).
+- **Incoterm-Gestaltungstipp ersetzt (`detectStructureRisks` Abschnitt F).** Der Text
+  „Lieferkonditionen auf DAP/DDP umstellen → Transport liegt rechtlich beim
+  Lieferanten (auch wenn du die Spedition koordinierst)" war in der Sache falsch:
+  Art. 36a Abs. 3 stellt darauf ab, wer **auf eigene Rechnung** versendet — wer die
+  Spedition weiter selbst beauftragt, behält die Zuordnung. Das Zitat „EuGH C-245/04
+  EMAG: Incoterm bestimmt Transportzuordnung" war zudem eine Fehlzitierung (EMAG
+  entschied, dass in der Kette nur **eine** Lieferung bewegt sein kann). Neu:
+  „Transportorganisation ändern" mit ausdrücklichem Hinweis, dass ein reiner
+  Klauselwechsel nicht genügt und der Incoterm nur Indiz ist. Die Option erscheint
+  nur noch, wenn wir den Transport aktuell selbst veranlassen (`transport === 'middle'`)
+  — beim Lieferanten-Transport war sie ohnehin gegenstandslos. Deckt sich mit der in
+  CLAUDE.md festgehaltenen Linie, Incoterms nicht als eigenen State zu führen.
+- **Tests:** neuer Engine-Fall `RC-HU-DE-BESITZ` (HU-UID vorhanden, **nicht**
+  mitgeteilt → Abs. 1, L1 bewegend) als Gegenprobe zu `RC-HU-DE-LITA` (mitgeteilt →
+  Abs. 2, L2 bewegend) — genau die vom Review benannte Testlücke. `QC4-03`
+  angepasst: der QuickCheck verdrahtet `uidOverride: null` fest und kann die
+  Mitteilung nicht ausdrücken, erwartet also jetzt korrekt die Grundregel
+  (VE/AF statt VD/DH). **56 Output-Tests + 15 Lohn-Tab-Fälle grün**,
+  `check:matrix` unverändert bei **57/63** (Baseline nach Merge von Matrix V1.2,
+  vor dem Merge 55/63 gegen die V1-Sollwerte — in beiden Fällen keine Regression durch
+  diese Änderung), `check`/`check:pages` OK.
+
+> **Offen aus demselben Review** (nicht Teil dieser Änderung, siehe RGR_TODO):
+> Belgien-RC (`_checkRCBlock(BE)`) fachlich beim Steuerberater verifizieren,
+> Matrix als CI-Gate, Deploy-Kopplung an grüne Tests.
+
+---
+
 ## v4.3 · 25.08.2026 — Matrix V1.2: zweite Prüfrunde (57/63)
 
 Die Fachseite hat die Wertkorrekturen aus Runde 1 eingearbeitet (`Matrix_erweitert_V1_2.xlsx`).

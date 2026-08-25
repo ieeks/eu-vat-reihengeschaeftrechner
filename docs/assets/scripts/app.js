@@ -933,9 +933,8 @@ const VATEngine = (() => {
   }
 
   function _applyQuickFix(ctx, chainIndex, label) {
-    const { dep, dest, vatIds, companyHome, uidOverride } = ctx;
+    const { dep, vatIds, companyHome, uidOverride } = ctx;
     const hasDepVat  = !!vatIds[dep];
-    const hasDestVat = !!vatIds[dest];
 
     // Art. 36a Abs. 2: "ansässig" im Abgangsland = Sitz (companyHome) im Abgangsland.
     // EuGH C-628/16 Kreuzmayr: Entscheidend ist die MITGETEILTE UID, nicht der Sitz.
@@ -984,30 +983,42 @@ const VATEngine = (() => {
 
     // ── Automatische Logik (keine manuelle Wahl) ──────────────────────────────
 
-    if (!intermediaryResidentInDep && !hasDepVat) {
-      // § 3 Abs. 15 Z 1 lit. c UStG / Art. 36a Abs. 2 Umkehrschluss:
-      // Zwischenhändler transportiert, teilt aber KEINE dep-Land-UID mit und ist nicht dort ansässig.
-      // → Standardregel greift → L(chainIndex-1) ist bewegte Lieferung (wie Lieferant transportiert).
+    if (!intermediaryResidentInDep) {
+      // Art. 36a Abs. 1 (Grundregel) / § 3 Abs. 15 Z 1 lit. c UStG:
+      // Zwischenhändler transportiert, ist aber nicht im Abgangsland ansässig und hat
+      // KEINE Mitteilung der Abgangsland-UID bestätigt (uidOverride===dep ist oben
+      // abgehandelt). Der bloße BESITZ einer dep-UID löst Abs. 2 NICHT aus — Abs. 2
+      // verlangt, dass die UID dem Lieferanten tatsächlich mitgeteilt wurde.
+      // → Grundregel → L(chainIndex-1) ist bewegte Lieferung.
       // Keine Registrierungspflicht im Abgangsland.
       const movingIndex = Math.max(0, chainIndex - 1);
+      const mitteilungsHinweis = hasDepVat
+        ? `hat zwar eine ${ctx.nameOf(dep)}-UID (${vatIds[dep]}), aber keine Mitteilung an den Vorlieferanten bestätigt`
+        : `hat keine ${ctx.nameOf(dep)}-UID`;
       return {
         movingIndex,
-        rationale: `§ 3 Abs. 15 Z 1 lit. c UStG / Art. 36a Abs. 2 Umkehrschluss: ${label} transportiert, teilt aber keine ${ctx.nameOf(dep)}-UID mit und ist nicht in ${ctx.nameOf(dep)} ansässig → L${movingIndex+1} ist bewegte Lieferung (Standardregel).`,
-        legalBasis: '§ 3 Abs. 15 Z 1 lit. c UStG / Art. 36a Abs. 2 MwStSystRL (Umkehrschluss)',
+        rationale: `Grundregel (Art. 36a Abs. 1): ${label} transportiert, ist nicht in ${ctx.nameOf(dep)} ansässig und ${mitteilungsHinweis} → L${movingIndex+1} ist bewegte Lieferung.${hasDepVat ? ` <em>Wurde die ${ctx.nameOf(dep)}-UID dem Vorlieferanten für diesen Umsatz mitgeteilt, links unter „UID-Wahl Art. 36a" auswählen → dann greift Abs. 2 und L${chainIndex+1} wird bewegt.</em>` : ''}`,
+        legalBasis: 'Art. 36a Abs. 1 MwStSystRL / § 3 Abs. 15 Z 1 lit. c UStG',
         quickFixApplied: false, quickFixVariant: 'lit-c',
         vatIdUsed: null, vatIdCountry: null,
-        euroTyreNote: 'EuGH C-430/09 Euro Tyre: Ohne UID-Mitteilung greift die Standardregel – Transport gehört zur Eingangslieferung.',
+        depVatAvailableNotCommunicated: hasDepVat,
+        euroTyreNote: 'EuGH C-430/09 Euro Tyre: Maßgeblich ist die dem Lieferanten mitgeteilte UID – ohne Mitteilung greift die Grundregel, der Transport gehört zur Eingangslieferung.',
       };
     }
 
 
-    // Art. 36a Abs. 2 lit. b: Zwischenhändler teilt Ansässigkeits-UID (dep=home) oder dest/andere UID mit
-    // → L(chainIndex) ist bewegte Lieferung, Registrierungspflicht im Abgangsland
+    // Art. 36a Abs. 2 lit. b: Zwischenhändler ist im Abgangsland ANSÄSSIG (dep === home)
+    // → seine Ansässigkeits-UID ist zugleich die Abgangsland-UID → L(chainIndex) ist
+    // bewegte Lieferung. (Der Zweig „dest-/andere UID" existiert hier nicht mehr: ohne
+    // Ansässigkeit greift oben die Grundregel, mit uidOverride der Zweig ganz oben.
+    // quickFixVariant bleibt aus Kompatibilitätsgründen 'dest-or-other-id'.)
     const movingIndex = chainIndex;
-    // Wenn uidOverride gesetzt → diese UID im Text verwenden (nicht neu berechnen)
-    const _litBVatCountry = uidOverride && vatIds[uidOverride] ? uidOverride
-                          : (intermediaryResidentInDep && hasDepVat) ? dep
-                          : hasDestVat ? dest : null;
+    // Hier nur noch erreichbar, wenn der Zwischenhändler im Abgangsland ANSÄSSIG ist
+    // (uidOverride oben abgehandelt, Nicht-Ansässigkeit fällt in die Grundregel).
+    // Die genannte UID muss die Entscheidung tragen: das ist die Ansässigkeits-/
+    // Abgangsland-UID. Ohne dep-UID keine Ersatz-UID benennen (sonst begründet der
+    // Text die Zuordnung mit einer UID, die sie gar nicht ausgelöst hat).
+    const _litBVatCountry = hasDepVat ? dep : null;
     const _litBVatId = _litBVatCountry ? vatIds[_litBVatCountry] : null;
     const _litBSuffix = _litBVatCountry === companyHome ? ', Ansässigkeits-UID' : '';
     const vatUsed = _litBVatId
@@ -1318,8 +1329,12 @@ const VATEngine = (() => {
       if (!isMoving && iAmTheBuyer && placeOfSupply && placeOfSupply !== companyHome && !vatIds[placeOfSupply]) {
         const r = ctx.rateOf(placeOfSupply);
         const isTransportB = ctx.transport === 'middle';
-        const altTransport = classifiedSupplies.some(s => s.isMoving) ? 
-          `<strong>Incoterm ändern:</strong> Lieferkonditionen auf DAP/DDP umstellen → Transport liegt rechtlich beim Lieferanten (auch wenn du die Spedition koordinierst), L1 wird bewegte Lieferung, ig. Erwerb in ${ctx.nameOf(companyHome)} mit ${companyHome}-UID. <em>(EuGH C-245/04 EMAG: Incoterm bestimmt Transportzuordnung)</em>` : '';
+        // Art. 36a Abs. 3: maßgeblich ist, wer die Ware selbst oder auf seine Rechnung
+        // versendet — NICHT der vereinbarte Incoterm. Ein bloßer Klauselwechsel bei
+        // unveränderter Transportorganisation verschiebt die Zuordnung nicht; der
+        // Incoterm ist nur Indiz. Option daher nur, wenn wir aktuell selbst veranlassen.
+        const altTransport = isTransportB && classifiedSupplies.some(s => s.isMoving) ?
+          `<strong>Transportorganisation ändern:</strong> Den Transport tatsächlich durch den Lieferanten ausführen lassen — er beauftragt den Frachtführer im eigenen Namen und auf eigene Rechnung → L1 wird bewegte Lieferung, ig. Erwerb in ${ctx.nameOf(companyHome)} mit ${companyHome}-UID. <em>Achtung: Ein reiner Incoterm-Wechsel (z.B. auf DAP/DDP) genügt nicht — beauftragst du die Spedition weiterhin selbst, bleibt die Zuordnung unverändert. Der Incoterm ist nur Indiz, maßgeblich ist die tatsächliche Transportveranlassung (Art. 36a Abs. 3 MwStSystRL); Änderung vertraglich dokumentieren.</em>` : '';
         const lagerTipp = `<strong>Warenfluss unterbrechen:</strong> Ware zuerst ins eigene Lager oder Speditionslager in ${ctx.nameOf(companyHome)} liefern lassen → kein Reihengeschäft mehr, sondern 2 separate Geschäfte: (1) ig. Erwerb ${placeOfSupply}→${companyHome}, (2) Inlandslieferung ${companyHome} an Kunde`;
         // Dreiecksgeschäft nur wenn 3+ verschiedene MS beteiligt
         const uniqueCountries = new Set(ctx.parties.map(p => p.code || p));
@@ -9376,6 +9391,30 @@ const SMOKE_TESTS = [
     }
   },
 
+  // RC-HU-DE-BESITZ: Gegenprobe zu RC-HU-DE-LITA — identische Stammdaten (HU-UID
+  // vorhanden!), aber KEINE Mitteilung an den Vorlieferanten (uidOverride: null).
+  // Art. 36a Abs. 2 verlangt die tatsächliche Mitteilung der Abgangsland-UID; der
+  // bloße Besitz löst die Ausnahme NICHT aus → Grundregel Abs. 1 → L1 bewegend.
+  // Regressionsschutz: früher fiel dieser Fall durch den !hasDepVat-Fallback und
+  // landete fälschlich auf lit. b (L2 bewegend) — mit einer Begründung, die eine
+  // andere UID nannte als die, die die Zuordnung ausgelöst hatte.
+  {
+    id: 'RC-HU-DE-BESITZ',
+    name: 'HU→DE(EPDE+HU-UID)→DE, Transport=Ich, HU-UID NICHT mitgeteilt — Abs. 1, L1 bewegend',
+    source: 'Art. 36a Abs. 1 MwStSystRL / § 3 Abs. 15 Z 1 lit. c UStG AT — Besitz ≠ Mitteilung → Grundregel',
+    company: 'EPDE',
+    ctx: { s1:'HU', s2:'DE', s4:'DE', dep:'HU', dest:'DE', transport:'middle',
+           mode:3, mePosition:2, uidOverride: null,
+           vatIds: { DE:'DE449663039', SI:'SI66423562', LV:'LV90013367396',
+                     EE:'EE102839441', NL:'NL827914052B01', BE:'BE1022245089',
+                     CZ:'CZ687387072', PL:'PL5263841834', HU:'HU12345678' } },
+    expect: {
+      movingIndex: 0,        // Abs. 1 → L1 bewegend, trotz vorhandener HU-UID
+      igLieferung: true,     // L1 = IG-Lieferung HU→DE 0%
+      lieferortL2: 'DE',     // L2 ruhend in DE (19%)
+    }
+  },
+
   // RC-SAPPI-1: DE(Sappi)→DE(EPDE)→IT, Lieferant transportiert, EPDE mit DE-UID (Default)
   // → movingIndex=0, L1 bewegend (IG-Lieferung DE→IT)
   // → Dreiecksgeschäft blockiert: EPDE-DE-UID = dep-Land-UID (Art. 141 lit. b verletzt)
@@ -10461,9 +10500,15 @@ function runOutputTests() {
     { id:'QC4-02', name:'EPDE FR→DE→NL→IT, U2, Kunde holt ab: bewegte L3 andere Parteien, L1/L2 ruhend in FR → Reg. FR',
       company:'EPDE', q4:['FR','DE','NL','IT'], mePos:2, transport:'customer', movingIndex:2, triangle:false,
       boxes:[{role:'in',type:'domestic'},{role:'out',type:'resting'},{role:'info',type:'moving-info'}], regRisk:'FR' },
-    { id:'QC4-03', name:'EPROHA DE→AT→NL→IT, U2, ich transportiere: L1 Eingang VD, L2 IG-Lieferung DH ab DE, L3 ruhend andere Parteien',
-      company:'EPROHA', q4:['DE','AT','NL','IT'], mePos:2, transport:'middle', movingIndex:1, triangle:true,
-      boxes:[{role:'in',type:'domestic',sap:'VD'},{role:'out',type:'ig-lieferung',sap:'DH'},{role:'info',type:'resting-info'}] },
+    // Art. 36a Abs. 1: EPROHA ist nicht in DE ansässig (Sitz AT). Die vorhandene
+    // DE-UID allein verschiebt die Warenbewegung NICHT — dafür müsste sie dem
+    // Vorlieferanten mitgeteilt worden sein. Der QuickCheck kennt diese Tatsache
+    // nicht (ctx.uidOverride ist dort fest null) → Grundregel, L1 bewegend.
+    // Für den Fall "DE-UID mitgeteilt" (→ L2 bewegend, VD/DH) den Hauptmodus mit
+    // expliziter UID-Wahl verwenden; Engine-Abdeckung: RC-HU-DE-LITA/-BESITZ.
+    { id:'QC4-03', name:'EPROHA DE→AT→NL→IT, U2, ich transportiere, DE-UID nicht mitgeteilt: Abs. 1 → L1 bewegend (ig. Erwerb VE)',
+      company:'EPROHA', q4:['DE','AT','NL','IT'], mePos:2, transport:'middle', movingIndex:0, triangle:true,
+      boxes:[{role:'in',type:'ig-erwerb',sap:'VE'},{role:'out',type:'ig-lieferung',sap:'AF'},{role:'info',type:'resting-info'}] },
     { id:'QC4-04', name:'EPDE FR→PL→DE→IT, U3 (ich=C), Lieferant: L1 bewegt andere Parteien, L2 Eingang, L3 IT-RC IC (Ausgang)',
       company:'EPDE', q4:['FR','PL','DE','IT'], mePos:3, transport:'supplier', movingIndex:0, triangle:true,
       boxes:[{role:'info',type:'moving-info'},{role:'in',type:'domestic'},{role:'out',type:'rc',sap:'IC'}] },
@@ -11725,22 +11770,31 @@ function renderUidOverrideBlock() {
 
   if (!opts.length) { $('uidOverrideSection').style.display = 'none'; return; }
 
-  const active = selectedUidOverride || opts[0].country;
-  if (!selectedUidOverride) setState({ uidOverride: opts[0].country });
+  // KEINE Vorauswahl: Art. 36a Abs. 2 setzt voraus, dass die Abgangsland-UID dem
+  // Vorlieferanten TATSÄCHLICH MITGETEILT wurde. Der bloße Besitz genügt nicht.
+  // Würde die dep-UID vorbelegt, unterstellte das Tool eine Tatsache, die es nicht
+  // kennt — und verschöbe die bewegte Lieferung ohne Zutun des Anwenders.
+  // Ohne Wahl bleibt uidOverride null → Engine rechnet die Grundregel Abs. 1.
+  const active = selectedUidOverride;
 
   $('uidOverrideSection').style.display = 'block';
 
   $('uidOverrideSection').innerHTML = `
     <div class="uid-override-block">
-      <div class="uid-override-hdr" onclick="const b=this.nextElementSibling;b.style.display=b.style.display==='none'?'':'none';" style="cursor:pointer">⚖️ UID-Wahl Art. 36a (Zwischenhändler)</div>
+      <div class="uid-override-hdr" onclick="const b=this.nextElementSibling;b.style.display=b.style.display==='none'?'':'none';" style="cursor:pointer">⚖️ UID-Wahl Art. 36a (Zwischenhändler)${active ? '' : ' <span style="font-weight:400;opacity:.75">— offen</span>'}</div>
       <div class="uid-override-body">
+        <div style="font-size:0.68rem;color:var(--tx-3);padding:2px 2px 6px;line-height:1.5">
+          Welche UID hast du dem <strong>Vorlieferanten für diesen Umsatz mitgeteilt</strong>?
+        </div>
         ${opts.map(o => `
           <div class="uid-opt${active===o.country?' active':''}" onclick="setUidOverride('${o.country}')">
             <span style="flex:1;font-size:0.8rem">${o.label}</span>
             <span class="uid-opt-val">${o.uid}</span>
           </div>`).join('')}
         <div style="font-size:0.68rem;color:var(--tx-3);padding:4px 2px;line-height:1.5">
-          Die gewählte UID bestimmt ob L${transportIdx+1} (vor) oder L${transportIdx+2} (nach dir) die bewegte Lieferung ist.
+          ${active
+            ? `Die gewählte UID bestimmt ob L${transportIdx+1} (vor) oder L${transportIdx+2} (nach dir) die bewegte Lieferung ist.`
+            : `<strong>Noch nicht gewählt</strong> — bis dahin gilt die Grundregel Art. 36a Abs. 1: L${transportIdx+1} (vor dir) ist die bewegte Lieferung. Nur eine tatsächlich mitgeteilte Abgangsland-UID verschiebt sie auf L${transportIdx+2} (Abs. 2).`}
         </div>
       </div>
     </div>`;
