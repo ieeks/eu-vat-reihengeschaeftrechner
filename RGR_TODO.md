@@ -4,6 +4,27 @@ Stand: 20.05.2026
 
 ---
 
+## EXW / Incoterms — live (25.08.2026)
+
+Bewusste Grundsatzentscheidung: **kein eigener Incoterm-State.** Incoterms haben keine eigene
+umsatzsteuerliche Wirkung — sie sind nur Indiz für Transportveranlasser (Art. 36a),
+Verfügungsmacht/Lieferort und Einführer, und alle drei fragt das Tool bereits einzeln ab.
+
+- [x] Einführer-Toggle zeigt die **Rolle** (Wir/Kunde/Lieferant), Incoterm nur als Zusatz
+      — Sammel-Label „Kunde (DAP/EXW)" entfernt (EXW ↔ DAP sind bei der Transportzuordnung Gegensätze)
+- [x] Indiz-Note unter dem Toggle (nur 3P/4P): Transportzuordnung kommt aus dem Transport-Feld
+- [x] `_exwExportHint()` — EXW mit Drittlandskunde: Ausführer muss EU-ansässig sein
+      (Art. 1 Nr. 19 UZK-DA), Empfehlung FCA; in allen 2P- und 3P-Drittland-Exportpfaden
+- [x] Tests `OT-M2-EXW-EXPORT`, `OT-3RD-IMPORTER-TOGGLE-LABELS`
+- [ ] **Offen (SAP):** Die SAP-Findung modelliert EXW als eigenes Feld und dreht die UID aufs
+      **Lieferantenland** — `buildSapInputHint`/`SAP_CUSTTAX_MAP` kennen diese Dimension nicht,
+      für denselben Fall können Tool und SAP also abweichende MWSKZ ergeben. Inhaltlich geführt
+      wird der Punkt in den Abschnitten **„Matrix V1"** und **„SAP-Findung Plants Abroad:
+      EXW-Fallback"** weiter unten (inkl. Fallback ohne UID im Lieferantenland); hier nur der
+      Verweis. Falls überhaupt, dann als reiner SAP-Eingabe-Hinweis — **nicht** als Steuerlogik.
+
+---
+
 ## Matrix V1 — offene Punkte aus der Prüfung (25.08.2026)
 
 Vollständiger Bericht: `vat-knowledge/plants_abroad/PRUEFUNG_V1.md`
