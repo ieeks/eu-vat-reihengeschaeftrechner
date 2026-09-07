@@ -65,7 +65,9 @@ Steuerrechtliche Beratung (2024) hat explizit bestätigt, dass die SI-Registrier
 **Output-Transparenz (Session 18):** `buildNormal3Result` zeigt im Expertenmodus bei `blocked-by-dest-vat` einen erklärenden Hinweis:
 > „Konservative Auslegung (Art. 141 lit. a MwStSystRL): Das Tool blockiert Dreiecksgeschäfte sobald eine UID im Bestimmungsland vorliegt — auch ohne dortige Niederlassung. Steuerrechtlich bestätigt für [Unternehmen]. Liberalere Auslegung (VwGH Ro 2020/15/0003) existiert, wird aber bewusst nicht angewendet."
 
-**Langfristiger Revisionspfad:** `establishments`-Array in COMPANIES → `vatIds[dest]`-Check durch `establishments.includes(dest)` ersetzen in `_detectTriangle3()` und `_detectTriangle4()`. Nur nach erneuter steuerrechtlicher Beratung.
+**Länderstand:** Welcher Mitgliedstaat Art. 141 lit. a wie auslegt, ist in [`vat-knowledge/eu/art141_dest_registration.md`](vat-knowledge/eu/art141_dest_registration.md) je Land dokumentiert (8 Länder mit UID ohne Niederlassung, Quellenqualität A/B/C). Stand 09/2026: nur DE und AT sind belegt — und dort ist die strenge Lesart **nicht** die Rechtslage; SI beruht auf interner Beratung, die übrigen sechs Zeilen sind offen.
+
+**Langfristiger Revisionspfad:** `establishments`-Array in COMPANIES → `vatIds[dest]`-Check durch `establishments.includes(dest)` ersetzen in `_detectTriangle3()` und `_detectTriangle4()`. Nur nach erneuter steuerrechtlicher Beratung — und frühestens, wenn die betroffene Länderzeile auf Quellenqualität A steht.
 
 ---
 

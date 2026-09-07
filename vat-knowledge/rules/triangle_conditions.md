@@ -77,6 +77,11 @@ bedeuten.
 
 **Das Tool wählt bewusst die compliance-sichere Option.**
 
+> Welches Land diese Frage wie beantwortet — inkl. Quellenqualität und offener
+> Punkte — steht in [`../eu/art141_dest_registration.md`](../eu/art141_dest_registration.md).
+> Für DE (§ 25b Abs. 2 Nr. 2 UStG) und AT (VwGH Ro 2020/15/0003) ist die strenge
+> Lesart nachweislich **nicht** die Rechtslage; für SI/NL/BE/CZ/PL/LV/EE ist sie ungeprüft.
+
 ### Betroffene Länder für EPDE
 SI, LV, EE, NL, BE, CZ, PL — alle mit UID aber ohne Niederlassung.
 In diesen 7 Ländern blockiert die UID das Dreiecksgeschäft,

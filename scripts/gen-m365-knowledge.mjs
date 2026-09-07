@@ -37,6 +37,7 @@ const SHARED = [
   ['EU · Art. 36a MwStSystRL',      'vat-knowledge/eu/art36a_mwstrl.md'],
   ['EU · Art. 138 MwStSystRL',      'vat-knowledge/eu/art138_mwstrl.md'],
   ['EU · Art. 141 Dreieck',         'vat-knowledge/eu/art141_triangle.md'],
+  ['EU · Art. 141 Länderstand',     'vat-knowledge/eu/art141_dest_registration.md'],
   ['EU · Quick Fixes 2020',         'vat-knowledge/eu/quick_fixes_2020.md'],
   ['AT · Reihengeschäft',           'vat-knowledge/at/ustg_at_reihengeschaeft.md'],
   ['AT · Dreiecksgeschäft',         'vat-knowledge/at/ustg_at_dreieck.md'],

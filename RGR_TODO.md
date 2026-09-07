@@ -18,6 +18,29 @@ da es den Stand vor V1.2 geprüft hat).
 - [x] **VAT-H05** — Incoterm-Gestaltungstipp ersetzt (Art. 36a Abs. 3, EMAG-Fehlzitat raus)
 - [x] Regressionstest `RC-HU-DE-BESITZ` (dep-UID vorhanden, nicht mitgeteilt)
 
+## Art. 141 lit. a — Länderstand (Datei: `vat-knowledge/eu/art141_dest_registration.md`)
+
+Die Übersicht steht, die Antworten fehlen. Jede Zeile auf **Q=A** zu heben ist Beraterarbeit,
+kein Code. Fragenkatalog (5 wortgleiche Fragen) steht in der Datei.
+
+- [ ] **SI (P0, wirtschaftlich größter Hebel).** Beratungsbeleg 2024 ist der einzige Anker und
+      nicht als lit.-a-Analyse dokumentiert. Klären: einschlägiger ZDDV-1-Artikel, Wortlaut
+      ansässig vs. erfasst, FURS-Praxis, Möglichkeit einer verbindlichen Auskunft. Hintergrund:
+      bei SI als Bestimmungsland werden 22 % vorfinanziert, ein Inlands-RC steht nicht zur
+      Verfügung (čl. 76 ZDDV-1) — Dreieck oder Abmeldung sind die einzigen Hebel.
+- [ ] **NL/BE/CZ/PL/LV/EE.** Vollständig offen. Achtung: die vorhandenen Einträge zu diesen
+      Ländern betreffen das Inlands-RC (Art. 194), **nicht** Art. 141 lit. a.
+- [ ] **DE + AT von Q=B auf Q=A.** § 25b UStG / Abschn. 25b.1 UStAE bzw. VwGH Ro 2020/15/0003
+      im Original nachziehen (in der Session egress-blockiert). Beim VwGH zusätzlich das Datum
+      klären — Literatur nennt teils 15.12.2021, teils 17.12.2021.
+- [ ] **`EuG T-646/24` verifizieren.** In `eu/art141_triangle.md:18` und
+      `rechtskonformitaet.md:34` als Beleg für die 4-Parteien-Anwendung zitiert. „T"-Nummern
+      sind Verfahren des **Gerichts**, das keine Vorabentscheidungen zur MwStSystRL entscheidet
+      — plausibler wäre ein „C"-Aktenzeichen. Gegen curia.europa.eu prüfen; nach dem
+      EMAG-Fehlzitat aus Session 24 nicht ungeprüft stehen lassen.
+
+---
+
 **Offen — fachlich, mit Steuerberater klären:**
 - [ ] **VAT-H02 · Belgien (P0).** `_checkRCBlock(BE)` sperrt RC, sobald eine BE-UID ohne
       BE-Betriebsstätte vorliegt („Direktregistrierung ohne Betriebsstätte → kein RC").

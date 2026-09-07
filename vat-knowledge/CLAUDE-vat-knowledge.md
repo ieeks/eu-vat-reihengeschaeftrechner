@@ -113,6 +113,7 @@ uidOverride > selectedUidOverride > companyHome
 
 **Dreiecksgeschäft-Blocker:**
 - B verwendet dest-UID → Art. 141 lit. a verletzt → kein Dreiecksgeschäft
+- B *besitzt* eine dest-UID (ohne sie zu verwenden) → Tool blockt ebenfalls — das ist **interne Policy (D1)**, nicht in allen MS die Rechtslage. Länderstand: [`eu/art141_dest_registration.md`](eu/art141_dest_registration.md)
 - B verwendet UID aus Land von A (s1) → A kann nicht steuerfrei fakturieren → blockiert
 
 ---
@@ -123,6 +124,7 @@ uidOverride > selectedUidOverride > companyHome
 - [`art36a_mwstrl.md`](eu/art36a_mwstrl.md) — Art. 36a MwStSystRL: Zuordnung der Warenbewegung, Quick Fix lit. a/b/c
 - [`art138_mwstrl.md`](eu/art138_mwstrl.md) — Art. 138 MwStSystRL: Steuerbefreiung IG-Lieferung, Belegnachweis
 - [`art141_triangle.md`](eu/art141_triangle.md) — Art. 141 MwStSystRL: Dreiecksgeschäft, EuGH Luxury Trust, 4-Parteien
+- [`art141_dest_registration.md`](eu/art141_dest_registration.md) — **Art. 141 lit. a Länderübersicht**: blockt eine bloße Registrierung im Bestimmungsland? 8 Länder mit UID ohne Niederlassung, Quellenqualität A/B/C, Fragenkatalog für lokale Berater
 - [`quick_fixes_2020.md`](eu/quick_fixes_2020.md) — RL 2018/1910/EU: Alle 4 Quick Fixes, Euro Tyre, Kreuzmayr
 
 ### Österreich (`at/`)
