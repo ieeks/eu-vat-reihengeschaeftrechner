@@ -2,6 +2,41 @@
 
 ---
 
+## v4.3 · 07.09.2026 — Länderübersicht Art. 141 lit. a (Registrierung im Bestimmungsland)
+
+Reine Wissensbasis-Erweiterung, **keine Codeänderung, keine Steuerlogik**. Anlass war ein
+konkreter Fall (SE-Lieferant → EPDE → SI-Kunde, Umstellung von slowenischer Inlands-MwSt
+auf ein Dreiecksgeschäft über die DE-UID) und die Frage, welche Mitgliedstaaten eine bloße
+Registrierung im Bestimmungsland als schädlich ansehen.
+
+- **Neu: `vat-knowledge/eu/art141_dest_registration.md`.** Länderübersicht zu Art. 141 lit. a
+  für die **8 Länder, in denen EPDE/EPROHA eine UID ohne Betriebsstätte halten**
+  (EPDE: SI/LV/EE/NL/BE/CZ/PL · EPROHA: DE), AT als Referenzauslegung. Bewusst **nicht**
+  EU-27: die Primärquellen (eur-lex, gesetze-im-internet, RIS) waren in der Session nicht
+  abrufbar, eine 27-Zeilen-Matrix wäre in weiten Teilen geraten gewesen.
+- **Quellenqualität A/B/C je Zeile.** Ehrlicher Ist-Stand: **DE** (§ 25b Abs. 2 Nr. 2 UStG —
+  „nicht **ansässig**", Registrierung unschädlich) und **AT** (VwGH Ro 2020/15/0003) auf B;
+  **SI** auf C mit dem Beratungsbeleg von 2024 als einziger Stütze; **NL/BE/CZ/PL/LV/EE**
+  vollständig offen. Damit ist dokumentiert, dass die D1-Policy in mindestens zwei von neun
+  Zeilen **nicht** der Rechtslage entspricht, sondern konservative Wahl ist.
+- **Abgrenzung dreier Fragen** festgehalten, die im Repo bisher ineinanderliefen:
+  (1) Registrierung von **B** → Dreieck blockiert? (2) Inlands-RC bei Direktregistrierung
+  nach Art. 194 → `rules/rc_country_rules.md`; (3) Ansässigkeit von **C** in NL → § D2.
+  Die vorhandene Ländertabelle „Regel 4" beantwortet **Frage 2** und ist für Frage 1 keine
+  Vorarbeit — für BE/CZ/PL/LV/EE steht dort nichts Verwertbares.
+- **EuGH-Einordnung präzisiert:** **C-580/16 „Firma Hans Bühler KG"** betrifft die
+  Registrierung im **Abgangs**mitgliedstaat (lit. c), nicht im Bestimmungsland; ein
+  EuGH-Urteil direkt zur Bestimmungsland-Registrierung existiert nicht. Der VwGH bindet
+  nur Österreich. Zweites, von der Registrierungsfrage unabhängiges Tor ergänzt: dieselbe
+  UID gegenüber Lieferant **und** Kunde, erteilt von einem MS ≠ Abgang/Bestimmung.
+- **Fragenkatalog für lokale Berater** (5 wortgleiche Fragen je Land), damit die offenen
+  Zeilen vergleichbar auf Q=A gehoben werden können.
+- **Verlinkt** aus `CLAUDE-vat-knowledge.md` (Dateiindex + Regel 5), `eu/art141_triangle.md`,
+  `rules/triangle_conditions.md` und `rechtskonformitaet.md` § D1; in die M365-Wissensbasen
+  aufgenommen (`scripts/gen-m365-knowledge.mjs`, beide Bundles neu generiert).
+
+---
+
 ## v4.3 · 25.08.2026 — Art. 36a: Besitz ≠ Mitteilung (UID-Vorwahl entfernt) + Incoterm-Tipp korrigiert
 
 Aufarbeitung aus dem externen Code- & USt-Review vom 25.08.2026 (Findings VAT-H01,

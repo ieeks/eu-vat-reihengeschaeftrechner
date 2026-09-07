@@ -24,15 +24,16 @@
 12. EU · Art. 36a MwStSystRL
 13. EU · Art. 138 MwStSystRL
 14. EU · Art. 141 Dreieck
-15. EU · Quick Fixes 2020
-16. AT · Reihengeschäft
-17. AT · Dreiecksgeschäft
-18. DE · § 3 Abs. 6a UStG
-19. DE · UStAE Reihengeschäft
-20. NL · Wet OB Reihengeschäft
-21. CH · Ort der Lieferung
-22. CH · Konsignationslager
-23. AT · EPROHA-Buchungskreise
+15. EU · Art. 141 Länderstand
+16. EU · Quick Fixes 2020
+17. AT · Reihengeschäft
+18. AT · Dreiecksgeschäft
+19. DE · § 3 Abs. 6a UStG
+20. DE · UStAE Reihengeschäft
+21. NL · Wet OB Reihengeschäft
+22. CH · Ort der Lieferung
+23. CH · Konsignationslager
+24. AT · EPROHA-Buchungskreise
 
 ---
 # 1. Firmenkontext EPROHA
@@ -115,6 +116,7 @@ die ruhende Lieferung ist die Dreieckslieferung → AF.
 | Dreiecksgeschäft AT | `at/ustg_at_dreieck.md` |
 | Dreiecksgeschäft DE | `de/ustae_reihengeschaeft.md` |
 | NL-RC / NL-Dreieck (Art. 12 / Art. 37c Wet OB) | `nl/wet_ob_nl_reihengeschaeft.md` |
+| `computeLohn()` / Modus 5 Lohnveredelung | `eu/art17_verbringen.md` |
 | Quick Fix allgemein | `eu/quick_fixes_2020.md` |
 | IG-Lieferung / Art. 138 | `eu/art138_mwstrl.md` |
 | DE § 3 Abs. 6a / § 13b | `de/ustg_de_3_6a.md` |
@@ -203,6 +205,7 @@ uidOverride > selectedUidOverride > companyHome
 
 **Dreiecksgeschäft-Blocker:**
 - B verwendet dest-UID → Art. 141 lit. a verletzt → kein Dreiecksgeschäft
+- B *besitzt* eine dest-UID (ohne sie zu verwenden) → Tool blockt ebenfalls — das ist **interne Policy (D1)**, nicht in allen MS die Rechtslage. Länderstand: [`eu/art141_dest_registration.md`](eu/art141_dest_registration.md)
 - B verwendet UID aus Land von A (s1) → A kann nicht steuerfrei fakturieren → blockiert
 
 ---
@@ -213,6 +216,7 @@ uidOverride > selectedUidOverride > companyHome
 - [`art36a_mwstrl.md`](eu/art36a_mwstrl.md) — Art. 36a MwStSystRL: Zuordnung der Warenbewegung, Quick Fix lit. a/b/c
 - [`art138_mwstrl.md`](eu/art138_mwstrl.md) — Art. 138 MwStSystRL: Steuerbefreiung IG-Lieferung, Belegnachweis
 - [`art141_triangle.md`](eu/art141_triangle.md) — Art. 141 MwStSystRL: Dreiecksgeschäft, EuGH Luxury Trust, 4-Parteien
+- [`art141_dest_registration.md`](eu/art141_dest_registration.md) — **Art. 141 lit. a Länderübersicht**: blockt eine bloße Registrierung im Bestimmungsland? 8 Länder mit UID ohne Niederlassung, Quellenqualität A/B/C, Fragenkatalog für lokale Berater
 - [`quick_fixes_2020.md`](eu/quick_fixes_2020.md) — RL 2018/1910/EU: Alle 4 Quick Fixes, Euro Tyre, Kreuzmayr
 
 ### Österreich (`at/`)
@@ -865,14 +869,31 @@ uidOverride && vatIds[uidOverride] !== undefined
 
 ### Automatische Logik (kein Override)
 ```
-!intermediaryResidentInDep && !hasDepVat
-  → lit. c (Umkehrschluss) → movingIndex = chainIndex - 1
+!intermediaryResidentInDep
+  → Grundregel Abs. 1 → movingIndex = chainIndex - 1
   → quickFixApplied: false, quickFixVariant: 'lit-c'
+  → depVatAvailableNotCommunicated: true, wenn dep-UID vorhanden (Hinweistext)
 
-sonst (ansässig ODER dep-UID vorhanden)
+sonst (im Abgangsland ansässig)
   → lit. b → movingIndex = chainIndex
-  → _litBVatCountry: uidOverride > dep(wenn resident+hasDepVat) > dest > null
+  → _litBVatCountry: dep (wenn hasDepVat), sonst null
 ```
+
+> **Besitz ≠ Mitteilung.** Art. 36a Abs. 2 verlangt, dass der Zwischenhändler dem
+> Lieferanten die Abgangsland-UID **tatsächlich mitgeteilt** hat. Das bloße
+> Vorhandensein einer dep-UID in den Stammdaten löst die Ausnahme daher NICHT aus —
+> die Mitteilung ist eine Tatsache, die nur über `uidOverride` (UI: „UID-Wahl
+> Art. 36a") eingegeben werden kann. Ohne Wahl gilt die Grundregel Abs. 1.
+>
+> Entsprechend gibt es **keine Vorauswahl** in `renderUidOverrideBlock()`; die
+> Optionsliste startet zwar mit der dep-UID (sie ist die rechtlich bemerkenswerte),
+> aktiv ist aber keine, bis der Anwender klickt.
+>
+> Die im lit.-b-Text genannte UID muss die Zuordnung auch tragen: benannt wird nur
+> die dep-/Ansässigkeits-UID, keine Ersatz-UID aus dem Bestimmungsland.
+>
+> Regressionstests: `RC-HU-DE-LITC` (keine dep-UID) · `RC-HU-DE-BESITZ` (dep-UID
+> vorhanden, nicht mitgeteilt → Abs. 1) · `RC-HU-DE-LITA` (mitgeteilt → Abs. 2).
 
 ## Return-Objekte
 Jedes Ergebnis enthält exakt:
@@ -1011,6 +1032,11 @@ würde die liberale Position ein erhebliches Nachforderungsrisiko
 bedeuten.
 
 **Das Tool wählt bewusst die compliance-sichere Option.**
+
+> Welches Land diese Frage wie beantwortet — inkl. Quellenqualität und offener
+> Punkte — steht in [`../eu/art141_dest_registration.md`](../eu/art141_dest_registration.md).
+> Für DE (§ 25b Abs. 2 Nr. 2 UStG) und AT (VwGH Ro 2020/15/0003) ist die strenge
+> Lesart nachweislich **nicht** die Rechtslage; für SI/NL/BE/CZ/PL/LV/EE ist sie ungeprüft.
 
 ### Betroffene Länder für EPDE
 SI, LV, EE, NL, BE, CZ, PL — alle mit UID aber ohne Niederlassung.
@@ -1202,8 +1228,18 @@ rcApplicable && rcBlockReason && !rcBlocked && iAmTheSeller
 ### (F) resting-buyer-no-uid — severity: 'error'
 Ruhende Lieferung, ich bin Käufer, fremdes Land, keine UID dort.
 → Lieferant fakturiert lokale MwSt, kein Vorsteuerabzug möglich.
-Bietet Optionen: Incoterm ändern, Warenfluss unterbrechen, Registrierung,
-Dreiecksgeschäft (wenn ≥ 3 verschiedene MS beteiligt).
+Bietet Optionen: Transportorganisation ändern, Warenfluss unterbrechen,
+Registrierung, Dreiecksgeschäft (wenn ≥ 3 verschiedene MS beteiligt).
+
+> **Kein Incoterm-Wechsel als Gestaltungstipp.** Art. 36a Abs. 3 stellt darauf ab,
+> wer die Ware selbst oder **auf seine Rechnung** versendet — nicht auf die
+> vereinbarte Klausel. Der frühere Text („auf DAP/DDP umstellen → Transport liegt
+> rechtlich beim Lieferanten, auch wenn du die Spedition koordinierst") war
+> irreführend und stützte sich zudem auf eine Fehlzitierung von EuGH C-245/04
+> (EMAG entschied, dass in der Kette nur EINE Lieferung bewegt sein kann, nicht
+> dass Incoterms die Zuordnung bestimmen). Die Option verlangt jetzt die
+> tatsächliche Änderung der Transportveranlassung und wird nur noch angezeigt,
+> wenn wir aktuell selbst veranlassen (`ctx.transport === 'middle'`).
 
 ## triangleMitigatesReg
 ```js
@@ -1566,6 +1602,9 @@ Art. 197 (Steuerschuld geht auf C über, Reverse Charge).
 
 ## 5 Bedingungen (lit. a–e)
 - **(a)** B (Erwerber) ist NICHT im Bestimmungsland (dest) registriert
+  > Richtlinienwortlaut ist „nicht **niedergelassen**". Dass das Tool schon die
+  > bloße Registrierung blocken lässt, ist bewusste Policy (D1) — Länderstand und
+  > Belege: [`art141_dest_registration.md`](art141_dest_registration.md)
 - **(b)** Erwerb erfolgt zum Zweck der anschließenden Weiterlieferung
 - **(c)** C (Empfänger) sitzt im Bestimmungsland
 - **(d)** C wird als Steuerschuldner benannt (RC, Art. 197)
@@ -1597,7 +1636,183 @@ von A verwendet, kann A nicht steuerfrei fakturieren → Dreiecksgeschäft block
 
 ---
 
-# 15. EU · Quick Fixes 2020
+# 15. EU · Art. 141 Länderstand
+<!-- Quelle: vat-knowledge/eu/art141_dest_registration.md -->
+
+# Art. 141 lit. a — Registrierung im Bestimmungsland (Länderübersicht)
+
+**Leitfrage:** Blockiert eine bloße USt-Registrierung **ohne Niederlassung** im
+Bestimmungsland die Dreiecksgeschäfts-Vereinfachung?
+
+Diese Datei ist die Landkarte hinter der bewussten Abweichung **D1** in
+[`rechtskonformitaet.md`](../../rechtskonformitaet.md) — und zugleich der
+**Fragenkatalog** für lokale Berater. Sie enthält **keine Steuerlogik** und ändert
+nichts am Code: `_detectTriangle3()` / `_detectTriangle4()` blocken weiterhin bei
+vorhandener `vatIds[dest]`.
+
+## Geltungsbereich
+
+Nur die **8 Länder, in denen EPDE/EPROHA eine UID ohne Betriebsstätte halten** —
+dort und nur dort greift die D1-Policy. AT ist als Referenzauslegung mitgeführt,
+ist aber kein Anwendungsfall (EPROHA ist in AT ansässig).
+
+| Gesellschaft | Sitz (`establishments`) | UID ohne Niederlassung |
+|---|---|---|
+| EPDE | DE | SI · LV · EE · NL · BE · CZ · PL |
+| EPROHA | AT | DE (CH = Drittland, nicht einschlägig) |
+
+## ⚠️ Drei Fragen, die gern verwechselt werden
+
+| # | Frage | Fundstelle |
+|---|---|---|
+| 1 | **B** im Bestimmungsland registriert → Dreieck blockiert? | **diese Datei** |
+| 2 | Inlands-RC trotz Direktregistrierung des Lieferanten (Art. 194)? | [`rules/rc_country_rules.md`](../rules/rc_country_rules.md) |
+| 3 | Muss **C** im Bestimmungsland *ansässig* sein (NL: „gevestigd")? | `rechtskonformitaet.md` § D2 |
+
+Die vorhandene Ländertabelle in `CLAUDE-vat-knowledge.md` („Regel 4") beantwortet
+**Frage 2**, nicht Frage 1. Sie darf für diese Datei **nicht** als Vorarbeit
+verbucht werden.
+
+## EU-Ebene — der gemeinsame Ausgangspunkt
+
+- **Wortlaut Art. 141 lit. a MwStSystRL:** Erwerb durch einen „**nicht in diesem
+  Mitgliedstaat niedergelassenen**, jedoch in einem anderen Mitgliedstaat für
+  Mehrwertsteuerzwecke erfassten Steuerpflichtigen". Der Text stellt auf
+  **Niederlassung** ab, nicht auf Registrierung.
+- **Explanatory Notes Quick Fixes 2020, Beispiel 8 (S. 66):** der mittlere
+  Unternehmer ist in zwei MS registriert — die Vereinfachung gilt dennoch.
+  Nicht bindend, aber Kommissionsauffassung.
+- **EuGH C-580/16 „Firma Hans Bühler KG" (19.04.2018):** betrifft die Registrierung
+  im **Abgangs**mitgliedstaat (lit. c), nicht im Bestimmungsland. Kernaussage,
+  die hierher übertragen wird: maßgeblich ist die für den konkreten Erwerb
+  **verwendete** UID, nicht der bloße Besitz weiterer UIDs. Zweck des Art. 141
+  laut Gerichtshof: dem mittleren Unternehmer die Registrierung im Bestimmungsland
+  **ersparen**.
+- **Kein EuGH-Urteil direkt zur Bestimmungsland-Registrierung** (Stand 09/2026).
+  Die einzige einschlägige Höchstgerichtsentscheidung ist national (AT, s. u.)
+  und bindet ausschließlich Österreich.
+
+**Zweites, unabhängiges Tor — gilt in *jedem* Land:** Selbst wo die Registrierung
+unschädlich ist, muss gegenüber Lieferant **und** Kunde **dieselbe** UID verwendet
+werden, erteilt von einem MS, der weder Abgangs- noch Bestimmungsland ist
+(Art. 141 lit. c; DE: § 25b Abs. 2 Nr. 2 UStG). Die Bestimmungsland-UID auch nur
+gegenüber einer Seite zu verwenden, kippt den Fall in jeder Auslegung.
+
+## Quellenqualität
+
+| Stufe | Bedeutung |
+|---|---|
+| **A** | Primärquelle (Gesetzestext / Judikatur / verbindliche Auskunft) im Original geprüft |
+| **B** | Sekundärliteratur oder Verwaltungsanweisung, Primärtext nicht selbst eingesehen |
+| **C** | Ungeprüft / nur interne Annahme — **nicht als Rechtsauskunft verwenden** |
+
+## Matrix
+
+| Land | Nationale Norm (Art.-141-Umsetzung) | Wortlaut | Verwaltungspraxis / Judikatur | Blockt bloße Registrierung? | Q |
+|---|---|---|---|---|---|
+| **DE** (EPROHA) | § 25b Abs. 2 Nr. 2 UStG | „nicht **ansässig**" | — | **nein** | **B** |
+| **SI** (EPDE) | ZDDV-1 — Artikel ⟶ offen | ⟶ offen | Steuerberatung 2024: SI-Registrierung ⇒ mit SI-MwSt fakturieren | **ja** (angenommen) | **C** |
+| **NL** (EPDE) | Art. 37c Wet OB 1968 | ⟶ offen *für lit. a* | Belastingdienst richtlinienkonform-mild (belegt nur für Bedingung zu **C**) | ⟶ offen | **C** |
+| **BE** (EPDE) | ⟶ offen | ⟶ offen | ⟶ offen | ⟶ offen | **C** |
+| **CZ** (EPDE) | ⟶ offen | ⟶ offen | ⟶ offen | ⟶ offen | **C** |
+| **PL** (EPDE) | ⟶ offen | ⟶ offen | ⟶ offen | ⟶ offen | **C** |
+| **LV** (EPDE) | ⟶ offen | ⟶ offen | ⟶ offen | ⟶ offen | **C** |
+| **EE** (EPDE) | ⟶ offen | ⟶ offen | ⟶ offen | ⟶ offen | **C** |
+| *AT (Referenz)* | Art. 25 UStG 1994 | ansässig | VwGH Ro 2020/15/0003; UStR Rz 4150 | **nein** | **B** |
+
+## Länderdetails
+
+### DE — § 25b Abs. 2 Nr. 2 UStG · Q=B
+Verlangt, dass der erste Abnehmer im Mitgliedstaat des Beförderungsendes „nicht
+**ansässig**" ist, und dass er gegenüber erstem Lieferer und letztem Abnehmer
+dieselbe UID verwendet, die ihm von einem anderen MS als dem des Beginns oder
+Endes der Beförderung erteilt wurde. Eine Registrierung im Bestimmungsland ist
+danach **unschädlich**.
+**Relevanz:** EPROHA mit DE-UID; EPDE-Ausgangsseite in jeder Dreieckskette.
+**Offen:** Primärtext nicht selbst eingesehen (egress-blockiert, 07.09.2026) —
+nur über Sekundärquellen bestätigt. Für Q=A: § 25b UStG + Abschn. 25b.1 UStAE
+im Original nachziehen.
+
+### SI — Q=C · **derzeit der teuerste Fall**
+Die interne Steuerberatung (2024) hat bestätigt, dass die SI-Registrierung von
+EPDE dazu führt, dass mit slowenischer MwSt fakturiert werden muss. Ob diese
+Aussage eine ausdrückliche Analyse von Art. 141 lit. a war oder aus der
+Registrierung heraus verallgemeinert wurde, ist **nicht dokumentiert**.
+**Offen:** (1) einschlägiger ZDDV-1-Artikel; (2) Wortlaut ansässig vs. erfasst;
+(3) FURS-Praxis; (4) ob eine verbindliche Auskunft eingeholt werden kann.
+**Wirtschaftliche Relevanz:** hoch — 22 % Vorfinanzierung bei jedem Strom mit
+SI als Bestimmungsland. Ein Inlands-RC steht nicht zur Verfügung
+(čl. 76 ZDDV-1, s. `rules/rc_country_rules.md`), die Umstellung auf ein Dreieck
+ist also der einzige Hebel — neben der Aufgabe der SI-Registrierung.
+
+### NL — Art. 37c Wet OB 1968 · Q=C für diese Frage
+`nl/wet_ob_nl_reihengeschaeft.md` ist gegen Primärquellen verifiziert, betrifft
+aber die **Ansässigkeit von C** (Art. 37c onderdeel b i.V.m. Art. 12 lid 3), nicht
+die Registrierung von **B**. Die dort belegte milde Belastingdienst-Praxis lässt
+sich **nicht** ohne Weiteres auf lit. a übertragen.
+**Offen:** Umsetzung von Art. 141 lit. a im Wet OB und die Praxis dazu.
+
+### BE · CZ · PL · LV · EE — Q=C, vollständig offen
+Für diese fünf Länder existiert im Repo **keine** Aussage zu Art. 141 lit. a.
+Die vorhandenen Einträge (Art. 51 §2 5° WBTW, § 92a ZDPH, Art. 17 Abs. 1 Nr. 5
+ustawa o VAT, Art. 141 PVN likums, KMSS § 41¹) betreffen ausschließlich das
+Inlands-RC (Frage 2 oben) und sagen nichts über die Dreiecksvereinfachung.
+
+### AT — Referenz, bindet nur Österreich
+**VwGH 15.12.2021, Ro 2020/15/0003:** eine Registrierung im Bestimmungsland ohne
+Sitz/Betriebsstätte ist unschädlich, solange für den konkreten Erwerb die UID
+eines anderen MS verwendet wird; UStR Rz 4150 wurde angepasst.
+**Offen:** Datum in der Literatur teils mit 17.12.2021 angegeben — am Original
+(RIS) abgleichen.
+
+## Fragenkatalog für lokale Berater
+
+Pro offenem Land wortgleich stellen, damit die Antworten vergleichbar bleiben:
+
+1. Wie setzt das nationale Recht Art. 141 lit. a um — „**nicht ansässig**" oder
+   „nicht für MwSt-Zwecke **erfasst**"? Bitte Norm mit Artikel-/Paragrafenangabe.
+2. Ist die Vereinfachung anwendbar, wenn der mittlere Unternehmer im
+   Bestimmungsland **registriert, aber nicht ansässig** ist und für den konkreten
+   Umsatz durchgängig die UID eines dritten MS verwendet?
+3. Falls nein: stützt sich das auf Gesetzeswortlaut, Verwaltungsanweisung oder
+   Prüfungspraxis? Gibt es dazu veröffentlichte Entscheidungen?
+4. Gibt es die Möglichkeit einer **verbindlichen Auskunft**, und mit welcher
+   Bearbeitungsdauer?
+5. Wie ist die Rechtsfolge bei Nichtanerkennung — nur Nachversteuerung im
+   Bestimmungsland, oder zusätzlich Erwerbsbesteuerung nach Art. 41 MwStSystRL
+   (DE: § 3d Satz 2 UStG) ohne Vorsteuerabzug?
+
+## Was das für das Tool bedeutet
+
+**Nichts — vorerst.** D1 bleibt: solange eine Zeile auf Q=C steht, ist die
+konservative Blockade die compliance-sichere Wahl. Eine Lockerung kommt
+frühestens infrage, wenn eine Länderzeile **Q=A** *und* „blockt: nein" trägt —
+und dann pro Land, nicht global. Der technische Revisionspfad (Umstellung von
+`vatIds[dest]` auf `establishments.includes(dest)`) ist in
+[`rules/triangle_conditions.md`](../rules/triangle_conditions.md) beschrieben und
+setzt eine erneute steuerrechtliche Freigabe voraus.
+
+Offener UI-Punkt dazu: **VAT-H03** in `RGR_TODO.md` — die Oberfläche formuliert die
+interne Policy derzeit als zwingendes Gesetz („Art. 141 lit. a → Vereinfachung
+blockiert"), obwohl sie in mindestens zwei der neun Zeilen (DE, AT) nachweislich
+nicht der Rechtslage entspricht.
+
+---
+
+**Quellen / Stand 07.09.2026**
+- Art. 141 MwStSystRL (RL 2006/112/EG) — Wortlaut aus Sekundärquellen, Primärtext
+  in dieser Session nicht abrufbar (eur-lex egress-blockiert)
+- § 25b UStG — [gesetze-im-internet.de](https://www.gesetze-im-internet.de/ustg_1980/__25b.html) ·
+  [dejure.org](https://dejure.org/gesetze/UStG/25b.html) (über Sekundärquellen bestätigt)
+- EuGH 19.04.2018, C-580/16 „Firma Hans Bühler KG"
+- VwGH 15.12.2021, Ro 2020/15/0003 —
+  [amtliche Entscheidungsübersicht](https://www.vwgh.gv.at/rechtsprechung/aktuelle_entscheidungen/2022/ro_2020150003.html)
+- Explanatory Notes zu den Quick Fixes 2020, Beispiel 8, S. 66
+- Interne Steuerberatung 2024 (SI), dokumentiert in `rechtskonformitaet.md` § D1
+
+---
+
+# 16. EU · Quick Fixes 2020
 <!-- Quelle: vat-knowledge/eu/quick_fixes_2020.md -->
 
 # Quick Fixes 2020 — RL 2018/1910/EU
@@ -1637,7 +1852,7 @@ des Transports mitgeteilt" angenommen. Euro-Tyre-Hinweis als Warnung im Output.
 
 ---
 
-# 16. AT · Reihengeschäft
+# 17. AT · Reihengeschäft
 <!-- Quelle: vat-knowledge/at/ustg_at_reihengeschaeft.md -->
 
 # UStG AT — Reihengeschäft
@@ -1674,7 +1889,7 @@ für UStG-Verweise (z.B. Art. 6, Art. 7, Art. 25 UStG 1994).
 
 ---
 
-# 17. AT · Dreiecksgeschäft
+# 18. AT · Dreiecksgeschäft
 <!-- Quelle: vat-knowledge/at/ustg_at_dreieck.md -->
 
 # UStG AT — Dreiecksgeschäft
@@ -1714,7 +1929,7 @@ Zusammenfassende Meldung: IG-Lieferungen + Dreiecksgeschäfte melden.
 
 ---
 
-# 18. DE · § 3 Abs. 6a UStG
+# 19. DE · § 3 Abs. 6a UStG
 <!-- Quelle: vat-knowledge/de/ustg_de_3_6a.md -->
 
 # § 3 Abs. 6a UStG — Quick Fix DE-Umsetzung
@@ -1755,7 +1970,7 @@ Direktregistrierungen (relevant für BE RC-Block, Art. 51 §2 5° WBTW).
 
 ---
 
-# 19. DE · UStAE Reihengeschäft
+# 20. DE · UStAE Reihengeschäft
 <!-- Quelle: vat-knowledge/de/ustae_reihengeschaeft.md -->
 
 # UStAE / UStG DE — Reihengeschäft & Dreiecksgeschäft
@@ -1792,7 +2007,7 @@ Im Code: `luxuryTrustWarning` im Triangle-Return.
 
 ---
 
-# 20. NL · Wet OB Reihengeschäft
+# 21. NL · Wet OB Reihengeschäft
 <!-- Quelle: vat-knowledge/nl/wet_ob_nl_reihengeschaeft.md -->
 
 # Wet OB 1968 NL — Reihengeschäft & RC-Sonderfall
@@ -1986,7 +2201,7 @@ ABC-regeling" · belastingdienst.nl „Opgaaf intracommunautaire prestaties"
 
 ---
 
-# 21. CH · Ort der Lieferung
+# 22. CH · Ort der Lieferung
 <!-- Quelle: vat-knowledge/ch/mwst_ch_ort_lieferung.md -->
 
 # MWSTG CH — Ort der Lieferung & Reihengeschäft
@@ -2026,7 +2241,7 @@ hasCH + dep===CH + dest!==CH → analyzeCH()            // CH→EU
 
 ---
 
-# 22. CH · Konsignationslager
+# 23. CH · Konsignationslager
 <!-- Quelle: vat-knowledge/ch/mwst_ch_konsignationslager.md -->
 
 # MWSTG CH — Konsignationslager
@@ -2067,7 +2282,7 @@ Liquiditätsvorteil bei großen Lagerbeständen. BAZG-Bewilligung erforderlich.
 
 ---
 
-# 23. AT · EPROHA-Buchungskreise
+# 24. AT · EPROHA-Buchungskreise
 <!-- Quelle: vat-knowledge/at/eproha-buchungskreise.md -->
 
 # EPROHA — AT-Buchungskreis vs. DE-Buchungskreis

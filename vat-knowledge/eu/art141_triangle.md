@@ -7,6 +7,9 @@ Art. 197 (Steuerschuld geht auf C über, Reverse Charge).
 
 ## 5 Bedingungen (lit. a–e)
 - **(a)** B (Erwerber) ist NICHT im Bestimmungsland (dest) registriert
+  > Richtlinienwortlaut ist „nicht **niedergelassen**". Dass das Tool schon die
+  > bloße Registrierung blocken lässt, ist bewusste Policy (D1) — Länderstand und
+  > Belege: [`art141_dest_registration.md`](art141_dest_registration.md)
 - **(b)** Erwerb erfolgt zum Zweck der anschließenden Weiterlieferung
 - **(c)** C (Empfänger) sitzt im Bestimmungsland
 - **(d)** C wird als Steuerschuldner benannt (RC, Art. 197)
