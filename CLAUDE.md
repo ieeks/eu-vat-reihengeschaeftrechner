@@ -52,6 +52,9 @@ Danach prüfen, ob das geplante Feature nicht längst auf main existiert.
 | `index.html` | Einstiegspunkt für lokalen Server / Redirect |
 | `package.json` | Start- und Check-Skripte |
 | `scripts/serve.mjs` | Dependency-freier lokaler Static-Server |
+| `scripts/export-matrix.mjs` | Exportiert die gesamte Konstellationsfläche als CSV (**liest nur**) |
+| `scripts/matrix-diff.mjs` | Vergleicht zwei Matrix-Exporte, gruppiert nach Abweichungsmuster |
+| `tests/matrix-baseline.csv` | Eingecheckte Regressions-Baseline (`tests/matrix-current.csv` ist gitignored) |
 | `.github/workflows/pages.yml` | GitHub-Pages-Deployment |
 
 ## Design-Snapshots / Rollback
@@ -355,6 +358,8 @@ Struktur → Warenkette → Transport → UID-Override → Context → Lohn → 
 npm run dev
 npm run check
 npm run check:pages
+npm run matrix:check      # Regressions-Baseline über die gesamte Konstellationsfläche
+npm run matrix:baseline   # Baseline neu setzen (nur bei gewollter fachlicher Änderung)
 ```
 
 - Einstieg lokal: `index.html`
@@ -387,6 +392,54 @@ npm run check:pages
 13. Hosting-Dokumentation auf tatsächlichen GitHub-Pages-Stand halten
 14. DE-RC-Logik liegt in `computeTax()` (Rendering-Layer), nicht in `_checkRCBlock()` (VATEngine). Engine hat keinen DE-Branch. § 13b UStG wird im Rendering geprüft.
 15. **Vor jeder Änderung Git-Stand abgleichen** — ist `origin/main` weiter als lokal, erst lokal nachziehen / frisch von `origin/main` branchen (siehe Callout ganz oben). Nie auf veraltetem Stand weiterbauen.
+
+## Regressions-Baseline (Konstellationsfläche)
+
+Zusätzlich zu `scripts/test.mjs` (Output-Tests) und `scripts/test-matrix.mjs`
+(SAP-Findungsmatrix gegen feste Sollwerte) gibt es einen **dritten Testtyp**: einen
+Vollexport der Konstellationsfläche, der gegen eine eingecheckte Baseline diffed wird.
+Er prüft keine Sollwerte, sondern **Unverändertheit** — er fängt genau die Fälle, die
+niemand von Hand als Testfall hinterlegt hat.
+
+```bash
+npm run matrix:check      # exportiert + vergleicht   → Exit 0 = deckungsgleich, 1 = Abweichung
+npm run matrix:baseline   # schreibt tests/matrix-baseline.csv neu
+```
+
+Konstellation je Zeile: **Gesellschaft × Abgangsland × Bestimmungsland ×
+Transportveranlasser × verwendete eigene UID** (27 EU-Länder → 12.642 Fälle, ca. 6 min).
+Die UID-Menge je Paar ist dedupliziert `[home, dep, dest]` — genau die Auswahl, die
+`renderUidOverrideBlock()` anbietet. Verglichen werden per Default nur die stabilen
+Ergebnisfelder (`verdict`, `moved_delivery`, `triangle`, `sap_out`, `sap_in`,
+`registration`, `active_uid`); `note`, `moved_route`, `risks` und `hints` sind
+Fließtext bzw. Zähler und würden bei jeder Formulierungsänderung rauschen.
+
+Kleiner Satz für den schnellen lokalen Durchlauf:
+```bash
+node scripts/export-matrix.mjs --countries DE,AT,IT,SI,PL,CZ --skip-same --out tests/x.csv
+```
+
+> **Eine gewollte fachliche Änderung bedeutet eine neu committete Baseline.**
+> Schlägt `matrix:check` fehl, ist das zuerst ein Befund, kein Formalismus: Report lesen,
+> Muster prüfen (`sap_out — 19× DH → XX`). Sind die Abweichungen genau die beabsichtigten,
+> `npm run matrix:baseline` laufen lassen und `tests/matrix-baseline.csv` **im selben
+> Commit wie die Logikänderung** einchecken — dann zeigt der Diff, was sich fachlich
+> geändert hat. Niemals die Baseline neu setzen, um eine unerklärte Abweichung
+> loszuwerden.
+
+**`export-matrix.mjs` liest nur.** Es lädt `docs/index.html` + `app.js` in jsdom (gleicher
+Bootstrap wie `test-matrix.mjs`) und ruft `analyze()` — keine Änderung an `app.js`.
+SAP-Kennzeichen kommen aus den rollenbezogenen Blöcken der Kurzbeschreibung
+(`.decision-own-note`: L1 = ICH ALS KÄUFER → Eingang, L2 = ICH ALS VERKÄUFER → Ausgang),
+**nicht** über die Einzelcode-Heuristik aus `test-matrix.mjs` — die ordnet ein allein
+stehendes Kennzeichen pauschal dem Ausgang zu und verschiebt z.B. ein reines
+Erwerbskennzeichen (VH) in die falsche Spalte. Das Dreieck-Signal ist
+`Vereinfachungsregelung anwendbar` (angewendet) bzw. der `dreiecksOpportunityBanner`
+(möglich) — **nicht** das Diagramm-Label `L2 — Dreieck`: ist L2 die bewegte Lieferung,
+trägt sie das Label nicht, obwohl die Vereinfachung greift.
+
+> **jsdom bleibt auf `^24`.** Ab jsdom 27 fehlt `VirtualConsole.sendTo()` — das würde
+> `export-matrix.mjs` UND `test-matrix.mjs` brechen. Nicht hochziehen.
 
 ## Tests
 ```bash

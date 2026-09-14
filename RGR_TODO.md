@@ -4,6 +4,29 @@ Stand: 25.08.2026
 
 ---
 
+## Regressions-Baseline (neu 14.09.2026)
+
+`npm run matrix:check` vergleicht die gesamte Konstellationsfläche gegen
+`tests/matrix-baseline.csv` und hängt im Pages-Workflow vor dem Deployment.
+**Gewollte fachliche Änderung → `npm run matrix:baseline` + Baseline im selben Commit.**
+
+- [ ] **Baseline-Abdeckung erweitern.** Aktuell nur Modus 3 (`mePosition=2`,
+      `importerRole='customer'`, EU-Länder). Nicht abgedeckt: **Modus 2** (Lager/
+      Drop-Shipment, `mode2Incoterm`, `mode2CustUid`), **Modus 5** (Lohnveredelung —
+      dort deckt `scripts/test-lohn-tabs.mjs` 15 Konstellationen ab), **4P**, sowie die
+      **Drittland-Pfade** (CH/LI/GB/TR/RS/BA/RU) mit `importerRole`-Varianten. Jeder Block
+      wäre eine eigene Sektion im Export; die CSV-Spalten tragen das schon.
+- [ ] **Laufzeit.** ~6 min für 12.642 Fälle, ein jsdom-Fenster, `analyze()` seriell. Für CI
+      heute vertretbar. Wenn es stört: Worker-Parallelisierung über Länderblöcke, oder im
+      Pages-Workflow auf einen Kernsatz kürzen und den vollen Lauf nächtlich fahren.
+- [ ] **Fließtextfelder.** `note`, `moved_route`, `risks`, `hints` stehen bewusst nicht im
+      Diff-Default (Formulierungsrauschen). Wenn Prosa-Regressionen relevant werden:
+      `--columns note` gezielt gegen eine eigene Baseline laufen lassen, nicht den Default
+      aufbohren.
+- [ ] **`verdict` bei fehlender Ampel.** Renderpfade ohne `.traffic-status` liefern ein
+      leeres Feld statt eines geratenen Werts. Sollte ein solcher Pfad in der Baseline
+      auftauchen, ist das ein Befund über den Renderpfad — nicht über den Export.
+
 ## Externes Code- & USt-Review 25.08.2026 (Commit 7ac7499)
 
 Vollständiger Bericht liegt außerhalb des Repos. Technische Findings (CI/Deploy,
