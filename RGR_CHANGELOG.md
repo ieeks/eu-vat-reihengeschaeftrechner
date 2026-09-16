@@ -2,6 +2,65 @@
 
 ---
 
+## v4.3 · 14.09.2026 — Regressions-Baseline über die gesamte Konstellationsfläche
+
+Neuer, **dritter Testtyp** neben `scripts/test.mjs` (Output-Tests) und
+`scripts/test-matrix.mjs` (SAP-Findungsmatrix gegen feste Sollwerte). Er prüft keine
+Sollwerte, sondern **Unverändertheit**: die gesamte Konstellationsfläche wird exportiert
+und gegen eine eingecheckte Baseline verglichen. Damit fallen Änderungen auf, die niemand
+als Testfall hinterlegt hat. **Keine Steuerlogik, keine Änderung an `app.js`.**
+
+- **Neu: `scripts/export-matrix.mjs`.** Lädt `docs/index.html` + `app.js` in jsdom (gleicher
+  Bootstrap wie `test-matrix.mjs`), ruft `analyze()` in der Schleife und schreibt eine CSV.
+  Konstellation je Zeile: **Gesellschaft × Abgangsland × Bestimmungsland ×
+  Transportveranlasser × verwendete eigene UID**. Die UID-Menge je Paar ist dedupliziert
+  `[home, dep, dest]` — genau die Auswahl, die `renderUidOverrideBlock()` anbietet.
+  Voller EU-Satz: 27 Länder → **12.642 Fälle**, ca. 6 Minuten. **Das Script liest nur.**
+  Optionen: `--countries eu|<Liste>` · `--companies` · `--transports` · `--out` ·
+  `--skip-same` · `--limit` · `--quiet`.
+- **Neu: `scripts/matrix-diff.mjs`.** Vergleicht zwei Exporte und gruppiert nach
+  Abweichungsmuster (`sap_out — 19× DH → XX` mit Beispielschlüsseln) statt Zeilen zu
+  spucken. Exit 0 = deckungsgleich, Exit 1 = Abweichung → taugt als CI-Gate.
+  Verglichen werden per Default nur die stabilen Ergebnisfelder (`verdict`,
+  `moved_delivery`, `triangle`, `sap_out`, `sap_in`, `registration`, `active_uid`);
+  `note`, `moved_route`, `risks`, `hints` sind Fließtext bzw. Zähler und würden bei jeder
+  Formulierungsänderung rauschen.
+- **Neu: `tests/matrix-baseline.csv`** (eingecheckt). `tests/matrix-current.csv` ist
+  Arbeitsstand und in `.gitignore`.
+- **`package.json`:** `matrix:baseline` (Baseline neu setzen) und `matrix:check`
+  (exportieren + vergleichen).
+- **`.github/workflows/pages.yml`:** `npm ci` + `npm run matrix:check` als Step **vor** dem
+  Deployment (Node 20 wie in `test.yml`). Eine Regression blockiert damit den Deploy.
+
+**Zwei Extraktionsentscheidungen, die bewusst von `test-matrix.mjs` abweichen** — beide
+verifiziert gegen die Sollwerte der Findungsmatrix:
+
+- **SAP-Kennzeichen kommen aus den rollenbezogenen Blöcken der Kurzbeschreibung**
+  (`.decision-own-note`: L1 = ICH ALS KÄUFER → Eingang, L2 = ICH ALS VERKÄUFER → Ausgang),
+  nicht aus der Einzelcode-Heuristik von `test-matrix.mjs`. Deren Fallback ordnet ein allein
+  stehendes Kennzeichen pauschal dem **Ausgang** zu; bei Fällen, in denen nur ein
+  Erwerbskennzeichen rendert (z.B. VH), landet es damit in der falschen Spalte. Mit der
+  rollenbezogenen Lesart stimmen die Exportzeilen in allen vergleichbaren Fällen mit den
+  Sollwerten der Matrix überein (Zl 19/32/34/35/37/43/44/53/56), u.a. `T1/B7`, `OB/VC`,
+  `C1/SI` — Werte, die eine reine Details-Lesart als `KEIN` verliert.
+- **Dreieck-Signal ist `Vereinfachungsregelung anwendbar` (angewendet) bzw. der
+  `dreiecksOpportunityBanner` (möglich)** — nicht das Diagramm-Label `L2 — Dreieck`. Ist L2
+  die bewegte Lieferung (Transport durch uns), trägt sie das Label nicht, obwohl die
+  Vereinfachung greift; das Label als Signal meldet solche Fälle fälschlich als
+  „nicht anwendbar".
+
+**Regel: eine gewollte fachliche Änderung bedeutet eine neu committete Baseline.** Schlägt
+`matrix:check` fehl, ist das zuerst ein Befund — Report lesen, Muster prüfen. Sind die
+Abweichungen genau die beabsichtigten, `npm run matrix:baseline` laufen lassen und die
+Baseline **im selben Commit wie die Logikänderung** einchecken; dann zeigt der Diff, was
+sich fachlich geändert hat. Nie die Baseline neu setzen, um eine unerklärte Abweichung
+loszuwerden.
+
+> **jsdom bleibt auf `^24`.** Ab jsdom 27 fehlt `VirtualConsole.sendTo()` — das würde
+> `export-matrix.mjs` und `test-matrix.mjs` brechen. Nicht hochziehen.
+
+---
+
 ## v4.3 · 07.09.2026 — Länderübersicht Art. 141 lit. a (Registrierung im Bestimmungsland)
 
 Reine Wissensbasis-Erweiterung, **keine Codeänderung, keine Steuerlogik**. Anlass war ein

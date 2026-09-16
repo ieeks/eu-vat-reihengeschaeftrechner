@@ -15,6 +15,9 @@ Analysiert EU-Reihengeschäfte → SAP-Steuerkennzeichen, Rechtsgrundlagen, Hand
 - `Reihengeschaeftsrechner_22.html` — Legacy-Snapshot der früheren Single-File-App
 - `index.html` — schlanker Einstiegspunkt/Redirect auf `docs/`
 - `scripts/serve.mjs` — dependency-freier lokaler Static-Server + Strukturcheck
+- `scripts/export-matrix.mjs` — exportiert die gesamte Konstellationsfläche als CSV (liest nur)
+- `scripts/matrix-diff.mjs` — vergleicht zwei Exporte, gruppiert nach Abweichungsmuster
+- `tests/matrix-baseline.csv` — eingecheckte Regressions-Baseline
 - `.github/workflows/pages.yml` — GitHub-Pages-Deployment per Actions
 - `vat-knowledge/` — 16 Markdown-Dateien + Index (EU/AT/DE/CH Steuerrecht ↔ Code)
 - `rechtskonformitaet.md` — Rechtsabgleich + bewusste Abweichungen (konservative Auslegung)
@@ -67,5 +70,40 @@ iPhone-optimiert: Warnungen + Diagramm + primäre Kurzbeschreibung, sekundäre I
 
 ## Tests
 44 Smoke · 13 Render · 8 Output · 12 Invarianten
+
+| Befehl | Prüft |
+|---|---|
+| `npm test` | Output-Tests + Lohnveredelungs-Tabs |
+| `npm run check:matrix` | SAP-Findungsmatrix „Plants Abroad" (V1) gegen feste Sollwerte |
+| `npm run matrix:check` | **Regressions-Baseline** über die gesamte Konstellationsfläche |
+| `npm run matrix:baseline` | Baseline neu setzen (siehe unten) |
+
+### Regressions-Baseline
+
+`npm run matrix:check` exportiert alle Konstellationen (Gesellschaft × Abgangsland ×
+Bestimmungsland × Transportveranlasser × verwendete UID — 27 EU-Länder, 12.642 Fälle)
+nach `tests/matrix-current.csv` und vergleicht sie gegen die eingecheckte
+`tests/matrix-baseline.csv`. Exit 0 = deckungsgleich, Exit 1 = Abweichung; der Report
+gruppiert nach Muster (`sap_out: 19× DH → XX`) statt Zeilen zu spucken. Läuft im
+Pages-Workflow vor dem Deployment.
+
+Laufzeit voller Satz ca. 6 Minuten. Für einen schnellen lokalen Durchlauf:
+
+```bash
+node scripts/export-matrix.mjs --countries DE,AT,IT,SI,PL,CZ --skip-same --out tests/x.csv
+```
+
+**Eine gewollte fachliche Änderung bedeutet eine neu committete Baseline.** Schlägt
+`matrix:check` nach einer bewussten Änderung an der Steuerlogik fehl, wird der Report
+geprüft — und wenn die Abweichungen genau die beabsichtigten sind:
+
+```bash
+npm run matrix:baseline    # schreibt tests/matrix-baseline.csv neu
+git add tests/matrix-baseline.csv
+```
+
+Die neue Baseline gehört in denselben Commit wie die Logikänderung — der Diff macht
+sichtbar, was sich fachlich geändert hat. `tests/matrix-current.csv` ist Arbeitsstand
+und in `.gitignore`.
 
 `Reihengeschaeftsrechner_22.html` — Single-file, direkt im Browser.
