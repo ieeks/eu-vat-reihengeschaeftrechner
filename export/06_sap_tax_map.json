@@ -1,0 +1,1738 @@
+{
+  "SAP_TAX_MAP": {
+    "EPDE": {
+      "DE": {
+        "domestic": {
+          "out": "DS",
+          "in": "VD",
+          "desc": "Ausgangssteuer DE 19% / Vorsteuer DE 19%"
+        },
+        "ic-exempt": {
+          "out": "DH",
+          "in": "DH",
+          "desc": "IG-Lieferung 0% (steuerfreie Ausfuhr DE) — OUT+IN gleich, Netto 0"
+        },
+        "ic-acquisition": {
+          "out": "VH",
+          "in": "VH",
+          "desc": "IG-Erwerb DE 19% (ESA/ESE) — OUT+IN gleich, Netto 0"
+        },
+        "rc": {
+          "out": null,
+          "in": "DC",
+          "desc": "Reverse Charge DE 19% (§ 13b UStG)"
+        },
+        "export": {
+          "out": "G0",
+          "in": null,
+          "desc": "Ausfuhrlieferung DE 0% (§ 6 UStG)"
+        },
+        "not-taxable": {
+          "out": "XD",
+          "in": null,
+          "desc": "Nicht steuerbar DE"
+        },
+        "rc-purchase": {
+          "out": null,
+          "in": "P0",
+          "desc": "Vorsteuer 0% DE (kein Steuervorgang)"
+        }
+      },
+      "BE": {
+        "domestic": {
+          "out": "BS",
+          "in": "BI",
+          "desc": "Ausgangssteuer BE 21% / Vorsteuer BE 21%"
+        },
+        "ic-exempt": {
+          "out": null,
+          "in": null,
+          "desc": "⚠ Kein SAP-Stkz vorhanden — IG-Lieferung mit BE-UID als Verkäufer bisher nicht in SAP angelegt. Neues Kennzeichen erforderlich (Pendant zu DH, aber für BE-Meldung)."
+        },
+        "ic-acquisition": {
+          "out": "BP",
+          "in": "BP",
+          "desc": "IG-Erwerb BE 21% — OUT+IN gleich, Netto 0"
+        },
+        "rc": {
+          "out": "BS",
+          "in": "BI",
+          "desc": "RC blockiert (Art. 51 §2 WBTW) → EPDE weist 21% BE-MwSt aus, kein eigenes RC-Stkz vorhanden"
+        }
+      },
+      "CZ": {
+        "domestic": {
+          "out": "AE",
+          "in": "VC",
+          "desc": "Ausgangssteuer CZ 21% / Vorsteuer CZ 21%"
+        },
+        "ic-exempt": {
+          "out": "OB",
+          "in": "OB",
+          "desc": "IG-Lieferung 0% CZ — OUT+IN gleich, Netto 0"
+        },
+        "ic-acquisition": {
+          "out": "UR",
+          "in": "UR",
+          "desc": "IG-Erwerb CZ 21% — OUT+IN gleich, Netto 0"
+        },
+        "rc": {
+          "out": "AE",
+          "in": "VC",
+          "desc": "RC CZ: Lieferant muss 21% ausweisen (§ 92a ZDPH)"
+        }
+      },
+      "EE": {
+        "domestic": {
+          "out": "ES",
+          "in": "EI",
+          "desc": "Ausgangssteuer EE 24% / Vorsteuer EE 24%"
+        },
+        "ic-exempt": {
+          "out": null,
+          "in": null,
+          "desc": "⚠ Kein SAP-Stkz vorhanden — IG-Lieferung mit EE-UID als Verkäufer bisher nicht in SAP angelegt. Neues Kennzeichen erforderlich (Pendant zu C1/OB/T1, aber für EE-Meldung)."
+        },
+        "ic-acquisition": {
+          "out": "EP",
+          "in": "EP",
+          "desc": "IG-Erwerb EE 24% — OUT+IN gleich, Netto 0"
+        },
+        "rc": {
+          "out": "ES",
+          "in": "EI",
+          "desc": "RC EE: Lieferant muss 24% ausweisen (KMSS § 41¹)"
+        }
+      },
+      "LV": {
+        "domestic": {
+          "out": "LS",
+          "in": "LI",
+          "desc": "Ausgangssteuer LV 21% / Vorsteuer LV 21%"
+        },
+        "ic-exempt": {
+          "out": null,
+          "in": null,
+          "desc": "⚠ Kein SAP-Stkz vorhanden — IG-Lieferung mit LV-UID als Verkäufer bisher nicht in SAP angelegt. Neues Kennzeichen erforderlich (Pendant zu C1/OB/T1, aber für LV-Meldung)."
+        },
+        "ic-acquisition": {
+          "out": "LP",
+          "in": "LP",
+          "desc": "IG-Erwerb LV 21% — OUT+IN gleich, Netto 0"
+        },
+        "rc": {
+          "out": "LS",
+          "in": "LI",
+          "desc": "RC LV: Lieferant muss 21% ausweisen (Art. 141 PVN)"
+        }
+      },
+      "NL": {
+        "domestic": {
+          "out": null,
+          "in": "NI",
+          "desc": "Vorsteuer NL 21%"
+        },
+        "ic-exempt": {
+          "out": null,
+          "in": null,
+          "desc": "⚠ Kein SAP-Stkz vorhanden — IG-Lieferung mit NL-UID als Verkäufer bisher nicht in SAP angelegt. Neues Kennzeichen erforderlich (für NL-Meldung)."
+        },
+        "ic-acquisition": {
+          "out": "NP",
+          "in": "NP",
+          "desc": "IG-Erwerb NL 21% — OUT+IN gleich, Netto 0"
+        },
+        "rc": {
+          "out": "NC",
+          "in": "NI",
+          "desc": "Reverse Charge NL 0% (Art. 12 Abs. 3 Wet OB)"
+        }
+      },
+      "PL": {
+        "domestic": {
+          "out": "A4",
+          "in": "B7",
+          "desc": "Ausgangssteuer PL 23% / Vorsteuer PL 23%"
+        },
+        "ic-exempt": {
+          "out": "T1",
+          "in": "T1",
+          "desc": "IG-Lieferung 0% PL — OUT+IN gleich, Netto 0"
+        },
+        "ic-acquisition": {
+          "out": "W5",
+          "in": "W5",
+          "desc": "IG-Erwerb PL 23% — OUT+IN gleich, Netto 0"
+        },
+        "rc": {
+          "out": "A4",
+          "in": "B7",
+          "desc": "RC PL: Lieferant muss 23% ausweisen (Art. 17 ustawa)"
+        }
+      },
+      "SI": {
+        "domestic": {
+          "out": "CB",
+          "in": "SI",
+          "desc": "Ausgangssteuer SI 22% / Vorsteuer SI 22%"
+        },
+        "ic-exempt": {
+          "out": "C1",
+          "in": "C1",
+          "desc": "IG-Lieferung 0% SI — OUT+IN gleich, Netto 0"
+        },
+        "ic-acquisition": {
+          "out": "EC",
+          "in": "EC",
+          "desc": "IG-Erwerb SI 22% — OUT+IN gleich, Netto 0"
+        },
+        "rc": {
+          "out": "CB",
+          "in": "SI",
+          "desc": "RC SI: Lieferant muss 22% ausweisen (čl. 76 ZDDV-1)"
+        }
+      },
+      "CH": {
+        "export": {
+          "out": "G0",
+          "in": null,
+          "desc": "Ausfuhr DE→CH 0% (§ 6 UStG)"
+        }
+      },
+      "LI": {
+        "export": {
+          "out": "G0",
+          "in": null,
+          "desc": "Ausfuhr DE→LI 0% (Schweizer MWST-Raum, § 6 UStG)"
+        }
+      },
+      "IT": {
+        "rc": {
+          "out": "IC",
+          "in": "VI",
+          "desc": "Inversione contabile IT 0% (Art. 17 DPR 633)"
+        },
+        "ic-acquisition": {
+          "out": "IP",
+          "in": "IP",
+          "desc": "IG-Erwerb IT 22% — OUT+IN gleich, Netto 0"
+        },
+        "domestic-input": {
+          "out": null,
+          "in": "VI",
+          "desc": "Vorsteuer IT 22%"
+        },
+        "domestic": {
+          "out": null,
+          "in": "VI",
+          "desc": "Vorsteuer IT 22% (Eingangsrechnung)"
+        }
+      }
+    },
+    "EPROHA": {
+      "AT": {
+        "domestic": {
+          "out": "A2",
+          "in": "V2",
+          "desc": "Ausgangssteuer AT 20% / Vorsteuer AT 20%"
+        },
+        "ic-exempt": {
+          "out": "AF",
+          "in": "AF",
+          "desc": "IG-Lieferung AT 0% — OUT+IN gleich, Netto 0"
+        },
+        "ic-acquisition": {
+          "out": "VE",
+          "in": "VE",
+          "desc": "IG-Erwerb AT 20% (ESA/ESE) — OUT+IN gleich, Netto 0"
+        },
+        "rc": {
+          "out": "RC",
+          "in": "RC",
+          "desc": "Reverse Charge AT (RCA/RCE)"
+        },
+        "export": {
+          "out": "A0",
+          "in": null,
+          "desc": "Ausfuhr AT 0%"
+        },
+        "dreiecks": {
+          "out": "AF",
+          "in": null,
+          "desc": "Dreiecksgeschäft AT — Erwerbsteuer 0%"
+        },
+        "not-taxable": {
+          "out": "X0",
+          "in": null,
+          "desc": "Nicht steuerbar AT"
+        }
+      },
+      "DE": {
+        "domestic": {
+          "out": "DS",
+          "in": "VD",
+          "desc": "Ausgangssteuer DE 19% / Vorsteuer DE 19%"
+        },
+        "ic-exempt": {
+          "out": "DH",
+          "in": "DH",
+          "desc": "IG-Lieferung 0% — OUT+IN gleich, Netto 0 — UID DE"
+        },
+        "ic-acquisition": {
+          "out": "VH",
+          "in": "VH",
+          "desc": "IG-Erwerb DE 19% (ESA/ESE) — OUT+IN gleich, Netto 0"
+        },
+        "export": {
+          "out": "D0",
+          "in": null,
+          "desc": "Ausfuhr DE→CH 0% (§ 6 UStG) — nur bei DE-UID"
+        }
+      },
+      "CH": {
+        "export": {
+          "out": "A0",
+          "in": null,
+          "desc": "Ausfuhr AT→CH 0%"
+        },
+        "domestic": {
+          "out": "B5",
+          "in": "IB",
+          "desc": "CH-MWST 8,1% Ausgang / Vorsteuer CH 8,1%"
+        }
+      },
+      "LI": {
+        "export": {
+          "out": "A0",
+          "in": null,
+          "desc": "Ausfuhr AT→LI 0% (Schweizer MWST-Raum)"
+        },
+        "domestic": {
+          "out": "B5",
+          "in": "IB",
+          "desc": "LI-MWST 8,1% (Schweizer MWST-Recht) Ausgang / Vorsteuer 8,1%"
+        }
+      },
+      "IT": {
+        "rc": {
+          "out": "IC",
+          "in": null,
+          "desc": "Reverse charge IT 0% (inversione contabile)"
+        },
+        "domestic-input": {
+          "out": null,
+          "in": "VT",
+          "desc": "Vorsteuer IT 22%"
+        },
+        "domestic": {
+          "out": null,
+          "in": "VT",
+          "desc": "Vorsteuer IT 22% (Eingangsrechnung)"
+        }
+      }
+    }
+  },
+  "SAP_CUSTTAX_MAP": {
+    "_meta": {
+      "src": "SAP VK12: A002/A011 -> KONP -> T007A",
+      "mat": "1 (volle Steuer)",
+      "stand": "2026-07-05",
+      "deps": {
+        "AT": "EPROHA",
+        "DE": "EPDE Werk 1701",
+        "PL": "EPDE Werk 1702",
+        "CZ": "EPDE Werk 1703 (coming soon)"
+      }
+    },
+    "AT": {
+      "AL": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        }
+      },
+      "AT": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        },
+        "A2": {
+          "cls": "1",
+          "rate": "20",
+          "txt": "Ausgangssteuer 20%",
+          "alt": [
+            "0"
+          ],
+          "empf": "AT"
+        },
+        "AF": {
+          "cls": "2",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%"
+        },
+        "AI": {
+          "cls": "6",
+          "rate": "0",
+          "txt": "⚠ Sonderfall – prüfen"
+        },
+        "DS": {
+          "cls": "4",
+          "rate": "19",
+          "txt": "Ausgangssteuer Deutschland 19%",
+          "empf": "AT"
+        },
+        "IC": {
+          "cls": "5",
+          "rate": "0",
+          "txt": "Reverse charge 0% Italien"
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "BA": {
+        "A0": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "BE": {
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "BS": {
+          "cls": "2",
+          "rate": "21",
+          "txt": "Ausgangssteuer Belgien 21%",
+          "empf": "BE"
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "BG": {
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "CH": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        },
+        "B5": {
+          "cls": "1",
+          "rate": "8.1",
+          "txt": "Ausgangssteuer 8,1% (Schweiz)",
+          "empf": "CH"
+        },
+        "D0": {
+          "cls": "4",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0% Abgangsland DE empf. Land CH"
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "CY": {
+        "AF": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%"
+        }
+      },
+      "CZ": {
+        "AE": {
+          "cls": "2",
+          "rate": "21",
+          "txt": "Ausgangssteuer Tschechien 21%",
+          "empf": "CZ"
+        },
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "DE": {
+        "AF": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%"
+        },
+        "DS": {
+          "cls": "1",
+          "rate": "19",
+          "txt": "Ausgangssteuer Deutschland 19%",
+          "empf": "DE"
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "DK": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        }
+      },
+      "EE": {
+        "AF": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%"
+        },
+        "ES": {
+          "cls": "2",
+          "rate": "24",
+          "txt": "Ausgangssteuer Estland 24%",
+          "empf": "EE"
+        }
+      },
+      "ES": {
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "FI": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        }
+      },
+      "FR": {
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "GB": {
+        "A0": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "HK": {
+        "A0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "HR": {
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "HU": {
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0",
+            "6"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "IN": {
+        "A0": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "IQ": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        }
+      },
+      "IT": {
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "IC": {
+          "cls": "5",
+          "rate": "0",
+          "txt": "Reverse charge 0% Italien"
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "KO": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        }
+      },
+      "LI": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        },
+        "B5": {
+          "cls": "1",
+          "rate": "8.1",
+          "txt": "Ausgangssteuer 8,1% (Schweiz)",
+          "empf": "LI"
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "LT": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        },
+        "TS": {
+          "cls": "2",
+          "rate": "21",
+          "txt": "Ausgangssteuer Litauen 21%",
+          "empf": "LT"
+        }
+      },
+      "LV": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        },
+        "LS": {
+          "cls": "2",
+          "rate": "21",
+          "txt": "Ausgangssteuer Lettland 21%",
+          "empf": "LV"
+        }
+      },
+      "MK": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        }
+      },
+      "MT": {
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "NL": {
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "PA": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        }
+      },
+      "PL": {
+        "A4": {
+          "cls": "2",
+          "rate": "23",
+          "txt": "Ausgangssteuer Polen 23%",
+          "empf": "PL"
+        },
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "PT": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        }
+      },
+      "RO": {
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "RS": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "RU": {
+        "A0": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "SC": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        }
+      },
+      "SG": {
+        "A0": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "SI": {
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "CB": {
+          "cls": "2",
+          "rate": "22",
+          "txt": "Ausgangssteuer Slowenien 22%",
+          "empf": "SI"
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "SK": {
+        "AF": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "UA": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "US": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        }
+      },
+      "YU": {
+        "A0": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "X0": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "ZA": {
+        "A0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        }
+      }
+    },
+    "DE": {
+      "AT": {
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "BA": {
+        "G0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Kein Steuervorgang"
+        }
+      },
+      "BE": {
+        "BS": {
+          "cls": "2",
+          "rate": "21",
+          "txt": "Ausgangssteuer Belgien 21%",
+          "empf": "BE"
+        },
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "BG": {
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "CH": {
+        "G0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Kein Steuervorgang"
+        }
+      },
+      "CZ": {
+        "AE": {
+          "cls": "2",
+          "rate": "21",
+          "txt": "Ausgangssteuer Tschechien 21%",
+          "alt": [
+            "0"
+          ],
+          "empf": "CZ"
+        },
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%"
+        },
+        "OB": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "Erwerbsteuer Tschechien 0%"
+        }
+      },
+      "DE": {
+        "DH": {
+          "cls": "2",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%"
+        },
+        "DS": {
+          "cls": "1",
+          "rate": "19",
+          "txt": "Ausgangssteuer Deutschland 19%",
+          "empf": "DE"
+        },
+        "G0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Kein Steuervorgang"
+        },
+        "OB": {
+          "cls": "4",
+          "rate": "0",
+          "txt": "Erwerbsteuer Tschechien 0%"
+        },
+        "XD": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "nicht steuerbar"
+        }
+      },
+      "DK": {
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "EE": {
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "ES": {
+          "cls": "2",
+          "rate": "24",
+          "txt": "Ausgangssteuer Estland 24%",
+          "empf": "EE"
+        }
+      },
+      "ES": {
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "FR": {
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "GB": {
+        "G0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Kein Steuervorgang"
+        }
+      },
+      "HR": {
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "HU": {
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "IT": {
+        "C1": {
+          "cls": "4",
+          "rate": "0",
+          "txt": "Export EU - 0%"
+        },
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "IC": {
+          "cls": "5",
+          "rate": "0",
+          "txt": "Reverse charge 0% Italien"
+        },
+        "OB": {
+          "cls": "6",
+          "rate": "0",
+          "txt": "Erwerbsteuer Tschechien 0%"
+        }
+      },
+      "LI": {
+        "G0": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Kein Steuervorgang"
+        }
+      },
+      "LT": {
+        "TS": {
+          "cls": "2",
+          "rate": "21",
+          "txt": "Ausgangssteuer Litauen 21%",
+          "empf": "LT"
+        }
+      },
+      "LV": {
+        "DH": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%"
+        },
+        "LS": {
+          "cls": "2",
+          "rate": "21",
+          "txt": "Ausgangssteuer Lettland 21%",
+          "empf": "LV"
+        }
+      },
+      "NL": {
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "NC": {
+          "cls": "2",
+          "rate": "0",
+          "txt": "Reverse Charge Niederlande 0%",
+          "alt": [
+            "6"
+          ]
+        }
+      },
+      "PL": {
+        "A4": {
+          "cls": "2",
+          "rate": "23",
+          "txt": "Ausgangssteuer Polen 23%",
+          "empf": "PL"
+        },
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        },
+        "T1": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "Erwerbsteuer Polen 0%"
+        }
+      },
+      "RO": {
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "SI": {
+        "CB": {
+          "cls": "2",
+          "rate": "22",
+          "txt": "Ausgangssteuer Slowenien 22%",
+          "empf": "SI"
+        },
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "SK": {
+        "DH": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Erwerbsteuer 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      }
+    },
+    "PL": {
+      "AT": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "BA": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "BE": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "BG": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "BR": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "CH": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "CY": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "CZ": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "DE": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "DZ": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "EE": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "ES": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "FR": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "GB": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "HK": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "HR": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "HU": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "ID": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "IE": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "IS": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "IT": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "KZ": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "LT": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "LV": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "NL": {
+        "T1": {
+          "cls": "1",
+          "rate": "0",
+          "txt": "Export 0% within EU",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "PA": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "PL": {
+        "A4": {
+          "cls": "1",
+          "rate": "23",
+          "txt": "Ausgangssteuer 23%",
+          "empf": "PL"
+        }
+      },
+      "PT": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "RO": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "RS": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "RU": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "SC": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "SE": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "SG": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "SI": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "SK": {
+        "T1": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export 0% within EU"
+        }
+      },
+      "UA": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      },
+      "US": {
+        "EA": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Export not EU"
+        }
+      }
+    },
+    "CZ": {
+      "AT": {
+        "OB": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "BE": {
+        "OB": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "BG": {
+        "OB": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "CH": {
+        "OB": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%"
+        },
+        "OC": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "Outside EU-tax immunity export of goods 0%"
+        }
+      },
+      "CZ": {
+        "AN": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Ausgangssteuer 0%"
+        },
+        "AV": {
+          "cls": "1",
+          "rate": "21",
+          "txt": "Ausgangssteuer 21%",
+          "empf": "CZ"
+        },
+        "B2": {
+          "cls": "2",
+          "rate": "19",
+          "txt": "⚠ Sonderfall – prüfen",
+          "empf": "CZ"
+        }
+      },
+      "DE": {
+        "OB": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "ES": {
+        "OB": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "FR": {
+        "OB": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "GB": {
+        "OB": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "HK": {
+        "OC": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Outside EU-tax immunity export of goods 0%"
+        }
+      },
+      "HR": {
+        "OB": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%"
+        }
+      },
+      "HU": {
+        "OB": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "IE": {
+        "OB": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%"
+        },
+        "OC": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "Outside EU-tax immunity export of goods 0%"
+        }
+      },
+      "IT": {
+        "OB": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "NL": {
+        "OB": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "PL": {
+        "OB": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%",
+          "alt": [
+            "0"
+          ]
+        }
+      },
+      "RO": {
+        "OB": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%"
+        },
+        "OC": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "Outside EU-tax immunity export of goods 0%"
+        }
+      },
+      "RS": {
+        "OB": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%"
+        }
+      },
+      "RU": {
+        "OC": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Outside EU-tax immunity export of goods 0%"
+        }
+      },
+      "SI": {
+        "OB": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%"
+        },
+        "OC": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "Outside EU-tax immunity export of goods 0%"
+        }
+      },
+      "SK": {
+        "OB": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "EU-Export to EU 0%"
+        },
+        "OC": {
+          "cls": "3",
+          "rate": "0",
+          "txt": "Outside EU-tax immunity export of goods 0%"
+        }
+      },
+      "UA": {
+        "OC": {
+          "cls": "0",
+          "rate": "0",
+          "txt": "Outside EU-tax immunity export of goods 0%"
+        }
+      }
+    }
+  }
+}

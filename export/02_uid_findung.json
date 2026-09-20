@@ -1,0 +1,193 @@
+{
+  "_hinweis": "Drei getrennte Ebenen. A = welche Lieferung ist bewegt (Recht). B = welches UID-Land liefert das MWSKZ (Tool-Soll). C = wie SAP die UID heute findet (Ist). Für einen Ist/Soll-Vergleich A+B gegen C stellen.",
+  "_stand": "2026-09-20",
+  "regeln": [
+    {
+      "ebene": "A-Transportzuordnung",
+      "prio": 1,
+      "regel": "A1",
+      "bedingung": "transport = supplier (Lieferant versendet)",
+      "ergebnis": "L1 ist bewegt",
+      "uid_land": "für die Zuordnung irrelevant",
+      "rechtsgrundlage": "Art. 36a Abs. 1 MwStSystRL / § 3 Abs. 6a S. 2 UStG",
+      "quelle": "determineMovingSupply()",
+      "hinweis": "Die eigene UID beeinflusst hier nur das MWSKZ (Ebene B), nicht die Zuordnung."
+    },
+    {
+      "ebene": "A-Transportzuordnung",
+      "prio": 2,
+      "regel": "A2",
+      "bedingung": "transport = customer (Endabnehmer holt ab)",
+      "ergebnis": "letzte Lieferung L(n-1) ist bewegt",
+      "uid_land": "für die Zuordnung irrelevant",
+      "rechtsgrundlage": "Art. 36a Abs. 1 Umkehrschluss / EuGH C-245/04 EMAG",
+      "quelle": "determineMovingSupply()",
+      "hinweis": "Schließt das Dreiecksgeschäft aus (Art. 141 lit. e)."
+    },
+    {
+      "ebene": "A-Transportzuordnung",
+      "prio": 3,
+      "regel": "A3",
+      "bedingung": "transport = middle/middle2 UND uidOverride = dep (Abgangsland-UID mitgeteilt)",
+      "ergebnis": "AUSGANGSlieferung des Zwischenhändlers ist bewegt (chainIndex)",
+      "uid_land": "dep",
+      "rechtsgrundlage": "Art. 36a Abs. 2 MwStSystRL / § 3 Abs. 6a S. 4 Nr. 2 UStG",
+      "quelle": "_applyQuickFix()",
+      "hinweis": "Nur die tatsächliche MITTEILUNG löst Abs. 2 aus — Besitz der UID genügt nicht."
+    },
+    {
+      "ebene": "A-Transportzuordnung",
+      "prio": 4,
+      "regel": "A4",
+      "bedingung": "transport = middle/middle2 UND uidOverride gesetzt, aber ≠ dep",
+      "ergebnis": "EINGANGSlieferung ist bewegt (chainIndex-1)",
+      "uid_land": "uidOverride (dest / Ansässigkeit / Dritt-MS)",
+      "rechtsgrundlage": "Art. 36a Abs. 1 MwStSystRL",
+      "quelle": "_applyQuickFix()",
+      "hinweis": "Dritt-MS-UID (weder dep noch dest) löst zusätzlich Art. 41 Doppelerwerb aus."
+    },
+    {
+      "ebene": "A-Transportzuordnung",
+      "prio": 5,
+      "regel": "A5",
+      "bedingung": "transport = middle/middle2, kein uidOverride, companyHome ≠ dep",
+      "ergebnis": "EINGANGSlieferung ist bewegt (Grundregel)",
+      "uid_land": "companyHome",
+      "rechtsgrundlage": "Art. 36a Abs. 1 / § 3 Abs. 15 Z 1 lit. c UStG",
+      "quelle": "_applyQuickFix()",
+      "hinweis": "Gilt AUCH wenn eine dep-UID vorhanden ist (Besitz ≠ Mitteilung, korrigiert 25.08.2026)."
+    },
+    {
+      "ebene": "A-Transportzuordnung",
+      "prio": 6,
+      "regel": "A6",
+      "bedingung": "transport = middle/middle2, kein uidOverride, companyHome = dep (im Abgangsland ansässig)",
+      "ergebnis": "AUSGANGSlieferung ist bewegt",
+      "uid_land": "dep (= companyHome)",
+      "rechtsgrundlage": "Art. 36a Abs. 2 lit. b MwStSystRL",
+      "quelle": "_applyQuickFix()",
+      "hinweis": "Ansässigkeit im Abgangsland; EPDE bei dep=DE, EPROHA bei dep=AT."
+    },
+    {
+      "ebene": "B-MWSKZ-Findung",
+      "prio": 1,
+      "regel": "B1",
+      "bedingung": "vatTreatment ∈ {ic-exempt, ic-acquisition, dreiecks, export}",
+      "ergebnis": "MWSKZ aus dem UID-LAND, nicht aus dem Lieferort",
+      "uid_land": "uidCountry → uidOverride → companyHome",
+      "rechtsgrundlage": "Buchungskreis folgt der Rechnungs-UID",
+      "quelle": "_sapEffectiveCountry()",
+      "hinweis": "Beispiel: IG-Lieferung ab DE mit DE-UID = DH, mit AT-UID = AF."
+    },
+    {
+      "ebene": "B-MWSKZ-Findung",
+      "prio": 2,
+      "regel": "B2",
+      "bedingung": "vatTreatment ∈ {domestic, rc, not-taxable}",
+      "ergebnis": "MWSKZ aus dem LIEFERORT-Land (Transaktionsland), UID irrelevant",
+      "uid_land": "Lieferort",
+      "rechtsgrundlage": "Ort des Umsatzes bestimmt das Steuerrecht",
+      "quelle": "_sapEffectiveCountry()",
+      "hinweis": "Ruhende Lieferung vor Transport = dep, nach Transport = dest (Art. 31/36)."
+    },
+    {
+      "ebene": "B-MWSKZ-Findung",
+      "prio": 3,
+      "regel": "B3",
+      "bedingung": "kein SAP_TAX_MAP-Eintrag für das ermittelte UID-Land",
+      "ergebnis": "Fallback auf das Lieferort-Land; existiert auch dort keiner → KEIN Code",
+      "uid_land": "Fallback",
+      "rechtsgrundlage": "—",
+      "quelle": "_sapEffectiveCountry()",
+      "hinweis": "Nie ein Kennzeichen erfinden. Bekannte Lücken: EPDE ic-exempt für BE/EE/LV/NL."
+    },
+    {
+      "ebene": "B-MWSKZ-Findung",
+      "prio": 4,
+      "regel": "B4",
+      "bedingung": "Dreiecksgeschäft greift (triangle = true)",
+      "ergebnis": "IG-Erwerb über Heimat-UID (VE/VH); ruhende L2 = Dreieckslieferung AF (EPROHA) bzw. DH (EPDE)",
+      "uid_land": "companyHome",
+      "rechtsgrundlage": "Art. 141/42 MwStSystRL · Art. 25 UStG AT · § 25b UStG",
+      "quelle": "buildQuickCheck / buildDreiecks3Result",
+      "hinweis": "triangle schlägt die Basisklassifikation rc — im Dreieck NIE das IT-Inlands-RC (IC)."
+    },
+    {
+      "ebene": "C-SAP-Findung-Ist",
+      "prio": 1,
+      "regel": "C1",
+      "bedingung": "Lieferung ab eigenem Werk (Lagerauftrag)",
+      "ergebnis": "UID des WERKSLANDES",
+      "uid_land": "Werksland (1701=DE, 1702=PL, 1703=CZ, AT=EPROHA)",
+      "rechtsgrundlage": "—",
+      "quelle": "plants_abroad/README.md Punkt 4",
+      "hinweis": "SAP-Findung, nicht Steuerrecht."
+    },
+    {
+      "ebene": "C-SAP-Findung-Ist",
+      "prio": 2,
+      "regel": "C2",
+      "bedingung": "Incoterm EXW (Kunde holt ab Lieferantenwerk)",
+      "ergebnis": "UID des LIEFERANTENLANDES — EXW hat Vorrang vor der Ship-to-Regel",
+      "uid_land": "Lieferantenland",
+      "rechtsgrundlage": "entspricht Art. 36a Abs. 2 (mitgeteilte Abgangsland-UID)",
+      "quelle": "plants_abroad/README.md Punkt 5",
+      "hinweis": "Das Tool kennt diese Dimension NICHT → bekannte Ist/Soll-Divergenz, siehe SAP-EXW in 05."
+    },
+    {
+      "ebene": "C-SAP-Findung-Ist",
+      "prio": 3,
+      "regel": "C3",
+      "bedingung": "EXW, aber im Lieferantenland KEINE eigene UID",
+      "ergebnis": "erst Ship-to-Land prüfen, dann erst BUKRS",
+      "uid_land": "Ship-to-Land, sonst BUKRS",
+      "rechtsgrundlage": "Art. 36a Abs. 1 (ohne dep-UID bleibt es bei der Grundregel)",
+      "quelle": "plants_abroad/README.md Punkt 5 + PRUEFUNG.md",
+      "hinweis": "Direkter BUKRS-Fallback wäre falsch — er unterstellt stillschweigend ein Dreiecksgeschäft."
+    },
+    {
+      "ebene": "C-SAP-Findung-Ist",
+      "prio": 4,
+      "regel": "C4",
+      "bedingung": "Streckengeschäft (3rd party) ohne EXW",
+      "ergebnis": "UID des WARENEMPFÄNGER-Landes, sofern dort eine eigene UID besteht",
+      "uid_land": "Ship-to-Land",
+      "rechtsgrundlage": "—",
+      "quelle": "plants_abroad/README.md Punkt 4",
+      "hinweis": ""
+    },
+    {
+      "ebene": "C-SAP-Findung-Ist",
+      "prio": 5,
+      "regel": "C5",
+      "bedingung": "keine eigene UID im Ship-to-Land",
+      "ergebnis": "UID des Buchungskreises (EPDE → DE, EPROHA → AT)",
+      "uid_land": "BUKRS",
+      "rechtsgrundlage": "Art. 141 (der BUKRS-Fallback IST der Dreiecksfall)",
+      "quelle": "plants_abroad/PRUEFUNG.md Anhang",
+      "hinweis": "Trägt nur, wenn wir weder im Lieferanten- noch im Bestimmungsland registriert sind."
+    },
+    {
+      "ebene": "C-SAP-Findung-Ist",
+      "prio": 6,
+      "regel": "C6",
+      "bedingung": "Drittland-Ziel, wir sind Einführer (DDP)",
+      "ergebnis": "UID + steuerliches Abgangsland = BESTIMMUNGSLAND (sofern dort registriert, sonst nicht buchbar)",
+      "uid_land": "Bestimmungsland",
+      "rechtsgrundlage": "Art. 7 Abs. 3 Bst. a MWSTG (CH) — Lieferort verlagert sich",
+      "quelle": "plants_abroad/PRUEFUNG.md B1",
+      "hinweis": "Deshalb bei CH/LI-DDP B5 statt A0 — das steuerliche Abgangsland muss auf CH/LI stehen."
+    },
+    {
+      "ebene": "C-SAP-Findung-Ist",
+      "prio": 7,
+      "regel": "C7",
+      "bedingung": "Drittland-Ziel, Kunde ist Einführer (DAP/EXW)",
+      "ergebnis": "UID + steuerliches Abgangsland = ABGANGSLAND → A0 / D0 / G0",
+      "uid_land": "Abgangsland",
+      "rechtsgrundlage": "§ 7 UStG AT / § 6 UStG DE",
+      "quelle": "plants_abroad/PRUEFUNG.md B1",
+      "hinweis": ""
+    }
+  ]
+}

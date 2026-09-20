@@ -2,6 +2,39 @@
 
 ---
 
+## v4.3 · 20.09.2026 — Prüfdaten-Export für externe Ist/Soll-Logik
+
+Grundlage für eine **Excel-Prüflogik der SAP-Steuerkennzeichen** (Ist/Soll auf
+Fakturapositionen) außerhalb dieses Repos. **Keine Steuerlogik, keine Änderung an
+`app.js`** — das Script liest ausschließlich.
+
+- **Neu: `scripts/export-pruefdaten.mjs`.** Schneidet die Datenkonstanten als Literal aus
+  dem Quelltext (String-, Template- und Kommentar-bewusster Klammer-Scanner) und wertet sie
+  aus. **Kein jsdom, keine npm-Abhängigkeit** — die Tests laufen dabei nicht.
+  Ausgabe nach `export/` als JSON **und** CSV (Semikolon + BOM → Excel ohne Import-Dialog).
+- **Inhalt:** `01_szenarien` (alle Renderpfade mit **Prüfreihenfolge** und benötigten
+  Inputs — erster Treffer gewinnt, bildet die `early return`s ab) · `02_uid_findung`
+  (Entscheidungstabelle auf drei Ebenen: Transportzuordnung Art. 36a · MWSKZ-Findung
+  `_sapEffectiveCountry()` · SAP-„Plants Abroad"-Findung inkl. EXW und Fallbacks) ·
+  `03_laender` (Sätze, EU/Drittland, CH-MWST-Raum, Zollunion, SAA, Sanktionen, eigene UIDs) ·
+  `04_testfaelle` (**184 Fixtures**, davon **63 Matrix-Zeilen** mit erwartetem Kennzeichen —
+  deckt sich mit den 63 prüfbaren Zeilen aus `PRUEFUNG.md`) · `05_abweichungen` ·
+  `06_sap_tax_map` + `06_sap_custtax_map` (roh + flach).
+- **`05_abweichungen` löst die doppelten IDs auf.** `D2`, `D3` und `F3` existieren im Repo
+  in **zwei** Dateien mit unterschiedlicher Bedeutung. Präfix macht sie eindeutig:
+  `RK-` = `rechtskonformitaet.md` · `TODO-` = `RGR_TODO.md` · `EC-` = `edge-cases.md`.
+- **`export/README.md`** dokumentiert zusätzlich: Herkunft und Neuerzeugung von
+  `SAP_CUSTTAX_MAP` (VK12-Kette A002/A011 → KONP → T007A, Filter `DATBI=9999-12-31` +
+  `TAXM1=1`, Prioritätsregel der Kunden-Steuerklassen), die zehn Sonderfälle, die eine
+  reine Werk/Ship-to-Findung nicht sieht, sowie ein zweistufiges Prüfkonzept
+  (Plausibilität ohne Transportwissen → Konstellation mit angereicherten Feldern).
+- **`package.json`:** `export:pruefdaten`.
+- **Abgrenzung dokumentiert:** `SAP_CUSTTAX_MAP` enthält nur den **aktuellen** Stand
+  (`DATBI`-Filter) → für rückwirkende Perioden­prüfungen ungeeignet. Eine Zuordnung
+  „Treatment → UVA-Kennzahl" existiert im Repo **nicht** (nur `KZ 077`).
+
+---
+
 ## v4.3 · 14.09.2026 — Regressions-Baseline über die gesamte Konstellationsfläche
 
 Neuer, **dritter Testtyp** neben `scripts/test.mjs` (Output-Tests) und

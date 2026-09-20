@@ -1,0 +1,30 @@
+﻿stufe;nr;id;bedingung;ziel;inputs;ergebnis;quelle
+A-Dispatch;1;MODE-5;currentMode === 5;analyzeLohn() / computeLohn();company|lohn;Lohnveredelung — 3 Schritte (Einkauf / Werkleistung / Verkauf), eigene Renderer;app.js renderResult()
+A-Dispatch;2;MODE-2;currentMode === 2;analyze2();company|dest|transport|mode2Incoterm|mode2CustUid|dropShipDest;Lieferung ab eigenem AT-Lager/Werk (EPROHA), 2 Parteien;app.js renderResult()
+A-Dispatch;3;MODE-3-4;sonst (mode 3 oder 4);analyze();company|kette|transport|mePosition|uidOverride;Reihengeschäft — weiter mit B;app.js renderResult()
+B-Routing;1;CH-INLAND;isCH(dep) && isCH(dest) && company === 'EPROHA';analyzeCHInland();company|kette;CH-Inlandslieferung 8,1 % (B5 / IB) über CH-Registrierung;app.js analyze()
+B-Routing;2;CH-IMPORT;isCH(dep) && !isCH(dest);analyzeCH();company|kette|importerRole;Einfuhr in die EU — EUSt über EORI, kein IG-Erwerb;app.js analyze()
+B-Routing;3;CH-EXPORT;isCH(dest) && !isCH(dep);VATEngine.run() → buildCHExportResult();company|kette|transport|importerRole;Ausfuhr 0 % (A0/D0/G0) bzw. CH-Inland B5 wenn wir Einführer sind;app.js analyze()
+B-Routing;4;GB-IMPORT;dep === 'GB' && dest !== 'GB';analyzeGBImport();company|kette|importerRole;Einfuhr aus GB — EUSt;app.js analyze()
+B-Routing;5;GB-EXPORT;dest === 'GB' && dep !== 'GB';VATEngine.run() → buildGBExportResult();company|kette|transport|importerRole;Ausfuhr 0 % — UK VAT beim Einführer;app.js analyze()
+B-Routing;6;DRITT-IMPORT;isNonEU(dep) && dep ∉ {CH,LI,GB}  (TR/RS/BA/RU…);analyzeThirdImport();company|kette|importerRole;Generische Einfuhr + Länderhinweis (Sanktionen/Zollunion/SAA);app.js analyze()
+B-Routing;7;DRITT-EXPORT;isNonEU(dest) && dest ∉ {CH,LI,GB};VATEngine.run() → buildThirdExportResult();company|kette|transport|importerRole;Generische Ausfuhr 0 % + Länderhinweis;app.js analyze()
+B-Routing;8;INLAND;dep === dest (beide EU) → eng._depEqDest;analyzeInland();company|kette|transport;Inlands-Reihengeschäft: keine IG-Lieferung, kein Dreieck, ggf. lokales RC (IT: IC/VI);app.js analyze() / VATEngine.run()
+B-Routing;9;STANDARD;sonst — EU→EU grenzüberschreitend;VATEngine.run() + buildDreiecks3/4Result bzw. buildNormal3/4Result;company|kette|transport|mePosition|uidOverride;Hauptpfad Reihengeschäft — einzige Konstellation mit Dreiecksvereinfachung;app.js analyze()
+C-Engine;1;ENG-GUARD;dep === dest && !isNonEU(dep);früher Ausstieg _depEqDest;dep|dest;movingIndex = -1, keine Transportzuordnung, kein Dreieck;app.js VATEngine.run()
+C-Engine;2;ENG-MOVING;immer;determineMovingSupply() → ggf. _applyQuickFix();transport|uidOverride|dep|company|mePosition;movingIndex = welche Lieferung ist die bewegte (Art. 36a) — siehe 02_uid_findung;app.js VATEngine
+C-Engine;3;ENG-CLASSIFY;immer;classifySupplies();kette|dep|dest|company;Je Lieferung: Lieferort (Art. 32/36), vatTreatment, RC-Prüfung (Art. 194 + Länderregeln);app.js VATEngine
+C-Engine;4;ENG-TRIANGLE;immer;detectTriangleTransaction();kette|dep|dest|transport|uidOverride|company;"Art. 141 lit. a–e; blockiert u. a. bei eigener UID im Bestimmungsland (siehe RK-D1)";app.js VATEngine
+C-Engine;5;ENG-RISK;immer;detectRegistrationRisk();kette|dep|dest|company;"Registrierungspflicht, Doppelerwerb (Art. 41), RC-Hinweise; vom Dreieck neutralisiert";app.js VATEngine
+C-Engine;6;ENG-SAP;Renderzeit, nicht Engine;_sapEffectiveCountry() → SAP_TAX_MAP;company|uidOverride|dep|dest;MWSKZ je Lieferung + Richtung (out/in) — siehe 02_uid_findung Ebene B;app.js Rendering-Layer
+D-Mode2;1;M2-CH;dest === 'CH' && !euGoodsRecipient;buildMode2IncoExport('CH');dest|mode2Incoterm|transport;DAP/EXW → Ausfuhr A0 · DDP → CH-Inland B5 8,1 %;app.js analyze2()
+D-Mode2;2;M2-LI;dest === 'LI' && !euGoodsRecipient;buildMode2IncoExport('LI');dest|mode2Incoterm|transport;wie CH (gemeinsamer MWST-Raum, CH-Registrierung deckt LI ab);app.js analyze2()
+D-Mode2;3;M2-AT-DROP;dest === 'AT' && dropShipDest && dropShipDest !== 'AT';Drop-Shipment-Zweig AT-Kunde;dropShipDest|mode2CustUid;AF (fremde EU-UID des Kunden) bzw. 20 % AT A2 ohne UID — siehe TODO-D3;app.js analyze2()
+D-Mode2;4;M2-AT;dest === 'AT';AT-Inlandslieferung;dest;20 % AT — A2 / V2;app.js analyze2()
+D-Mode2;5;M2-GB;dest === 'GB' && !euGoodsRecipient;buildMode2IncoExport('GB');dest|mode2Incoterm;DAP/EXW → A0 · DDP → 20 % UK VAT, kein AP-MWSKZ;app.js analyze2()
+D-Mode2;6;M2-DRITT;isNonEU(dest) && !euGoodsRecipient (TR/RS/BA/RU);buildMode2IncoExport(dest) bzw. _importerToggle bei RU;dest|mode2Incoterm|importerRole;"A0; DDP ist mangels Registrierung eine Warnkarte („so nicht möglich"")";app.js analyze2()
+D-Mode2;7;M2-DROP-EU;dropShipDest && dropShipDest !== dest && dropShipDest !== 'AT';Reihengeschäft/Dreieck mit EPROHA als erstem Lieferanten;dest|dropShipDest|mode2CustUid;AF · bei Dritt-MS-UID Dreiecksgeschäft Art. 141 · ohne UID 20 % AT;app.js analyze2()
+D-Mode2;8;M2-EU;sonst — EU-Kunde;IG-Lieferung ab AT;dest;AF 0 % + ZM + Intrastat;app.js analyze2()
+E-Lohn;1;LV-INLAND;sup === con;Inlandszweig;lohn;"Wareneinkauf innerstaatlich; Werkleistung trotzdem RC wenn con ≠ Heimat; lit. f greift NICHT";app.js computeLohn()
+E-Lohn;2;LV-SUP-HOME;sup === companyHome && con !== companyHome;supIsHome-Zweig;lohn;homeHandover=true → Inlandslieferung + Verbringen (Art. 17 Abs. 2 lit. f) · false → ig. Lieferung + Erwerb im con-Land;app.js computeLohn()
+E-Lohn;3;LV-NORMAL;sonst;Normalpfad (lvDirect);lohn;"Einkauf / Werkleistung (RC Art. 44+196) / Verkauf; litF entscheidet über Verbringen";app.js computeLohn()
