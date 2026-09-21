@@ -1,0 +1,192 @@
+﻿abgangsland;zielland;mwskz;steuerklasse_kunde;alternative_klassen;satz;bedeutung;empfangsland_setzen
+AT;AL;A0;0;;0;Ausgangssteuer 0%;
+AT;AT;A0;0;;0;Ausgangssteuer 0%;
+AT;AT;A2;1;0;20;Ausgangssteuer 20%;AT
+AT;AT;AF;2;;0;Erwerbsteuer 0%;
+AT;AT;AI;6;;0;⚠ Sonderfall – prüfen;
+AT;AT;DS;4;;19;Ausgangssteuer Deutschland 19%;AT
+AT;AT;IC;5;;0;Reverse charge 0% Italien;
+AT;AT;X0;3;;0;nicht steuerbar;
+AT;BA;A0;1;0;0;Ausgangssteuer 0%;
+AT;BA;X0;3;;0;nicht steuerbar;
+AT;BE;AF;1;0;0;Erwerbsteuer 0%;
+AT;BE;BS;2;;21;Ausgangssteuer Belgien 21%;BE
+AT;BE;X0;3;;0;nicht steuerbar;
+AT;BG;AF;1;0;0;Erwerbsteuer 0%;
+AT;BG;X0;3;;0;nicht steuerbar;
+AT;CH;A0;0;;0;Ausgangssteuer 0%;
+AT;CH;B5;1;;8.1;Ausgangssteuer 8,1% (Schweiz);CH
+AT;CH;D0;4;;0;Ausgangssteuer 0% Abgangsland DE empf. Land CH;
+AT;CH;X0;3;;0;nicht steuerbar;
+AT;CY;AF;0;;0;Erwerbsteuer 0%;
+AT;CZ;AE;2;;21;Ausgangssteuer Tschechien 21%;CZ
+AT;CZ;AF;1;0;0;Erwerbsteuer 0%;
+AT;CZ;X0;3;;0;nicht steuerbar;
+AT;DE;AF;0;;0;Erwerbsteuer 0%;
+AT;DE;DS;1;;19;Ausgangssteuer Deutschland 19%;DE
+AT;DE;X0;3;;0;nicht steuerbar;
+AT;DK;A0;0;;0;Ausgangssteuer 0%;
+AT;EE;AF;0;;0;Erwerbsteuer 0%;
+AT;EE;ES;2;;24;Ausgangssteuer Estland 24%;EE
+AT;ES;AF;1;0;0;Erwerbsteuer 0%;
+AT;ES;X0;3;;0;nicht steuerbar;
+AT;FI;A0;0;;0;Ausgangssteuer 0%;
+AT;FR;AF;1;0;0;Erwerbsteuer 0%;
+AT;FR;X0;3;;0;nicht steuerbar;
+AT;GB;A0;1;0;0;Ausgangssteuer 0%;
+AT;GB;X0;3;;0;nicht steuerbar;
+AT;HK;A0;3;0;0;Ausgangssteuer 0%;
+AT;HR;AF;1;0;0;Erwerbsteuer 0%;
+AT;HR;X0;3;;0;nicht steuerbar;
+AT;HU;AF;1;0|6;0;Erwerbsteuer 0%;
+AT;HU;X0;3;;0;nicht steuerbar;
+AT;IN;A0;1;0;0;Ausgangssteuer 0%;
+AT;IN;X0;3;;0;nicht steuerbar;
+AT;IQ;A0;0;;0;Ausgangssteuer 0%;
+AT;IT;AF;1;0;0;Erwerbsteuer 0%;
+AT;IT;IC;5;;0;Reverse charge 0% Italien;
+AT;IT;X0;3;;0;nicht steuerbar;
+AT;KO;A0;0;;0;Ausgangssteuer 0%;
+AT;LI;A0;0;;0;Ausgangssteuer 0%;
+AT;LI;B5;1;;8.1;Ausgangssteuer 8,1% (Schweiz);LI
+AT;LI;X0;3;;0;nicht steuerbar;
+AT;LT;A0;0;;0;Ausgangssteuer 0%;
+AT;LT;TS;2;;21;Ausgangssteuer Litauen 21%;LT
+AT;LV;A0;0;;0;Ausgangssteuer 0%;
+AT;LV;LS;2;;21;Ausgangssteuer Lettland 21%;LV
+AT;MK;A0;0;;0;Ausgangssteuer 0%;
+AT;MT;AF;1;0;0;Erwerbsteuer 0%;
+AT;MT;X0;3;;0;nicht steuerbar;
+AT;NL;AF;1;0;0;Erwerbsteuer 0%;
+AT;NL;X0;3;;0;nicht steuerbar;
+AT;PA;A0;0;;0;Ausgangssteuer 0%;
+AT;PL;A4;2;;23;Ausgangssteuer Polen 23%;PL
+AT;PL;AF;1;0;0;Erwerbsteuer 0%;
+AT;PL;X0;3;;0;nicht steuerbar;
+AT;PT;A0;0;;0;Ausgangssteuer 0%;
+AT;RO;AF;1;0;0;Erwerbsteuer 0%;
+AT;RO;X0;3;;0;nicht steuerbar;
+AT;RS;A0;0;;0;Ausgangssteuer 0%;
+AT;RS;X0;3;;0;nicht steuerbar;
+AT;RU;A0;1;0;0;Ausgangssteuer 0%;
+AT;RU;X0;3;;0;nicht steuerbar;
+AT;SC;A0;0;;0;Ausgangssteuer 0%;
+AT;SG;A0;1;0;0;Ausgangssteuer 0%;
+AT;SG;X0;3;;0;nicht steuerbar;
+AT;SI;AF;1;0;0;Erwerbsteuer 0%;
+AT;SI;CB;2;;22;Ausgangssteuer Slowenien 22%;SI
+AT;SI;X0;3;;0;nicht steuerbar;
+AT;SK;AF;1;0;0;Erwerbsteuer 0%;
+AT;SK;X0;3;;0;nicht steuerbar;
+AT;UA;A0;0;;0;Ausgangssteuer 0%;
+AT;UA;X0;3;;0;nicht steuerbar;
+AT;US;A0;0;;0;Ausgangssteuer 0%;
+AT;YU;A0;1;0;0;Ausgangssteuer 0%;
+AT;YU;X0;3;;0;nicht steuerbar;
+AT;ZA;A0;0;;0;Ausgangssteuer 0%;
+DE;AT;DH;1;0;0;Erwerbsteuer 0%;
+DE;BA;G0;0;;0;Kein Steuervorgang;
+DE;BE;BS;2;;21;Ausgangssteuer Belgien 21%;BE
+DE;BE;DH;1;0;0;Erwerbsteuer 0%;
+DE;BG;DH;1;0;0;Erwerbsteuer 0%;
+DE;CH;G0;0;;0;Kein Steuervorgang;
+DE;CZ;AE;2;0;21;Ausgangssteuer Tschechien 21%;CZ
+DE;CZ;DH;1;;0;Erwerbsteuer 0%;
+DE;CZ;OB;3;;0;Erwerbsteuer Tschechien 0%;
+DE;DE;DH;2;;0;Erwerbsteuer 0%;
+DE;DE;DS;1;;19;Ausgangssteuer Deutschland 19%;DE
+DE;DE;G0;0;;0;Kein Steuervorgang;
+DE;DE;OB;4;;0;Erwerbsteuer Tschechien 0%;
+DE;DE;XD;3;;0;nicht steuerbar;
+DE;DK;DH;1;0;0;Erwerbsteuer 0%;
+DE;EE;DH;1;0;0;Erwerbsteuer 0%;
+DE;EE;ES;2;;24;Ausgangssteuer Estland 24%;EE
+DE;ES;DH;1;0;0;Erwerbsteuer 0%;
+DE;FR;DH;1;0;0;Erwerbsteuer 0%;
+DE;GB;G0;0;;0;Kein Steuervorgang;
+DE;HR;DH;1;0;0;Erwerbsteuer 0%;
+DE;HU;DH;1;0;0;Erwerbsteuer 0%;
+DE;IT;C1;4;;0;Export EU - 0%;
+DE;IT;DH;1;0;0;Erwerbsteuer 0%;
+DE;IT;IC;5;;0;Reverse charge 0% Italien;
+DE;IT;OB;6;;0;Erwerbsteuer Tschechien 0%;
+DE;LI;G0;0;;0;Kein Steuervorgang;
+DE;LT;TS;2;;21;Ausgangssteuer Litauen 21%;LT
+DE;LV;DH;0;;0;Erwerbsteuer 0%;
+DE;LV;LS;2;;21;Ausgangssteuer Lettland 21%;LV
+DE;NL;DH;1;0;0;Erwerbsteuer 0%;
+DE;NL;NC;2;6;0;Reverse Charge Niederlande 0%;
+DE;PL;A4;2;;23;Ausgangssteuer Polen 23%;PL
+DE;PL;DH;1;0;0;Erwerbsteuer 0%;
+DE;PL;T1;3;;0;Erwerbsteuer Polen 0%;
+DE;RO;DH;1;0;0;Erwerbsteuer 0%;
+DE;SI;CB;2;;22;Ausgangssteuer Slowenien 22%;SI
+DE;SI;DH;1;0;0;Erwerbsteuer 0%;
+DE;SK;DH;1;0;0;Erwerbsteuer 0%;
+PL;AT;T1;0;;0;Export 0% within EU;
+PL;BA;EA;0;;0;Export not EU;
+PL;BE;T1;0;;0;Export 0% within EU;
+PL;BG;T1;0;;0;Export 0% within EU;
+PL;BR;EA;0;;0;Export not EU;
+PL;CH;EA;0;;0;Export not EU;
+PL;CY;T1;0;;0;Export 0% within EU;
+PL;CZ;T1;0;;0;Export 0% within EU;
+PL;DE;T1;0;;0;Export 0% within EU;
+PL;DZ;EA;0;;0;Export not EU;
+PL;EE;T1;0;;0;Export 0% within EU;
+PL;ES;T1;0;;0;Export 0% within EU;
+PL;FR;T1;0;;0;Export 0% within EU;
+PL;GB;EA;0;;0;Export not EU;
+PL;HK;EA;0;;0;Export not EU;
+PL;HR;T1;0;;0;Export 0% within EU;
+PL;HU;T1;0;;0;Export 0% within EU;
+PL;ID;EA;0;;0;Export not EU;
+PL;IE;T1;0;;0;Export 0% within EU;
+PL;IS;EA;0;;0;Export not EU;
+PL;IT;T1;0;;0;Export 0% within EU;
+PL;KZ;EA;0;;0;Export not EU;
+PL;LT;T1;0;;0;Export 0% within EU;
+PL;LV;T1;0;;0;Export 0% within EU;
+PL;NL;T1;1;0;0;Export 0% within EU;
+PL;PA;EA;0;;0;Export not EU;
+PL;PL;A4;1;;23;Ausgangssteuer 23%;PL
+PL;PT;T1;0;;0;Export 0% within EU;
+PL;RO;T1;0;;0;Export 0% within EU;
+PL;RS;EA;0;;0;Export not EU;
+PL;RU;EA;0;;0;Export not EU;
+PL;SC;EA;0;;0;Export not EU;
+PL;SE;T1;0;;0;Export 0% within EU;
+PL;SG;EA;0;;0;Export not EU;
+PL;SI;T1;0;;0;Export 0% within EU;
+PL;SK;T1;0;;0;Export 0% within EU;
+PL;UA;EA;0;;0;Export not EU;
+PL;US;EA;0;;0;Export not EU;
+CZ;AT;OB;3;0;0;EU-Export to EU 0%;
+CZ;BE;OB;3;0;0;EU-Export to EU 0%;
+CZ;BG;OB;3;0;0;EU-Export to EU 0%;
+CZ;CH;OB;0;;0;EU-Export to EU 0%;
+CZ;CH;OC;3;;0;Outside EU-tax immunity export of goods 0%;
+CZ;CZ;AN;0;;0;Ausgangssteuer 0%;
+CZ;CZ;AV;1;;21;Ausgangssteuer 21%;CZ
+CZ;CZ;B2;2;;19;⚠ Sonderfall – prüfen;CZ
+CZ;DE;OB;3;0;0;EU-Export to EU 0%;
+CZ;ES;OB;3;0;0;EU-Export to EU 0%;
+CZ;FR;OB;3;0;0;EU-Export to EU 0%;
+CZ;GB;OB;3;0;0;EU-Export to EU 0%;
+CZ;HK;OC;0;;0;Outside EU-tax immunity export of goods 0%;
+CZ;HR;OB;0;;0;EU-Export to EU 0%;
+CZ;HU;OB;3;0;0;EU-Export to EU 0%;
+CZ;IE;OB;0;;0;EU-Export to EU 0%;
+CZ;IE;OC;3;;0;Outside EU-tax immunity export of goods 0%;
+CZ;IT;OB;3;0;0;EU-Export to EU 0%;
+CZ;NL;OB;3;0;0;EU-Export to EU 0%;
+CZ;PL;OB;3;0;0;EU-Export to EU 0%;
+CZ;RO;OB;0;;0;EU-Export to EU 0%;
+CZ;RO;OC;3;;0;Outside EU-tax immunity export of goods 0%;
+CZ;RS;OB;0;;0;EU-Export to EU 0%;
+CZ;RU;OC;0;;0;Outside EU-tax immunity export of goods 0%;
+CZ;SI;OB;0;;0;EU-Export to EU 0%;
+CZ;SI;OC;3;;0;Outside EU-tax immunity export of goods 0%;
+CZ;SK;OB;0;;0;EU-Export to EU 0%;
+CZ;SK;OC;3;;0;Outside EU-tax immunity export of goods 0%;
+CZ;UA;OC;0;;0;Outside EU-tax immunity export of goods 0%;

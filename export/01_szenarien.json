@@ -1,0 +1,430 @@
+{
+  "_hinweis": "Reihenfolge ist die tatsächliche Auswertungsreihenfolge im Code. Erster Treffer gewinnt (early return). In Excel als IF-Kaskade in dieser Reihenfolge nachbauen.",
+  "_stand": "2026-09-20",
+  "inputs": {
+    "company": "EPDE | EPROHA — steuert vatIds + companyHome (DE bzw. AT)",
+    "mode": "2 = eigenes Lager/Werk (2 Parteien) · 3 = Reihengeschäft 3 Parteien · 4 = 4 Parteien · 5 = Lohnveredelung",
+    "kette": "s1..s4 = Länderkette der Parteien (ISO-2). Mode 3 nutzt s1,s2,s4",
+    "dep": "Abgangsland = s1 (steuerliches Abgangsland, kann vom physischen abweichen)",
+    "dest": "Bestimmungsland = letzte Partei der Kette",
+    "transport": "supplier | middle | middle2 | customer — wer versendet auf eigene Rechnung (Art. 36a Abs. 3)",
+    "mePosition": "1..4 — an welcher Stelle der Kette die eigene Gesellschaft steht",
+    "uidOverride": "ISO-2 der dem Vorlieferanten MITGETEILTEN eigenen UID, sonst null (Art. 36a Abs. 2)",
+    "importerRole": "self | customer | supplier — wer ist Einführer (Drittlandspfade)",
+    "mode2Incoterm": "dap | ddp — nur Mode 2 Drittlandsexport: wer verzollt",
+    "mode2CustUid": "ISO-2 der vom Drittland-Kunden vorgelegten EU-UID, sonst leer",
+    "dropShipDest": "ISO-2 abweichender Warenempfänger (Mode 2 Drop-Shipment), sonst leer",
+    "lohn": "lohnSup/lohnCon/lohnCus + lvDirect + litF + homeHandover (Mode 5)"
+  },
+  "szenarien": [
+    {
+      "stufe": "A-Dispatch",
+      "nr": 1,
+      "id": "MODE-5",
+      "bedingung": "currentMode === 5",
+      "ziel": "analyzeLohn() / computeLohn()",
+      "inputs": [
+        "company",
+        "lohn"
+      ],
+      "ergebnis": "Lohnveredelung — 3 Schritte (Einkauf / Werkleistung / Verkauf), eigene Renderer",
+      "quelle": "app.js renderResult()"
+    },
+    {
+      "stufe": "A-Dispatch",
+      "nr": 2,
+      "id": "MODE-2",
+      "bedingung": "currentMode === 2",
+      "ziel": "analyze2()",
+      "inputs": [
+        "company",
+        "dest",
+        "transport",
+        "mode2Incoterm",
+        "mode2CustUid",
+        "dropShipDest"
+      ],
+      "ergebnis": "Lieferung ab eigenem AT-Lager/Werk (EPROHA), 2 Parteien",
+      "quelle": "app.js renderResult()"
+    },
+    {
+      "stufe": "A-Dispatch",
+      "nr": 3,
+      "id": "MODE-3-4",
+      "bedingung": "sonst (mode 3 oder 4)",
+      "ziel": "analyze()",
+      "inputs": [
+        "company",
+        "kette",
+        "transport",
+        "mePosition",
+        "uidOverride"
+      ],
+      "ergebnis": "Reihengeschäft — weiter mit B",
+      "quelle": "app.js renderResult()"
+    },
+    {
+      "stufe": "B-Routing",
+      "nr": 1,
+      "id": "CH-INLAND",
+      "bedingung": "isCH(dep) && isCH(dest) && company === 'EPROHA'",
+      "ziel": "analyzeCHInland()",
+      "inputs": [
+        "company",
+        "kette"
+      ],
+      "ergebnis": "CH-Inlandslieferung 8,1 % (B5 / IB) über CH-Registrierung",
+      "quelle": "app.js analyze()"
+    },
+    {
+      "stufe": "B-Routing",
+      "nr": 2,
+      "id": "CH-IMPORT",
+      "bedingung": "isCH(dep) && !isCH(dest)",
+      "ziel": "analyzeCH()",
+      "inputs": [
+        "company",
+        "kette",
+        "importerRole"
+      ],
+      "ergebnis": "Einfuhr in die EU — EUSt über EORI, kein IG-Erwerb",
+      "quelle": "app.js analyze()"
+    },
+    {
+      "stufe": "B-Routing",
+      "nr": 3,
+      "id": "CH-EXPORT",
+      "bedingung": "isCH(dest) && !isCH(dep)",
+      "ziel": "VATEngine.run() → buildCHExportResult()",
+      "inputs": [
+        "company",
+        "kette",
+        "transport",
+        "importerRole"
+      ],
+      "ergebnis": "Ausfuhr 0 % (A0/D0/G0) bzw. CH-Inland B5 wenn wir Einführer sind",
+      "quelle": "app.js analyze()"
+    },
+    {
+      "stufe": "B-Routing",
+      "nr": 4,
+      "id": "GB-IMPORT",
+      "bedingung": "dep === 'GB' && dest !== 'GB'",
+      "ziel": "analyzeGBImport()",
+      "inputs": [
+        "company",
+        "kette",
+        "importerRole"
+      ],
+      "ergebnis": "Einfuhr aus GB — EUSt",
+      "quelle": "app.js analyze()"
+    },
+    {
+      "stufe": "B-Routing",
+      "nr": 5,
+      "id": "GB-EXPORT",
+      "bedingung": "dest === 'GB' && dep !== 'GB'",
+      "ziel": "VATEngine.run() → buildGBExportResult()",
+      "inputs": [
+        "company",
+        "kette",
+        "transport",
+        "importerRole"
+      ],
+      "ergebnis": "Ausfuhr 0 % — UK VAT beim Einführer",
+      "quelle": "app.js analyze()"
+    },
+    {
+      "stufe": "B-Routing",
+      "nr": 6,
+      "id": "DRITT-IMPORT",
+      "bedingung": "isNonEU(dep) && dep ∉ {CH,LI,GB}  (TR/RS/BA/RU…)",
+      "ziel": "analyzeThirdImport()",
+      "inputs": [
+        "company",
+        "kette",
+        "importerRole"
+      ],
+      "ergebnis": "Generische Einfuhr + Länderhinweis (Sanktionen/Zollunion/SAA)",
+      "quelle": "app.js analyze()"
+    },
+    {
+      "stufe": "B-Routing",
+      "nr": 7,
+      "id": "DRITT-EXPORT",
+      "bedingung": "isNonEU(dest) && dest ∉ {CH,LI,GB}",
+      "ziel": "VATEngine.run() → buildThirdExportResult()",
+      "inputs": [
+        "company",
+        "kette",
+        "transport",
+        "importerRole"
+      ],
+      "ergebnis": "Generische Ausfuhr 0 % + Länderhinweis",
+      "quelle": "app.js analyze()"
+    },
+    {
+      "stufe": "B-Routing",
+      "nr": 8,
+      "id": "INLAND",
+      "bedingung": "dep === dest (beide EU) → eng._depEqDest",
+      "ziel": "analyzeInland()",
+      "inputs": [
+        "company",
+        "kette",
+        "transport"
+      ],
+      "ergebnis": "Inlands-Reihengeschäft: keine IG-Lieferung, kein Dreieck, ggf. lokales RC (IT: IC/VI)",
+      "quelle": "app.js analyze() / VATEngine.run()"
+    },
+    {
+      "stufe": "B-Routing",
+      "nr": 9,
+      "id": "STANDARD",
+      "bedingung": "sonst — EU→EU grenzüberschreitend",
+      "ziel": "VATEngine.run() + buildDreiecks3/4Result bzw. buildNormal3/4Result",
+      "inputs": [
+        "company",
+        "kette",
+        "transport",
+        "mePosition",
+        "uidOverride"
+      ],
+      "ergebnis": "Hauptpfad Reihengeschäft — einzige Konstellation mit Dreiecksvereinfachung",
+      "quelle": "app.js analyze()"
+    },
+    {
+      "stufe": "C-Engine",
+      "nr": 1,
+      "id": "ENG-GUARD",
+      "bedingung": "dep === dest && !isNonEU(dep)",
+      "ziel": "früher Ausstieg _depEqDest",
+      "inputs": [
+        "dep",
+        "dest"
+      ],
+      "ergebnis": "movingIndex = -1, keine Transportzuordnung, kein Dreieck",
+      "quelle": "app.js VATEngine.run()"
+    },
+    {
+      "stufe": "C-Engine",
+      "nr": 2,
+      "id": "ENG-MOVING",
+      "bedingung": "immer",
+      "ziel": "determineMovingSupply() → ggf. _applyQuickFix()",
+      "inputs": [
+        "transport",
+        "uidOverride",
+        "dep",
+        "company",
+        "mePosition"
+      ],
+      "ergebnis": "movingIndex = welche Lieferung ist die bewegte (Art. 36a) — siehe 02_uid_findung",
+      "quelle": "app.js VATEngine"
+    },
+    {
+      "stufe": "C-Engine",
+      "nr": 3,
+      "id": "ENG-CLASSIFY",
+      "bedingung": "immer",
+      "ziel": "classifySupplies()",
+      "inputs": [
+        "kette",
+        "dep",
+        "dest",
+        "company"
+      ],
+      "ergebnis": "Je Lieferung: Lieferort (Art. 32/36), vatTreatment, RC-Prüfung (Art. 194 + Länderregeln)",
+      "quelle": "app.js VATEngine"
+    },
+    {
+      "stufe": "C-Engine",
+      "nr": 4,
+      "id": "ENG-TRIANGLE",
+      "bedingung": "immer",
+      "ziel": "detectTriangleTransaction()",
+      "inputs": [
+        "kette",
+        "dep",
+        "dest",
+        "transport",
+        "uidOverride",
+        "company"
+      ],
+      "ergebnis": "Art. 141 lit. a–e; blockiert u. a. bei eigener UID im Bestimmungsland (siehe RK-D1)",
+      "quelle": "app.js VATEngine"
+    },
+    {
+      "stufe": "C-Engine",
+      "nr": 5,
+      "id": "ENG-RISK",
+      "bedingung": "immer",
+      "ziel": "detectRegistrationRisk()",
+      "inputs": [
+        "kette",
+        "dep",
+        "dest",
+        "company"
+      ],
+      "ergebnis": "Registrierungspflicht, Doppelerwerb (Art. 41), RC-Hinweise; vom Dreieck neutralisiert",
+      "quelle": "app.js VATEngine"
+    },
+    {
+      "stufe": "C-Engine",
+      "nr": 6,
+      "id": "ENG-SAP",
+      "bedingung": "Renderzeit, nicht Engine",
+      "ziel": "_sapEffectiveCountry() → SAP_TAX_MAP",
+      "inputs": [
+        "company",
+        "uidOverride",
+        "dep",
+        "dest"
+      ],
+      "ergebnis": "MWSKZ je Lieferung + Richtung (out/in) — siehe 02_uid_findung Ebene B",
+      "quelle": "app.js Rendering-Layer"
+    },
+    {
+      "stufe": "D-Mode2",
+      "nr": 1,
+      "id": "M2-CH",
+      "bedingung": "dest === 'CH' && !euGoodsRecipient",
+      "ziel": "buildMode2IncoExport('CH')",
+      "inputs": [
+        "dest",
+        "mode2Incoterm",
+        "transport"
+      ],
+      "ergebnis": "DAP/EXW → Ausfuhr A0 · DDP → CH-Inland B5 8,1 %",
+      "quelle": "app.js analyze2()"
+    },
+    {
+      "stufe": "D-Mode2",
+      "nr": 2,
+      "id": "M2-LI",
+      "bedingung": "dest === 'LI' && !euGoodsRecipient",
+      "ziel": "buildMode2IncoExport('LI')",
+      "inputs": [
+        "dest",
+        "mode2Incoterm",
+        "transport"
+      ],
+      "ergebnis": "wie CH (gemeinsamer MWST-Raum, CH-Registrierung deckt LI ab)",
+      "quelle": "app.js analyze2()"
+    },
+    {
+      "stufe": "D-Mode2",
+      "nr": 3,
+      "id": "M2-AT-DROP",
+      "bedingung": "dest === 'AT' && dropShipDest && dropShipDest !== 'AT'",
+      "ziel": "Drop-Shipment-Zweig AT-Kunde",
+      "inputs": [
+        "dropShipDest",
+        "mode2CustUid"
+      ],
+      "ergebnis": "AF (fremde EU-UID des Kunden) bzw. 20 % AT A2 ohne UID — siehe TODO-D3",
+      "quelle": "app.js analyze2()"
+    },
+    {
+      "stufe": "D-Mode2",
+      "nr": 4,
+      "id": "M2-AT",
+      "bedingung": "dest === 'AT'",
+      "ziel": "AT-Inlandslieferung",
+      "inputs": [
+        "dest"
+      ],
+      "ergebnis": "20 % AT — A2 / V2",
+      "quelle": "app.js analyze2()"
+    },
+    {
+      "stufe": "D-Mode2",
+      "nr": 5,
+      "id": "M2-GB",
+      "bedingung": "dest === 'GB' && !euGoodsRecipient",
+      "ziel": "buildMode2IncoExport('GB')",
+      "inputs": [
+        "dest",
+        "mode2Incoterm"
+      ],
+      "ergebnis": "DAP/EXW → A0 · DDP → 20 % UK VAT, kein AP-MWSKZ",
+      "quelle": "app.js analyze2()"
+    },
+    {
+      "stufe": "D-Mode2",
+      "nr": 6,
+      "id": "M2-DRITT",
+      "bedingung": "isNonEU(dest) && !euGoodsRecipient (TR/RS/BA/RU)",
+      "ziel": "buildMode2IncoExport(dest) bzw. _importerToggle bei RU",
+      "inputs": [
+        "dest",
+        "mode2Incoterm",
+        "importerRole"
+      ],
+      "ergebnis": "A0; DDP ist mangels Registrierung eine Warnkarte („so nicht möglich\")",
+      "quelle": "app.js analyze2()"
+    },
+    {
+      "stufe": "D-Mode2",
+      "nr": 7,
+      "id": "M2-DROP-EU",
+      "bedingung": "dropShipDest && dropShipDest !== dest && dropShipDest !== 'AT'",
+      "ziel": "Reihengeschäft/Dreieck mit EPROHA als erstem Lieferanten",
+      "inputs": [
+        "dest",
+        "dropShipDest",
+        "mode2CustUid"
+      ],
+      "ergebnis": "AF · bei Dritt-MS-UID Dreiecksgeschäft Art. 141 · ohne UID 20 % AT",
+      "quelle": "app.js analyze2()"
+    },
+    {
+      "stufe": "D-Mode2",
+      "nr": 8,
+      "id": "M2-EU",
+      "bedingung": "sonst — EU-Kunde",
+      "ziel": "IG-Lieferung ab AT",
+      "inputs": [
+        "dest"
+      ],
+      "ergebnis": "AF 0 % + ZM + Intrastat",
+      "quelle": "app.js analyze2()"
+    },
+    {
+      "stufe": "E-Lohn",
+      "nr": 1,
+      "id": "LV-INLAND",
+      "bedingung": "sup === con",
+      "ziel": "Inlandszweig",
+      "inputs": [
+        "lohn"
+      ],
+      "ergebnis": "Wareneinkauf innerstaatlich; Werkleistung trotzdem RC wenn con ≠ Heimat; lit. f greift NICHT",
+      "quelle": "app.js computeLohn()"
+    },
+    {
+      "stufe": "E-Lohn",
+      "nr": 2,
+      "id": "LV-SUP-HOME",
+      "bedingung": "sup === companyHome && con !== companyHome",
+      "ziel": "supIsHome-Zweig",
+      "inputs": [
+        "lohn"
+      ],
+      "ergebnis": "homeHandover=true → Inlandslieferung + Verbringen (Art. 17 Abs. 2 lit. f) · false → ig. Lieferung + Erwerb im con-Land",
+      "quelle": "app.js computeLohn()"
+    },
+    {
+      "stufe": "E-Lohn",
+      "nr": 3,
+      "id": "LV-NORMAL",
+      "bedingung": "sonst",
+      "ziel": "Normalpfad (lvDirect)",
+      "inputs": [
+        "lohn"
+      ],
+      "ergebnis": "Einkauf / Werkleistung (RC Art. 44+196) / Verkauf; litF entscheidet über Verbringen",
+      "quelle": "app.js computeLohn()"
+    }
+  ]
+}

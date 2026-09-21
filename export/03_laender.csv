@@ -1,0 +1,35 @@
+﻿code;name;name_en;satz_standard;eu_mitglied;ch_mwst_raum;zollunion_eu;saa_abkommen;sanktionen;uid_epde;uid_eproha
+AT;Österreich;Austria;20;ja;;;;;;ATU36513402
+BA;Bosnien-Herz.;Bosnia and Herz.;17;nein;;;ja;;;
+BE;Belgien;Belgium;21;ja;;;;;BE1022245089;
+BG;Bulgarien;Bulgaria;20;ja;;;;;;
+CH;Schweiz;Switzerland;8.1;nein;ja;;;;;CHE-113.857.016 MWST
+CY;Zypern;Cyprus;19;ja;;;;;;
+CZ;Tschechien;Czechia;21;ja;;;;;CZ687387072;
+DE;Deutschland;Germany;19;ja;;;;;DE449663039;DE248554278
+DK;Dänemark;Denmark;25;ja;;;;;;
+EE;Estland;Estonia;24;ja;;;;;EE102839441;
+ES;Spanien;Spain;21;ja;;;;;;
+FI;Finnland;Finland;25.5;ja;;;;;;
+FR;Frankreich;France;20;ja;;;;;;
+GB;Großbritannien;United Kingdom;20;nein;;;;;;
+GR;Griechenland;Greece;24;ja;;;;;;
+HR;Kroatien;Croatia;25;ja;;;;;;
+HU;Ungarn;Hungary;27;ja;;;;;;
+IE;Irland;Ireland;23;ja;;;;;;
+IT;Italien;Italy;22;ja;;;;;;
+LI;Liechtenstein;Liechtenstein;8.1;nein;ja;;;;;
+LT;Litauen;Lithuania;21;ja;;;;;;
+LU;Luxemburg;Luxembourg;17;ja;;;;;;
+LV;Lettland;Latvia;21;ja;;;;;LV90013367396;
+MT;Malta;Malta;18;ja;;;;;;
+NL;Niederlande;Netherlands;21;ja;;;;;NL827914052B01;
+PL;Polen;Poland;23;ja;;;;;PL5263841834;
+PT;Portugal;Portugal;23;ja;;;;;;
+RO;Rumänien;Romania;21;ja;;;;;;
+RS;Serbien;Serbia;20;nein;;;ja;;;
+RU;Russland;Russia;20;nein;;;;ja;;
+SE;Schweden;Sweden;25;ja;;;;;;
+SI;Slowenien;Slovenia;22;ja;;;;;SI66423562;
+SK;Slowakei;Slovakia;23;ja;;;;;;
+TR;Türkei;Türkiye;20;nein;;ja;;;;

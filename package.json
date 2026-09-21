@@ -12,6 +12,7 @@
     "gen:m365": "node scripts/gen-m365-knowledge.mjs",
     "check:m365": "node scripts/gen-m365-knowledge.mjs --check",
     "check:matrix": "node scripts/test-matrix.mjs",
+    "export:pruefdaten": "node scripts/export-pruefdaten.mjs",
     "matrix:baseline": "node scripts/export-matrix.mjs --countries eu --out tests/matrix-baseline.csv",
     "matrix:check": "node scripts/export-matrix.mjs --countries eu --out tests/matrix-current.csv && node scripts/matrix-diff.mjs tests/matrix-baseline.csv tests/matrix-current.csv",
     "test": "node scripts/test.mjs && node scripts/test-lohn-tabs.mjs"

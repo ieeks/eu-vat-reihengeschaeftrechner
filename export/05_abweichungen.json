@@ -1,0 +1,186 @@
+{
+  "_hinweis": "IDs sind im Repo mehrfach vergeben (D2/D3/F3 existieren in zwei Dateien). Präfix macht sie eindeutig: RK- = rechtskonformitaet.md · TODO- = RGR_TODO.md · EC- = vat-knowledge/edge-cases.md.",
+  "_stand": "2026-09-20",
+  "abweichungen": [
+    {
+      "id": "RK-D1",
+      "quelle_datei": "rechtskonformitaet.md § D1",
+      "typ": "bewusste Abweichung (konservativ)",
+      "titel": "Dreieck: eigene UID im Bestimmungsland blockiert, nicht erst die Niederlassung",
+      "konstellation": "EPDE mit UID in SI/LV/EE/NL/BE/CZ/PL · EPROHA mit UID in DE/CH — jeweils als mittlerer Unternehmer mit diesem Land als Bestimmungsland",
+      "wirkung_kennzeichen": "Statt Dreieck (AF/DH) → ig. Erwerb + lokale Inlandslieferung im Bestimmungsland (z. B. SI: EC + CB). Registrierung nötig.",
+      "status": "bewusst so, Revision nur nach Steuerberatung",
+      "fundstelle": "_detectTriangle3() / _detectTriangle4()"
+    },
+    {
+      "id": "RK-D2",
+      "quelle_datei": "rechtskonformitaet.md § D2",
+      "typ": "bewusste Abweichung (mild)",
+      "titel": "NL-Dreieck: bloße NL-Registrierung des Kunden C genügt (Belastingdienst-Praxis)",
+      "konstellation": "Bestimmungsland NL, Kunde C nur NL-registriert statt NL-ansässig",
+      "wirkung_kennzeichen": "Dreieck bleibt anwendbar → AF/DH statt NL-Registrierung. Spiegelbild zu D1.",
+      "status": "bewusst so",
+      "fundstelle": "_detectTriangle3() — kein gevestigd-Check"
+    },
+    {
+      "id": "RK-D3",
+      "quelle_datei": "rechtskonformitaet.md § D3",
+      "typ": "bewusste Abweichung (konservativ)",
+      "titel": "Lohnveredelung: ig. Verbringen gemeldet statt Art. 17 Abs. 2 lit. e in Anspruch genommen",
+      "konstellation": "Mode 5, Ware kommt nach der Veredelung nicht zurück (litF=false) und geht ab dem Veredelungsland weiter",
+      "wirkung_kennzeichen": "Zusätzliches ig. Verbringen (Ausgang AF/DH, Eingang VE/VH) + Registrierungspflicht im Veredelungsland statt „kein Verbringen\".",
+      "status": "bewusst so",
+      "fundstelle": "computeLohn() Feld verbringen, reason=no-return"
+    },
+    {
+      "id": "RK-F3",
+      "quelle_datei": "rechtskonformitaet.md § F3",
+      "typ": "akademisch, nicht relevant",
+      "titel": "Quick-Fix mit manuell gewählter dep-UID ohne tatsächliche Registrierung",
+      "konstellation": "Nur konstruierbar, wenn eine dep-UID gewählt wird, die nicht in COMPANIES hinterlegt ist",
+      "wirkung_kennzeichen": "keine — in der UI nicht erzeugbar (UID nur aus Stammdatensatz wählbar)",
+      "status": "kein Handlungsbedarf",
+      "fundstelle": "_applyQuickFix()"
+    },
+    {
+      "id": "TODO-D2",
+      "quelle_datei": "RGR_TODO.md (Matrix V1, Rechner-Befund D2)",
+      "typ": "Bug im Rechner",
+      "titel": "MWSKZ wird trotz fehlender Registrierung angezeigt",
+      "konstellation": "Kunde holt im Abgangsland ab (transport=customer), eigene Gesellschaft hat dort KEINE UID — z. B. Matrix Z38 (EXW IT→SI, EPDE)",
+      "wirkung_kennzeichen": "Rechner zeigt DH und warnt zugleich „Registrierungspflicht\". Richtig wäre „kein MWSKZ (Registrierung fehlt)\". Die Matrix ist hier ehrlicher.",
+      "status": "offen",
+      "fundstelle": "SAP-Badge im Rendering-Layer"
+    },
+    {
+      "id": "TODO-D3",
+      "quelle_datei": "RGR_TODO.md (Matrix V1, Rechner-Befund D3)",
+      "typ": "Modellgrenze",
+      "titel": "Drop-Shipment AT-Kunde ohne fremde EU-UID nicht schaltbar",
+      "konstellation": "Mode 2, dest=AT, abweichender Warenempfänger, Kunde legt KEINE fremde EU-UID vor (Matrix Z63)",
+      "wirkung_kennzeichen": "Rechner zeigt AF + Hinweis „sonst 20 % AT\"; Sollwert der Matrix ist A2 (20 % AT).",
+      "status": "offen",
+      "fundstelle": "analyze2() Drop-Shipment-Zweig"
+    },
+    {
+      "id": "SAP-EXW",
+      "quelle_datei": "CLAUDE.md · RGR_TODO.md (EXW/Incoterms)",
+      "typ": "Ist/Soll-Divergenz Tool ↔ SAP",
+      "titel": "EXW dreht in SAP die UID aufs Lieferantenland — das Tool kennt diese Dimension nicht",
+      "konstellation": "Alle EXW-Konstellationen; besonders Lieferantenland ohne eigene Registrierung (IT, FR, ES, HU, RO …) bei Warenempfänger-Land MIT eigener UID",
+      "wirkung_kennzeichen": "Gleicher Sachverhalt kann in Tool und SAP unterschiedliche MWSKZ ergeben (z. B. DH vs. CB). Für die Excel-Prüfung EXW als eigene Spalte führen.",
+      "status": "offen, mit SAP-Team zu klären",
+      "fundstelle": "buildSapInputHint() / SAP_CUSTTAX_MAP kennen kein EXW-Feld"
+    },
+    {
+      "id": "SAP-ABGANGSLAND",
+      "quelle_datei": "plants_abroad/PRUEFUNG.md § 2.1",
+      "typ": "Datenfehler in der Matrix",
+      "titel": "steuerliches Abgangsland nicht gepflegt (Z50, Z51, Z57)",
+      "konstellation": "CH-DDP (Z50), LI-DDP (Z51), IT→IT (Z57) — Abgangsland steht auf AT",
+      "wirkung_kennzeichen": "SAP findet A0 bzw. AF statt der gepflegten B5 / IC. Abgangsland muss CH / LI / IT sein.",
+      "status": "offen (Fachseite)",
+      "fundstelle": "Matrix_erweitert_V1_2.xlsx Spalte „tax delivered from country\""
+    },
+    {
+      "id": "SAP-LUECKE-IGL",
+      "quelle_datei": "SAP_TAX_MAP / RGR_TODO.md P3",
+      "typ": "fehlendes Kennzeichen",
+      "titel": "Kein Ausgangs-MWSKZ für IG-Lieferung mit BE-, EE-, LV- oder NL-UID",
+      "konstellation": "EPDE verkauft als Lieferant mit BE/EE/LV/NL-UID ig. an ein anderes EU-Land",
+      "wirkung_kennzeichen": "SAP_TAX_MAP liefert null → Tool zeigt „kein MWSKZ\". In SAP anzulegen (Pendant zu DH/T1/C1/OB).",
+      "status": "offen",
+      "fundstelle": "SAP_TAX_MAP.EPDE.{BE,EE,LV,NL}[ic-exempt]"
+    },
+    {
+      "id": "VAT-H02",
+      "quelle_datei": "RGR_TODO.md (offen, P0)",
+      "typ": "fachlich offen",
+      "titel": "BE: RC wird bei Direktregistrierung ohne Betriebsstätte gesperrt",
+      "konstellation": "EPDE mit BE-UID ohne BE-Betriebsstätte, ruhende Lieferung in BE",
+      "wirkung_kennzeichen": "Tool weist 21 % BE aus (BS/BI) statt RC. Wenn RC doch greift, ist das eine Fehlklassifikation über den vollen Steuerbetrag.",
+      "status": "offen, mit Steuerberater zu klären — vorher nichts ändern",
+      "fundstelle": "_checkRCBlock() BE-Zweig"
+    },
+    {
+      "id": "VAT-M01",
+      "quelle_datei": "RGR_TODO.md (offen)",
+      "typ": "fachlich offen",
+      "titel": "IT: gleiche RC-Frage wie BE, aktuell latent",
+      "konstellation": "Wird akut, sobald eine IT-UID in die Stammdaten aufgenommen wird",
+      "wirkung_kennzeichen": "heute keine (EPROHA ohne IT-UID → IC ohne Eingangscode; EPDE mit IT-UID → VI)",
+      "status": "latent",
+      "fundstelle": "_checkRCBlock() IT-Zweig"
+    },
+    {
+      "id": "VAT-H04",
+      "quelle_datei": "RGR_TODO.md (offen)",
+      "typ": "Modellgrenze",
+      "titel": "Art. 138: validierte Kunden-UID wird nicht modelliert",
+      "konstellation": "Jede IG-Lieferung — das Tool kennt weder VIES-Status noch ZM-Abgabe",
+      "wirkung_kennzeichen": "„0 % steuerfrei\" gilt nur dem Grunde nach. Für die UVA-/Fakturaprüfung ist die UID-Validierung eine EIGENE Kontrolle.",
+      "status": "bewusst außerhalb des Scope",
+      "fundstelle": "—"
+    },
+    {
+      "id": "VAT-M04",
+      "quelle_datei": "RGR_TODO.md (offen)",
+      "typ": "Anzeigefehler",
+      "titel": "Rechtsgrundlage: _applyQuickFix() zitiert § 3 Abs. 6a UStG (DE) auch für EPROHA",
+      "konstellation": "EPROHA in jedem Quick-Fix-Fall",
+      "wirkung_kennzeichen": "keine — nur der zitierte Paragraf ist falsch (AT: Art. statt §)",
+      "status": "offen",
+      "fundstelle": "_applyQuickFix()"
+    },
+    {
+      "id": "EC-F1",
+      "quelle_datei": "vat-knowledge/edge-cases.md § F1",
+      "typ": "Sonderfall (abgedeckt)",
+      "titel": "Inlands-Reihengeschäft BG→AT→BG bzw. BG→DE→BG",
+      "konstellation": "dep = dest, eigene Gesellschaft in der Mitte",
+      "wirkung_kennzeichen": "Keine IG-Lieferung, kein Dreieck — alle Lieferungen sind Inlandslieferungen im dep-Land; ohne dortige Registrierung entsteht Registrierungspflicht.",
+      "status": "abgedeckt (analyzeInland)",
+      "fundstelle": "rules/inland_chain.md"
+    },
+    {
+      "id": "EC-F2",
+      "quelle_datei": "vat-knowledge/edge-cases.md § F2",
+      "typ": "Sonderfall (abgedeckt)",
+      "titel": "HU→DE(EPDE)→DE, EXW-Abholung — UID-Wahl entscheidet",
+      "konstellation": "Zwischenhändler holt beim HU-Lieferanten ab; dep=HU, dest=DE",
+      "wirkung_kennzeichen": "Ohne mitgeteilte HU-UID greift die Grundregel → L1 bewegt, HU-Lieferant fakturiert 27 % HU. Mit dep-UID → L2 bewegt.",
+      "status": "abgedeckt",
+      "fundstelle": "_applyQuickFix()"
+    },
+    {
+      "id": "EC-F3",
+      "quelle_datei": "vat-knowledge/edge-cases.md § F3",
+      "typ": "Sonderfall (abgedeckt)",
+      "titel": "DE(Sappi)→DE(EPDE)→IT — Abgangsland gleich Sitzland des Zwischenhändlers",
+      "konstellation": "dep = companyHome = DE, Zwischenhändler transportiert",
+      "wirkung_kennzeichen": "Ansässigkeit im Abgangsland → Art. 36a Abs. 2 lit. b → Ausgangslieferung bewegt (DH), nicht Grundregel.",
+      "status": "abgedeckt",
+      "fundstelle": "_applyQuickFix() Zweig intermediaryResidentInDep"
+    },
+    {
+      "id": "EC-F4",
+      "quelle_datei": "vat-knowledge/edge-cases.md § F4",
+      "typ": "Sonderfall (abgedeckt)",
+      "titel": "AT(EPROHA)→CH-Kunde→SK — Drittland-Kunde, Ware bleibt in der EU",
+      "konstellation": "Mode 2, Kunde im Drittland, Warenempfänger in der EU",
+      "wirkung_kennzeichen": "KEINE Ausfuhr (A0), sondern ig. Reihengeschäft. Je vorgelegter EU-UID des Kunden: keine → A2 20 % AT · AT-UID → A2 · Bestimmungsland-UID → AF · Dritt-MS-UID → Dreieck.",
+      "status": "abgedeckt",
+      "fundstelle": "analyze2() euGoodsRecipient / bIsNonEU"
+    },
+    {
+      "id": "BASELINE-SCOPE",
+      "quelle_datei": "RGR_TODO.md (Regressions-Baseline)",
+      "typ": "Abdeckungslücke",
+      "titel": "Regressions-Baseline deckt nur Modus 3 mit EU-Ländern ab",
+      "konstellation": "Nicht in tests/matrix-baseline.csv: Modus 2, Modus 4, Modus 5, alle Drittlandspfade, importerRole-Varianten",
+      "wirkung_kennzeichen": "Für diese Bereiche gibt es keine automatische Regressionsabsicherung — Änderungen dort fallen nicht auf.",
+      "status": "offen",
+      "fundstelle": "scripts/export-matrix.mjs"
+    }
+  ]
+}

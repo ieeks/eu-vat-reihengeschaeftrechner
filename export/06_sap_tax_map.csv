@@ -1,0 +1,60 @@
+﻿gesellschaft;uid_land;treatment;mwskz_out;mwskz_in;bedeutung
+EPDE;DE;domestic;DS;VD;Ausgangssteuer DE 19% / Vorsteuer DE 19%
+EPDE;DE;ic-exempt;DH;DH;IG-Lieferung 0% (steuerfreie Ausfuhr DE) — OUT+IN gleich, Netto 0
+EPDE;DE;ic-acquisition;VH;VH;IG-Erwerb DE 19% (ESA/ESE) — OUT+IN gleich, Netto 0
+EPDE;DE;rc;;DC;Reverse Charge DE 19% (§ 13b UStG)
+EPDE;DE;export;G0;;Ausfuhrlieferung DE 0% (§ 6 UStG)
+EPDE;DE;not-taxable;XD;;Nicht steuerbar DE
+EPDE;DE;rc-purchase;;P0;Vorsteuer 0% DE (kein Steuervorgang)
+EPDE;BE;domestic;BS;BI;Ausgangssteuer BE 21% / Vorsteuer BE 21%
+EPDE;BE;ic-exempt;;;⚠ Kein SAP-Stkz vorhanden — IG-Lieferung mit BE-UID als Verkäufer bisher nicht in SAP angelegt. Neues Kennzeichen erforderlich (Pendant zu DH, aber für BE-Meldung).
+EPDE;BE;ic-acquisition;BP;BP;IG-Erwerb BE 21% — OUT+IN gleich, Netto 0
+EPDE;BE;rc;BS;BI;RC blockiert (Art. 51 §2 WBTW) → EPDE weist 21% BE-MwSt aus, kein eigenes RC-Stkz vorhanden
+EPDE;CZ;domestic;AE;VC;Ausgangssteuer CZ 21% / Vorsteuer CZ 21%
+EPDE;CZ;ic-exempt;OB;OB;IG-Lieferung 0% CZ — OUT+IN gleich, Netto 0
+EPDE;CZ;ic-acquisition;UR;UR;IG-Erwerb CZ 21% — OUT+IN gleich, Netto 0
+EPDE;CZ;rc;AE;VC;RC CZ: Lieferant muss 21% ausweisen (§ 92a ZDPH)
+EPDE;EE;domestic;ES;EI;Ausgangssteuer EE 24% / Vorsteuer EE 24%
+EPDE;EE;ic-exempt;;;⚠ Kein SAP-Stkz vorhanden — IG-Lieferung mit EE-UID als Verkäufer bisher nicht in SAP angelegt. Neues Kennzeichen erforderlich (Pendant zu C1/OB/T1, aber für EE-Meldung).
+EPDE;EE;ic-acquisition;EP;EP;IG-Erwerb EE 24% — OUT+IN gleich, Netto 0
+EPDE;EE;rc;ES;EI;RC EE: Lieferant muss 24% ausweisen (KMSS § 41¹)
+EPDE;LV;domestic;LS;LI;Ausgangssteuer LV 21% / Vorsteuer LV 21%
+EPDE;LV;ic-exempt;;;⚠ Kein SAP-Stkz vorhanden — IG-Lieferung mit LV-UID als Verkäufer bisher nicht in SAP angelegt. Neues Kennzeichen erforderlich (Pendant zu C1/OB/T1, aber für LV-Meldung).
+EPDE;LV;ic-acquisition;LP;LP;IG-Erwerb LV 21% — OUT+IN gleich, Netto 0
+EPDE;LV;rc;LS;LI;RC LV: Lieferant muss 21% ausweisen (Art. 141 PVN)
+EPDE;NL;domestic;;NI;Vorsteuer NL 21%
+EPDE;NL;ic-exempt;;;⚠ Kein SAP-Stkz vorhanden — IG-Lieferung mit NL-UID als Verkäufer bisher nicht in SAP angelegt. Neues Kennzeichen erforderlich (für NL-Meldung).
+EPDE;NL;ic-acquisition;NP;NP;IG-Erwerb NL 21% — OUT+IN gleich, Netto 0
+EPDE;NL;rc;NC;NI;Reverse Charge NL 0% (Art. 12 Abs. 3 Wet OB)
+EPDE;PL;domestic;A4;B7;Ausgangssteuer PL 23% / Vorsteuer PL 23%
+EPDE;PL;ic-exempt;T1;T1;IG-Lieferung 0% PL — OUT+IN gleich, Netto 0
+EPDE;PL;ic-acquisition;W5;W5;IG-Erwerb PL 23% — OUT+IN gleich, Netto 0
+EPDE;PL;rc;A4;B7;RC PL: Lieferant muss 23% ausweisen (Art. 17 ustawa)
+EPDE;SI;domestic;CB;SI;Ausgangssteuer SI 22% / Vorsteuer SI 22%
+EPDE;SI;ic-exempt;C1;C1;IG-Lieferung 0% SI — OUT+IN gleich, Netto 0
+EPDE;SI;ic-acquisition;EC;EC;IG-Erwerb SI 22% — OUT+IN gleich, Netto 0
+EPDE;SI;rc;CB;SI;RC SI: Lieferant muss 22% ausweisen (čl. 76 ZDDV-1)
+EPDE;CH;export;G0;;Ausfuhr DE→CH 0% (§ 6 UStG)
+EPDE;LI;export;G0;;Ausfuhr DE→LI 0% (Schweizer MWST-Raum, § 6 UStG)
+EPDE;IT;rc;IC;VI;Inversione contabile IT 0% (Art. 17 DPR 633)
+EPDE;IT;ic-acquisition;IP;IP;IG-Erwerb IT 22% — OUT+IN gleich, Netto 0
+EPDE;IT;domestic-input;;VI;Vorsteuer IT 22%
+EPDE;IT;domestic;;VI;Vorsteuer IT 22% (Eingangsrechnung)
+EPROHA;AT;domestic;A2;V2;Ausgangssteuer AT 20% / Vorsteuer AT 20%
+EPROHA;AT;ic-exempt;AF;AF;IG-Lieferung AT 0% — OUT+IN gleich, Netto 0
+EPROHA;AT;ic-acquisition;VE;VE;IG-Erwerb AT 20% (ESA/ESE) — OUT+IN gleich, Netto 0
+EPROHA;AT;rc;RC;RC;Reverse Charge AT (RCA/RCE)
+EPROHA;AT;export;A0;;Ausfuhr AT 0%
+EPROHA;AT;dreiecks;AF;;Dreiecksgeschäft AT — Erwerbsteuer 0%
+EPROHA;AT;not-taxable;X0;;Nicht steuerbar AT
+EPROHA;DE;domestic;DS;VD;Ausgangssteuer DE 19% / Vorsteuer DE 19%
+EPROHA;DE;ic-exempt;DH;DH;IG-Lieferung 0% — OUT+IN gleich, Netto 0 — UID DE
+EPROHA;DE;ic-acquisition;VH;VH;IG-Erwerb DE 19% (ESA/ESE) — OUT+IN gleich, Netto 0
+EPROHA;DE;export;D0;;Ausfuhr DE→CH 0% (§ 6 UStG) — nur bei DE-UID
+EPROHA;CH;export;A0;;Ausfuhr AT→CH 0%
+EPROHA;CH;domestic;B5;IB;CH-MWST 8,1% Ausgang / Vorsteuer CH 8,1%
+EPROHA;LI;export;A0;;Ausfuhr AT→LI 0% (Schweizer MWST-Raum)
+EPROHA;LI;domestic;B5;IB;LI-MWST 8,1% (Schweizer MWST-Recht) Ausgang / Vorsteuer 8,1%
+EPROHA;IT;rc;IC;;Reverse charge IT 0% (inversione contabile)
+EPROHA;IT;domestic-input;;VT;Vorsteuer IT 22%
+EPROHA;IT;domestic;;VT;Vorsteuer IT 22% (Eingangsrechnung)

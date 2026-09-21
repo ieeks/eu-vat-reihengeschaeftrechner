@@ -54,6 +54,8 @@ Danach prüfen, ob das geplante Feature nicht längst auf main existiert.
 | `scripts/serve.mjs` | Dependency-freier lokaler Static-Server |
 | `scripts/export-matrix.mjs` | Exportiert die gesamte Konstellationsfläche als CSV (**liest nur**) |
 | `scripts/matrix-diff.mjs` | Vergleicht zwei Matrix-Exporte, gruppiert nach Abweichungsmuster |
+| `scripts/export-pruefdaten.mjs` | Exportiert Szenarien/UID-Findung/Stammdaten/Fixtures/Abweichungen nach `export/` (**liest nur**, kein jsdom) |
+| `export/` | Generierter Prüfdaten-Export für externe Ist/Soll-Logik (Excel) — `export/README.md` erklärt den Aufbau |
 | `tests/matrix-baseline.csv` | Eingecheckte Regressions-Baseline (`tests/matrix-current.csv` ist gitignored) |
 | `.github/workflows/pages.yml` | GitHub-Pages-Deployment |
 
@@ -360,6 +362,7 @@ npm run check
 npm run check:pages
 npm run matrix:check      # Regressions-Baseline über die gesamte Konstellationsfläche
 npm run matrix:baseline   # Baseline neu setzen (nur bei gewollter fachlicher Änderung)
+npm run export:pruefdaten # Prüfdaten nach export/ (für externe Ist/Soll-Logik, liest nur)
 ```
 
 - Einstieg lokal: `index.html`
