@@ -158,12 +158,18 @@ Desktop:                          Mobile (≤768px):
 
 ## UID-Logik in Kurzbeschreibung
 ```
-Override → gewinnt immer
+Seller bewegend → dep-UID (gewinnt auch gegen Override; keine dep-UID → keine UID, kein Code)
+Override → gewinnt sonst immer
 Buyer bewegend → dest-UID
-Seller bewegend → dep-UID
 Ruhend → Lieferort-UID
 Fallback → companyHome
 ```
+**Override = dem Vorlieferanten mitgeteilte UID (Einkaufsseite).** Die eigene bewegte
+ig. Lieferung/Ausfuhr liegt im Abgangsland (Art. 32) → MWSKZ und Rechnungs-UID immer über
+`dep` (EPROHA ab DE = DH, nicht AF). Gilt gleich in `ownSupplyNotes()`, `buildDeliveryBox()`
+(Call-Sites übergeben für die bewegte L2 `placeOfSupply = dep`), `buildNormal3Result()`
+(`l2MyCode`), Vergleich-Tab und TL;DR. Nie auf die Heimat zurückfallen
+(`vat-knowledge/rules/uid_usage_rules.md`, `plants_abroad/README.md` Punkt 5).
 
 ## Art. 36a — Besitz ≠ Mitteilung (Session 24)
 

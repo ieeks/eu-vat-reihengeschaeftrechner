@@ -4,6 +4,20 @@ Stand: 25.08.2026
 
 ---
 
+## Nachlauf MWSKZ-Fix eigene bewegte Ausgangslieferung (23.09.2026)
+
+- [ ] **Lieferbox-UID ohne Abgangsland-UID.** `buildNormal3Result()` fällt für `l2MyCode` weiterhin
+      auf Override/Heimat zurück, wenn keine dep-UID existiert (Kennzeichen ist bereits korrekt
+      „kein SAP-Stkz."). Die Pflichtangaben nennen dann noch die Heimat-UID — besser: Hinweis
+      „Registrierung im Abgangsland nötig" statt einer UID.
+- [ ] **Pflichtangaben der Einkaufs-Box (L1).** Bei „ICH ALS KÄUFER" steht in den Pflichtangaben
+      „USt-IdNr. des Lieferanten: <eigene UID>" — Beschriftung aus Verkäufersicht, prüfen.
+- [ ] **Beschriftung Lieferungen nach Parteisitz.** Kurzbeschreibung/Lieferboxen zeigen z. B.
+      „Deutschland → Österreich → Italien", obwohl die Ware direkt DE → IT fließt. Fachlich nicht
+      falsch, aber missverständlich.
+- [ ] **Dreieck mit dritter eigener UID.** Die UID-Auswahl bietet nur Heimat/dep/dest an. Praxisfälle
+      aus der UVA-Prüfung: EURO/EPROHA mit DE-UID bei AT→IT, EPDE mit SI-UID (C1) bei DE→IT.
+
 ## Regressions-Baseline (neu 14.09.2026)
 
 `npm run matrix:check` vergleicht die gesamte Konstellationsfläche gegen

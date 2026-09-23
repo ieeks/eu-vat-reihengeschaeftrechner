@@ -3442,12 +3442,25 @@ function buildDeliveryBox(num, from, to, isMoving, tax, myCode, dest, iAmBuyer, 
           // IG-Lieferung (Verkäufer): myHome + UID-Hint für AF vs. DH
           // IG-Erwerb (Käufer): UID-Land wo EPDE einkauft (myCode) für W5/VH/LP etc.
           // Ruhende Lieferung: Lieferort (pos) verwenden
-          const sapCountry = (treatment === 'ic-exempt' || treatment === 'ic-acquisition') ? myHome
+          // Eigene BEWEGTE ig. Lieferung/Ausfuhr: Lieferort = Abgangsland (pos) → Kennzeichen über
+          // dessen UID (ab DE = DH/D0, ab AT = AF/A0). Kein Rückfall auf Heimat/Einkaufs-UID —
+          // fehlt dort eine UID bzw. ein Kennzeichen, ist eine Registrierung nötig
+          // (vat-knowledge/plants_abroad/README.md Punkt 5).
+          const sellerMovingOut = iAmSeller && isMoving && placeOfSupply
+                               && (treatment === 'ic-exempt' || treatment === 'export');
+          const sapCountry = sellerMovingOut ? pos
+                          : (treatment === 'ic-exempt' || treatment === 'ic-acquisition') ? myHome
                           : treatment === 'export' ? myHome
                           : pos;
-          const uidHint    = (treatment === 'ic-exempt' || treatment === 'ic-acquisition') ? myCode : null;
+          const uidHint    = sellerMovingOut ? pos
+                          : (treatment === 'ic-exempt' || treatment === 'ic-acquisition') ? myCode : null;
           const eff = _sapEffectiveCountry(comp, sapCountry, treatment, uidHint);
           const map = SAP_TAX_MAP[comp]?.[eff]?.[treatment];
+          if (sellerMovingOut && !map?.out) {
+            return `<span class="badge" style="background:rgba(239,68,68,0.12);color:#ef4444;border-color:rgba(239,68,68,0.35);"
+              title="Ausgangslieferung ab ${cn(pos)}: Kennzeichen hängt an der ${cn(pos)}-UID">
+              SAP&nbsp;Stkz.:&nbsp;⚠ kein SAP-Stkz. ab ${cn(pos)}${myVat(pos) ? '' : ` (keine ${cn(pos)}-UID)`}</span>`;
+          }
           if (!map) return '';
           const outCode = map.out;
           const inCode  = map.in;
@@ -3598,14 +3611,16 @@ function buildNormal3Result(supplier, me, customer, departure, destination, movi
   const _uidOverride = selectedUidOverride || null;
   const l1MyCode   = _uidOverride ? _uidOverride : ((!movingL1 && myVat(departure)) ? departure : effectiveVatCode);
   const l2IAmBuyer = false;
-  const l2MyCode   = _uidOverride ? _uidOverride : ((!movingL1 && myVat(departure)) ? departure : effectiveVatCode);
+  // L2 bewegt: eigene ig. Lieferung ab dep → dep-UID gewinnt auch gegen den Override
+  // (der Override ist die dem Vorlieferanten mitgeteilte UID, nicht die Rechnungs-UID).
+  const l2MyCode   = (!movingL1 && myVat(departure)) ? departure : (_uidOverride ? _uidOverride : effectiveVatCode);
 
   // computeTax bekommt jetzt den korrekten myCode → invIG/invStd zeigen konsistente UID
   const l1 = computeTax(movingL1,  supplier, me,       departure, destination, 1, l1MyCode);
   const l2 = computeTax(!movingL1, me,       customer, departure, destination, 2, l2MyCode);
 
   let html = buildDeliveryBox('L1', supplier, me,       movingL1,  l1, l1MyCode, destination, l1IAmBuyer, departure);
-  html    += buildDeliveryBox('L2', me,       customer, !movingL1, l2, l2MyCode, destination, l2IAmBuyer, destination);
+  html    += buildDeliveryBox('L2', me,       customer, !movingL1, l2, l2MyCode, destination, l2IAmBuyer, movingL1 ? destination : departure);
   html    += '<div class="hints">';
   l1.hints.forEach(h => html += rH(h));
   l2.hints.forEach(h => html += rH(h));
@@ -6709,6 +6724,12 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
 
   function formatOwnUidCode(s) {
     const pos = s.placeOfSupply || (s.isMoving ? ctx.dep : ctx.dest);
+    // Eigene bewegte Lieferung (ig. Lieferung/Ausfuhr): Lieferort = Abgangsland (Art. 32)
+    // → Rechnungs-UID ist die Abgangsland-UID. selectedUidOverride beschreibt nur die dem
+    // VORLIEFERANTEN mitgeteilte UID (Art. 36a) und gilt nicht für die eigene Ausgangsrechnung.
+    // Keine Abgangsland-UID → keine UID (Registrierung nötig), kein Heimat-Fallback
+    // (vat-knowledge/plants_abroad/README.md Punkt 5).
+    if (s.iAmTheSeller && s.isMoving) return myVat(ctx.dep) ? ctx.dep : null;
     if (selectedUidOverride && MY_VAT_IDS[selectedUidOverride]) return selectedUidOverride;
     if (s.iAmTheBuyer && s.isMoving) return myVat(ctx.dest) ? ctx.dest : COMPANIES[currentCompany].home;
     if (s.iAmTheSeller && s.isMoving) return myVat(ctx.dep) ? ctx.dep : COMPANIES[currentCompany].home;
@@ -6728,7 +6749,12 @@ function buildKurzbeschreibung(ctx, eng, options = {}) {
         if (dreiecks && s.iAmTheBuyer && s.isMoving) sapTreat = 'ic-acquisition';
         const uidCode = formatOwnUidCode(s);
         const uid = MY_VAT_IDS[uidCode];
-        const badge = sapBadge(pos, sapTreat, s.iAmTheSeller ? 'seller' : 'buyer', s.iAmTheBuyer ? uidCode : undefined);
+        // Eigene bewegte Lieferung: Kennzeichen über Abgangsland (Land + UID-Hint = dep), damit
+        // weder die Einkaufs-UID (Override) noch die Heimat einspringt (AF statt DH).
+        const sellerMoving = s.iAmTheSeller && s.isMoving;
+        const badge = sellerMoving
+          ? sapBadge(ctx.dep, sapTreat, 'seller', ctx.dep)
+          : sapBadge(pos, sapTreat, s.iAmTheSeller ? 'seller' : 'buyer', s.iAmTheBuyer ? uidCode : undefined);
         const lines = [];
         lines.push(`<div class="decision-own-line"><span class="decision-own-dot">•</span><span>${s.isMoving ? 'Bewegte' : 'Ruhende'} Lieferung ${flag(s.from)} ${cn(s.from)} → ${flag(s.to)} ${cn(s.to)}</span></div>`);
         if (badge) lines.push(`<div class="decision-own-line"><span class="decision-own-dot">⚙</span><span>${badge}</span></div>`);
@@ -7355,7 +7381,7 @@ function analyze() {
       const buyerUidHint = selectedUidOverride
                         || (myVat(dest) ? dest : null)
                         || myHome;
-      const movSAP  = movSupply?.iAmTheSeller  ? sapBadge(myHome, 'ic-exempt',      'seller', dep)
+      const movSAP  = movSupply?.iAmTheSeller  ? sapBadge(dep,    'ic-exempt',      'seller', dep)   // Abgangsland, kein Heimat-Fallback
                     : movSupply?.iAmTheBuyer   ? sapBadge(myHome, 'ic-acquisition', 'buyer',  buyerUidHint) : '';
       // dreiecksEffective: dreiecksOpportunity mit gewählter UID zählt für SAP-Codes wie echtes Dreiecksgeschäft
       const dreiecksEffective = dreiecks || (dreiecksOpportunity && !!selectedUidOverride);
@@ -7502,7 +7528,7 @@ function analyze() {
       const buyerUidHint4 = selectedUidOverride
                          || (myVat(dest) ? dest : null)
                          || myHome4;
-      const movSAP4 = movSup4?.iAmTheSeller ? sapBadge(myHome4, 'ic-exempt',      'seller', dep)
+      const movSAP4 = movSup4?.iAmTheSeller ? sapBadge(dep,     'ic-exempt',      'seller', dep)   // Abgangsland, kein Heimat-Fallback
                     : movSup4?.iAmTheBuyer  ? sapBadge(myHome4, 'ic-acquisition', 'buyer',  buyerUidHint4) : '';
       tldrLines.push({ key: movName, val: `<strong>Bewegte Lieferung</strong> · IG-Lieferung <strong>0%</strong> · ${cn(dep)} → ${cn(dest)}${movSAP4}` });
 
@@ -7715,7 +7741,7 @@ function toggleWahlrechtVariante(s1, me, s4, dep, dest, altMovingL1) {
     </div>`;
 
   inner += buildDeliveryBox('L1', s1, me, altMovingL1, altL1Tax, altL1MyCode, dest, !altMovingL1, dep);
-  inner += buildDeliveryBox('L2', me, s4, !altMovingL1, altL2Tax, altL2MyCode, dest, false, dest);
+  inner += buildDeliveryBox('L2', me, s4, !altMovingL1, altL2Tax, altL2MyCode, dest, false, altMovingL1 ? dest : dep);
 
   // Hints
   inner += '<div class="hints">';
@@ -11112,6 +11138,9 @@ function buildVergleichTab(baseCtx, baseEng) {
     const uidCountry = (treatment === 'ic-exempt' || treatment === 'ic-acquisition')
       ? (selectedUidOverride || (sup.iAmTheBuyer && MY_VAT_IDS[dest] ? dest : myHome))
       : null;
+    // Eigene bewegte Lieferung: Lieferort Abgangsland → Kennzeichen über dep, nicht über
+    // die Einkaufs-UID (Override) oder die Heimat (vgl. ownSupplyNotes in buildKurzbeschreibung).
+    if (sup.iAmTheSeller && sup.isMoving) return sapBadge(dep, treatment, 'seller', dep) || '–';
     if (sup.iAmTheSeller) return sapBadge(pos, treatment, 'seller', uidCountry) || '–';
     if (sup.iAmTheBuyer)  return sapBadge(pos, treatment, 'buyer',  uidCountry) || '–';
     return '–';

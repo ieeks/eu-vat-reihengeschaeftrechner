@@ -137,7 +137,12 @@ function _sapEffectiveCountry(company, country, treatment, uidCountry) {
    Wenn kein SAP-Eintrag für dieses UID-Land existiert: Fallback auf `country`.
 
 **Konsequenz:** Wählt der Nutzer im UI eine DE-UID als Override →
-wird automatisch der DE-Buchungskreis für die IG-Buchung verwendet.
+wird automatisch der DE-Buchungskreis für die IG-**Erwerbs**-Buchung verwendet.
+
+**Ausnahme eigene bewegte Ausgangslieferung (seit 23.09.2026):** Hier gibt der Override
+nichts vor — die Renderer übergeben `dep` als Land **und** UID-Hint. EPROHA liefert ab DE
+→ **DH**, ab AT → **AF**; ohne UID/Kennzeichen im Abgangsland → kein Code (Registrierung).
+Details: `rules/uid_usage_rules.md`.
 
 ---
 
