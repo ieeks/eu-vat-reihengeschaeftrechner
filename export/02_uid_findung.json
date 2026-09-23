@@ -1,6 +1,6 @@
 {
   "_hinweis": "Drei getrennte Ebenen. A = welche Lieferung ist bewegt (Recht). B = welches UID-Land liefert das MWSKZ (Tool-Soll). C = wie SAP die UID heute findet (Ist). Für einen Ist/Soll-Vergleich A+B gegen C stellen.",
-  "_stand": "2026-09-20",
+  "_stand": "2026-09-23",
   "regeln": [
     {
       "ebene": "A-Transportzuordnung",
@@ -77,7 +77,18 @@
       "uid_land": "uidCountry → uidOverride → companyHome",
       "rechtsgrundlage": "Buchungskreis folgt der Rechnungs-UID",
       "quelle": "_sapEffectiveCountry()",
-      "hinweis": "Beispiel: IG-Lieferung ab DE mit DE-UID = DH, mit AT-UID = AF."
+      "hinweis": "Beispiel: IG-Erwerb in AT mit AT-UID = VE, in DE mit DE-UID = VH. Eigene bewegte Ausgangslieferung: siehe B1a."
+    },
+    {
+      "ebene": "B-MWSKZ-Findung",
+      "prio": 1,
+      "regel": "B1a",
+      "bedingung": "eigene BEWEGTE Ausgangslieferung (ic-exempt / export, kein Dreieck)",
+      "ergebnis": "MWSKZ aus der UID des ABGANGSLANDS; uidOverride (dem Vorlieferanten mitgeteilte UID) und companyHome spielen keine Rolle. Keine UID/kein Eintrag im Abgangsland → KEIN Code + Registrierung",
+      "uid_land": "dep",
+      "rechtsgrundlage": "Art. 32 + 138 MwStSystRL · § 14a Abs. 3 / § 18a UStG — Lieferort und Meldung im Abgangsland",
+      "quelle": "buildKurzbeschreibung ownSupplyNotes() · buildDeliveryBox() · buildVergleichTab()",
+      "hinweis": "EPROHA ab DE = DH (nicht AF, auch wenn die AT-UID dem Lieferanten mitgeteilt wurde). EPDE ab IT ohne IT-UID = KEIN (Matrix-Zeile 38), nicht DH."
     },
     {
       "ebene": "B-MWSKZ-Findung",

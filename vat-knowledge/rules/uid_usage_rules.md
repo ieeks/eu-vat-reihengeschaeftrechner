@@ -39,9 +39,22 @@ let selectedUidOverride = null;  // globaler Scope
 ## Implementierung in buildKurzbeschreibung()
 `formatOwnUidCode(s)`: Bestimmt aktive UID pro Supply:
 ```
-selectedUidOverride → iAmTheBuyer+moving: dest → iAmTheSeller+moving: dep
-→ myVat(pos) ? pos : companyHome
+iAmTheSeller+moving: dep-UID (sonst null — KEIN Override, KEIN Heimat-Fallback)
+→ selectedUidOverride → iAmTheBuyer+moving: dest → myVat(pos) ? pos : companyHome
 ```
+
+## Eigene bewegte Ausgangslieferung (seit 23.09.2026)
+`selectedUidOverride` ist die dem **Vorlieferanten mitgeteilte** UID (Art. 36a) — eine
+Tatsache der **Einkaufs**seite. Für die eigene bewegte ig. Lieferung/Ausfuhr gilt sie nicht:
+Lieferort ist das Abgangsland (Art. 32), Meldung/ZM dort (§ 18a UStG), Rechnungs-UID
+= Abgangsland-UID (§ 14a Abs. 3 UStG). Kennzeichen daher immer über `dep`:
+EPROHA ab DE = **DH** (nicht AF, auch wenn die AT-UID mitgeteilt wurde) · EPDE ab IT
+ohne IT-UID = **kein Kennzeichen** + Registrierung (SAP-Matrix Zeile 38; vgl.
+`plants_abroad/README.md` Punkt 5: kein Rückfall auf den Heimat-Buchungskreis).
+Umgesetzt in `ownSupplyNotes()`/`formatOwnUidCode()` (Kurzbeschreibung),
+`buildDeliveryBox()` (+ `placeOfSupply` der bewegten L2 = dep), `buildNormal3Result()`
+(`l2MyCode`), Vergleich-Tab `sapCode()` und den TL;DR-Zeilen (3P/4P).
+Unberührt: Dreieck (ruhende L2 über die Erwerbs-UID) und die Käuferseite.
 
 ## summaryItems 'Aktive UID'
 | Bedingung | Anzeige |

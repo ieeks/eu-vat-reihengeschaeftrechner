@@ -2,6 +2,31 @@
 
 ---
 
+## v4.3 · 23.09.2026 — MWSKZ der eigenen bewegten Ausgangslieferung über das Abgangsland
+
+**Fachliche Korrektur (Baseline neu gesetzt).** Gefunden beim Abgleich der UVA-Hilfsformel
+(004_DEBITOREN, Spalte AI) mit dem Tool.
+
+- **Fehler:** Bei der eigenen **bewegten** ig. Lieferung (Kunde transportiert bzw. Abgangsland-UID
+  mitgeteilt) wurde das Ausgangskennzeichen über die dem **Vorlieferanten mitgeteilte** UID
+  (`selectedUidOverride`) bzw. die Heimat ermittelt. EPROHA, Lieferant DE → Kunde IT, Kunde holt
+  ab: **AF** + AT-UID auf der Ausgangsrechnung, obwohl die Lieferung in DE ausgeführt und in der
+  DE-ZM gemeldet wird (**DH** + DE-UID). Ohne UID-Wahl widersprach sich die Anzeige sogar selbst
+  (AF neben DE-UID). Fehlte die Abgangsland-UID (EPDE ab IT), sprang die Heimat ein (**DH**) statt
+  „kein Kennzeichen + Registrierung" — entgegen `plants_abroad/README.md` Punkt 5.
+- **Fix (nur Rendering-Layer, keine VATEngine-Änderung):** `ownSupplyNotes()`/`formatOwnUidCode()`,
+  `buildDeliveryBox()` (+ Call-Sites: `placeOfSupply` der bewegten L2 = `dep`),
+  `buildNormal3Result()` (`l2MyCode`), Vergleich-Tab `sapCode()`, TL;DR 3P/4P (`sapBadge(dep, …)`
+  statt `sapBadge(myHome, …)`). Ohne Kennzeichen zeigt die Lieferbox „⚠ kein SAP-Stkz. ab <Land>".
+- **Tests:** SAP-Soll-Matrix (`check:matrix`) 57 → **58/63** deckungsgleich (Zeile 38
+  „EXW IT→SI, Kunde holt" jetzt KEIN wie in SAP). Output-Tests 56/56, Lohn-Tabs 15/15.
+  Baseline-Diff siehe Commit.
+- **Doku:** `vat-knowledge/rules/uid_usage_rules.md`, `at/eproha-buchungskreise.md`, `CLAUDE.md`,
+  Prüfdaten-Export `02_uid_findung` (neue Regel **B1a**, falsches Beispiel „ab DE mit AT-UID = AF"
+  entfernt).
+
+---
+
 ## v4.3 · 20.09.2026 — Prüfdaten-Export für externe Ist/Soll-Logik
 
 Grundlage für eine **Excel-Prüflogik der SAP-Steuerkennzeichen** (Ist/Soll auf

@@ -1,6 +1,6 @@
 {
   "_hinweis": "suite=matrix-* sind die belastbarsten Sollwerte (Ist/Soll gegen SAP). quickcheck-* und lohnveredelung tragen MWSKZ je Lieferung. smoke prüft Struktur (bewegte Lieferung, Dreieck, Lieferort), nicht Kennzeichen. output-html/render sind HTML-Assertions ohne maschinenlesbaren Sollwert.",
-  "_stand": "2026-09-20",
+  "_stand": "2026-09-23",
   "_zaehlung": {
     "matrix-strecke": 37,
     "matrix-lager": 14,
