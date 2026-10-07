@@ -2,6 +2,18 @@
 
 ---
 
+## v4.3 · 07.10.2026 — EPDE-UIDs vereinheitlicht
+
+**Datenkorrektur, keine Steuerlogik.** Abgleich mit der bestätigten EPDE-UID-Liste
+(DE449663039 · SI66423562 · LV90013367396 · EE102839441 · NL827914052B01 · BE1022245089 ·
+CZ687387072 · PL5263841834) — `COMPANIES.EPDE` war bereits korrekt.
+
+- `buildInvoiceSnapshot()`: hartkodierte EPDE-UID `DE811128823` → `DE449663039` (Funktion gibt `''` zurück, nicht sichtbar).
+- Testfixtures (`app.js`, 3 EPDE-`vatIds`-Overrides) + `export/04_testfaelle.json`: abweichende EE/NL/BE/CZ/PL-Nummern auf die Stammdaten gezogen.
+- `docs/v1/` und `Reihengeschaeftsrechner_22.html` bewusst unverändert (eingefrorene Stände).
+
+---
+
 ## v4.3 · 23.09.2026 — MWSKZ der eigenen bewegten Ausgangslieferung über das Abgangsland
 
 **Fachliche Korrektur (Baseline neu gesetzt).** Gefunden beim Abgleich der UVA-Hilfsformel
