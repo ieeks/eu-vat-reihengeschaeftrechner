@@ -5470,7 +5470,7 @@ function buildInvoiceSnapshot(ctx, eng) {
   const { dep, dest, s1, s4, mode } = ctx;
   const isAT = COMPANIES[currentCompany].home === 'AT';
   const companyName = isAT ? 'EU-RO Handels GmbH' : 'Europapier Deutschland GmbH';
-  const companyUid  = isAT ? 'ATU36513402' : 'DE811128823';
+  const companyUid  = isAT ? 'ATU36513402' : 'DE449663039';
 
   // Meine ausgehende Lieferung bestimmen
   const mySupply = eng.supplies ? eng.supplies.find(s => s.iAmTheSeller) : null;
@@ -9276,7 +9276,7 @@ const SMOKE_TESTS = [
     source: '§ 3 Abs. 6 UStG iVm. § 3 Abs. 6a Satz 2 UStG — U1 veranlasst Transport',
     ctx: { s1:'DE', s2:'DE', s4:'CH', dep:'DE', dest:'CH', transport:'supplier',
            mode:3, mePosition:2, company:'EPDE',
-           vatIds:{DE:'DE449663039',SI:'SI66423562',LV:'LV90013367396',EE:'EE102112731',NL:'NL863726469B01',BE:'BE0441800834',CZ:'CZ685576332',PL:'PL5272830749'},
+           vatIds:{DE:'DE449663039',SI:'SI66423562',LV:'LV90013367396',EE:'EE102839441',NL:'NL827914052B01',BE:'BE1022245089',CZ:'CZ687387072',PL:'PL5263841834'},
            companyHome:'DE', establishments:['DE'],
            parties:['DE','DE','CH'], isNonEU:(c)=>c==='CH', rateOf:(c)=>c==='CH'?8.1:c==='DE'?19:21, nameOf:(c)=>c },
     expect: {
@@ -9292,7 +9292,7 @@ const SMOKE_TESTS = [
     ctx: { s1:'DE', s2:'DE', s4:'CH', dep:'DE', dest:'CH', transport:'middle',
            uidOverride: null, // DE-UID = Ansässigkeits-UID = lit. b → L2 bewegend
            mode:3, mePosition:2, company:'EPDE',
-           vatIds:{DE:'DE449663039',SI:'SI66423562',LV:'LV90013367396',EE:'EE102112731',NL:'NL863726469B01',BE:'BE0441800834',CZ:'CZ685576332',PL:'PL5272830749'},
+           vatIds:{DE:'DE449663039',SI:'SI66423562',LV:'LV90013367396',EE:'EE102839441',NL:'NL827914052B01',BE:'BE1022245089',CZ:'CZ687387072',PL:'PL5263841834'},
            companyHome:'DE', establishments:['DE'],
            parties:['DE','DE','CH'], isNonEU:(c)=>c==='CH', rateOf:(c)=>c==='CH'?8.1:c==='DE'?19:21, nameOf:(c)=>c },
     expect: {
@@ -9307,7 +9307,7 @@ const SMOKE_TESTS = [
     source: '§ 3 Abs. 6a Satz 3 UStG — letzter Abnehmer (CH) holt ab → letzte Lieferung bewegend',
     ctx: { s1:'DE', s2:'DE', s4:'CH', dep:'DE', dest:'CH', transport:'customer',
            mode:3, mePosition:2, company:'EPDE',
-           vatIds:{DE:'DE449663039',SI:'SI66423562',LV:'LV90013367396',EE:'EE102112731',NL:'NL863726469B01',BE:'BE0441800834',CZ:'CZ685576332',PL:'PL5272830749'},
+           vatIds:{DE:'DE449663039',SI:'SI66423562',LV:'LV90013367396',EE:'EE102839441',NL:'NL827914052B01',BE:'BE1022245089',CZ:'CZ687387072',PL:'PL5263841834'},
            companyHome:'DE', establishments:['DE'],
            parties:['DE','DE','CH'], isNonEU:(c)=>c==='CH', rateOf:(c)=>c==='CH'?8.1:c==='DE'?19:21, nameOf:(c)=>c },
     expect: {
