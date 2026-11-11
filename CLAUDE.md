@@ -24,10 +24,9 @@ git checkout -b <neuer-branch> origin/main   # frisch von main branchen (empfohl
 ```
 Danach prüfen, ob das geplante Feature nicht längst auf main existiert.
 
-> **Deploy-Hinweis:** Jeder lokale Commit deployt via `hooks/post-commit` →
-> `sync-repos.sh` **sofort live** (rsync `docs/` → Repo `~/Developer/ieeks.github.io`).
-> Es gibt kein „Commit ohne Deploy". Schlägt der Deploy-Push fehl, im Deploy-Repo
-> `git reset --hard origin/main` (sonst wird veralteter `docs/`-Stand ausgeliefert).
+> **Deploy-Hinweis (11.11.2026):** GitHub Actions deployt `docs/` aus `main` als eigene
+> Project-Page unter `manuel.tools/eu-vat-reihengeschaeftrechner/`. Der frühere lokale
+> Sync-Hook ist historisch; `ieeks.github.io` enthält nur die Startseite. Siehe `WORKFLOW.md`.
 
 ---
 
@@ -256,6 +255,16 @@ Quelle: `SAP_TAX_MAP` in app.js (2026_EPCA_Tax_Account_determination_S4P.xlsx)
 | `dreiecks` | **AF** | — | Dreiecksgeschäft AT (Erwerbsteuer 0%) |
 | `rc` | **RC** | **RC** | Reverse Charge AT (RCA/RCE) |
 | `not-taxable` | **X0** | — | Nicht steuerbar AT |
+| `rc-purchase` | — | **V0** | Vorsteuer 0 %; Drittlandseinkauf ohne Erwerbsteuer, EUSt separat (User bestätigt 11.11.2026) |
+
+**Import-Eingang:** `getImportPurchaseSap(company,destination,importer)` ist die gemeinsame
+SAP-Zuordnung für die CH/LI-Einkaufsbox und `_importerConsequence()`. `rc-purchase` ist
+ein historischer Schlüssel für Vorsteuer 0 %, kein Reverse Charge. `analyzeCH()` gibt
+`isImportPurchase`, `sapTreatment` und `sapCountry` explizit an `buildDeliveryBox()` weiter;
+die „0 % + bewegt“-Heuristik darf daraus keinen IG-Erwerb (VE/VH) machen. Bei Lieferant
+als Einführer gilt laut bestehendem Importmodell `domestic` (z. B. AT V2), sonst der
+vorhandene 0%-Eingangscode (EPROHA/AT V0, EPDE/DE P0). Fehlende Länder-Mappings bleiben
+leer. Regression: `scripts/test-import-purchase.mjs`, in `npm test`.
 
 **EPROHA — DE-UID**
 

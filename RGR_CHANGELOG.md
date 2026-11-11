@@ -2,6 +2,21 @@
 
 ---
 
+## v4.3 · 11.11.2026 — Eingangskennzeichen bei Drittland-Import
+
+- EPROHA/AT: **V0 = Vorsteuer 0 %** (vom User bestätigt) als `rc-purchase` ergänzt.
+- CH/LI-Import: explizite SAP-Behandlung der Lieferantenrechnung statt Ableitung aus
+  „0 % + bewegte Lieferung“. Dadurch V0/P0 statt des falschen IG-Erwerbs VE/VH.
+- Einkaufsbox und Einführer-Hinweis verwenden `getImportPurchaseSap()`. Bei Lieferant
+  als Einführer wird die im Importmodell vorgesehene Inlandsrechnung gezeigt (AT V2).
+- Irreführenden Erwerbs-UID-Hinweis beim Import unterdrückt; 0%-Vorsteuer und separat
+  behandelte EUSt in den Einkaufshinweisen getrennt. Fehlende Mappings bleiben offen.
+- Regression für 15 Fälle: Transport A/B, Einführerrollen, CH/LI/GB/TR, EPDE-P0,
+  fehlendes Länder-Mapping sowie unveränderte echte IG-Erwerbe VE/VH; in `npm test`.
+- Ausgangsbeurteilung und VATEngine nicht geändert.
+
+---
+
 ## v4.3 · 07.10.2026 — EPDE-UIDs vereinheitlicht
 
 **Datenkorrektur, keine Steuerlogik.** Abgleich mit der bestätigten EPDE-UID-Liste

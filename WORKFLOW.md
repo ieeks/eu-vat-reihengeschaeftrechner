@@ -1,59 +1,34 @@
-# WORKFLOW.md – Dual Repo Workflow
+# WORKFLOW.md – GitHub Pages
 
-## REPOS
+Stand: 11.11.2026. Der Rechner wird als eigene GitHub-Project-Page veröffentlicht.
+`ieeks.github.io` enthält laut dessen aktuellem README nur die Startseite und verlinkt
+die Tools in ihren eigenen Repositories; dort liegt keine Kopie dieses Rechners.
 
-| Role | Name | URL |
+| Rolle | Repository / Artefakt | URL |
 |---|---|---|
-| PRIMARY (source of truth) | `eu-vat-reihengeschaeftrechner` | https://ieeks.github.io/eu-vat-reihengeschaeftrechner/ |
-| DEPLOY (read-only copy, subfolder) | `ieeks.github.io/eu-vat-reihengeschaeftrechner/` | https://manuel-app.dev/eu-vat-reihengeschaeftrechner/ |
+| Quelle und Deployment | `eu-vat-reihengeschaeftrechner`, Artefakt `docs/` | https://manuel.tools/eu-vat-reihengeschaeftrechner/ |
+| Startseite | `ieeks.github.io` | https://manuel.tools/ |
 
 ---
 
-## HARD RULES
+## Workflow
 
-- PRIMARY is the ONLY source of truth
-- DEPLOY must NEVER be edited directly
-- ALL changes flow PRIMARY → DEPLOY, never the other way
-- Task is NOT done until PRIMARY updated, DEPLOY synced, DEPLOY pushed
-
----
-
-## REQUIRED WORKFLOW
-
-After ANY change:
-
-1. Make changes in PRIMARY only
-2. Commit in PRIMARY → sync runs automatically via post-commit hook
-3. Decide redirect state and run toggle script if needed
+1. Änderungen in diesem Repository auf dem aktuellen `origin/main` aufbauen.
+2. Relevante Tests und `matrix:check` ausführen; Baseline nur bei erklärten Änderungen neu setzen.
+3. Änderung nach `main` bringen. `.github/workflows/pages.yml` prüft die Matrix und deployt `docs/`.
+4. Pages-Workflow und die ausgelieferte App prüfen.
 
 ---
 
-## CLOUDFLARE REDIRECT
+Keine Kopie nach `ieeks.github.io` anlegen und dessen Domain-/Startseiten-Dateien
+bei einer Rechnerkorrektur nicht verändern.
 
-`manuel-app.dev` → `ieeks.github.io` (temporary fallback)
+## Historischer lokaler Sync
 
-- Domain should be LIVE → `./toggle-cloudflare-redirect.sh disable`
-- Fallback mode → `./toggle-cloudflare-redirect.sh enable`
-
----
-
-## SYNC EXCLUSIONS
-
-Never copy from PRIMARY to DEPLOY:
-
-- `.git/`
-- `CNAME`
-- Domain/deployment configs
+`sync-repos.sh`, `hooks/post-commit` und `toggle-cloudflare-redirect.sh` dokumentieren
+den früheren Mac-/Dual-Repo-Workflow mit `manuel-app.dev`. Sie sind kein Bestandteil
+des aktuellen GitHub-Actions-Deployments und werden dafür nicht ausgeführt.
 
 ---
 
-## COMPLETION CHECKLIST
-
-Always report at end of task:
-
-```
-Primary repo updated:  yes/no
-Deploy repo updated:   yes/no
-Deploy repo pushed:    yes/no
-Redirect state:        enabled/disabled
-```
+Zum Abschluss den Commit/PR und den tatsächlichen Pages-Status nennen.

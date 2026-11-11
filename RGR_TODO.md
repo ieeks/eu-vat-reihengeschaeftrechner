@@ -1,8 +1,16 @@
 # RGR TODO — Reihengeschäftsrechner v4.3
 
-Stand: 25.08.2026
+Stand: 11.11.2026
 
 ---
+
+## Nachlauf Drittland-Einkauf (11.11.2026)
+
+- [x] EPROHA/AT V0 (Vorsteuer 0 %) ergänzen; CH/LI-Import nicht als IG-Erwerb VE anzeigen.
+- [x] Einkaufsbox und Einführer-Hinweis gemeinsam prüfen; 15 Regressionen in `npm test`.
+- [ ] Ausgangsbeurteilung der Importfälle separat vereinheitlichen: Einführer-Hinweis
+      „Kunde → X0“ und L2-Inlandslieferung müssen auch die Transportzuordnung beachten.
+      Nicht Teil der gezielten Korrektur des Einkaufskennzeichens.
 
 ## Nachlauf MWSKZ-Fix eigene bewegte Ausgangslieferung (23.09.2026)
 

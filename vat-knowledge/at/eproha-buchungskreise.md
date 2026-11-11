@@ -35,6 +35,13 @@ Land des Lieferorts (transaction country), unabhängig von der UID.
 | Ausfuhr AT → Drittland (CH, GB, …) | **A0** | — | Ausfuhrnachweis ATLAS |
 | Inlandslieferung AT (20% MwSt) | **A2** | **V2** | UVA AT |
 | Nicht steuerbar AT | **X0** | — | — |
+| Drittlandseinkauf ohne EU-USt (Vorsteuer 0 %) | — | **V0** | Keine Erwerbsteuer; EUSt separat über Einfuhrbeleg |
+
+**V0 bestätigt am 11.11.2026:** Die Nettorechnung des Drittland-Lieferanten ist kein
+innergemeinschaftlicher Erwerb und darf deshalb nicht mit VE angezeigt werden.
+`SAP_TAX_MAP.EPROHA.AT['rc-purchase'].in = 'V0'`; der historische Schlüssel steht hier
+für Vorsteuer 0 %, nicht für Reverse Charge. Ist nach dem Importmodell der Lieferant
+Einführer und stellt eine österreichische Inlandsrechnung, gilt stattdessen V2.
 
 ### DE-Buchungskreis (DE-UID auf Rechnung)
 
