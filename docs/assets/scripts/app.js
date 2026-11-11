@@ -123,6 +123,8 @@ const SAP_TAX_MAP = {
       'export':               { out:'A0', in:null,  desc:'Ausfuhr AT 0%' },
       'dreiecks':             { out:'AF', in:null,  desc:'Dreiecksgeschäft AT — Erwerbsteuer 0%' },
       'not-taxable':          { out:'X0', in:null,  desc:'Nicht steuerbar AT' },
+      // Vom FI-Key-User bestätigt: V0 = Vorsteuer 0%; keine Erwerbsteuer/EUSt.
+      'rc-purchase':          { out:null, in:'V0',  desc:'Vorsteuer 0% AT – Drittlandseinkauf ohne Erwerbsteuer; EUSt separat' },
     },
     DE: {
       'domestic':             { out:'DS', in:'VD',  desc:'Ausgangssteuer DE 19% / Vorsteuer DE 19%' },
@@ -285,6 +287,14 @@ function getSapCode(company, country, treatment, role, uidCountry) {
 function getSapDesc(company, country, treatment, uidCountry) {
   const eff = _sapEffectiveCountry(company, country, treatment, uidCountry);
   return SAP_TAX_MAP[company]?.[eff]?.[treatment]?.desc || null;
+}
+
+// Eingangsrechnung bei Einfuhr: dieselbe Zuordnung für Lieferbox und Einführer-Hinweis.
+// Der historische Schlüssel rc-purchase bezeichnet hier nur Vorsteuer 0%, kein RC.
+function getImportPurchaseSap(company, destination, importer) {
+  const country = importer === 'customer' ? COMPANIES[company].home : destination;
+  const treatment = importer === 'supplier' ? 'domestic' : 'rc-purchase';
+  return { country, treatment, code: getSapCode(company, country, treatment, 'buyer') };
 }
 
 // Gibt einen inline SAP-Badge-String zurück für TLDR-Zeilen
@@ -3116,9 +3126,15 @@ function analyzeCH(supplier, me, customer, departure, destination) {
     // Ruhende L2 = Inlandslieferung im Bestimmungsland nach Einfuhr: dort-UID auf Rechnung
     // + in den Pflichtangaben, nicht die Heimat-UID
     const l2Code = myVat(destination) ? destination : myCode;
-    const l1tax = computeTaxCH('import', supplier, me, myCode);
+    const purchase = getImportPurchaseSap(currentCompany, destination, importerRole);
+    const l1Code = myVat(purchase.country) ? purchase.country : myCode;
+    const l1tax = importerRole === 'supplier'
+      ? computeTaxCH('domestic-l1', destination, me, l1Code)
+      : computeTaxCH('import', supplier, me, l1Code);
+    // Einfuhr ist kein IG-Erwerb. SAP-Behandlung explizit übergeben, nicht aus „0%“ ableiten.
+    Object.assign(l1tax, { isImportPurchase: true, sapTreatment: purchase.treatment, sapCountry: purchase.country });
     const l2tax = computeTaxCH('import-l2', me, customer, l2Code);
-    html += buildDeliveryBox('L1', supplier, me, true, l1tax, myCode, destination);
+    html += buildDeliveryBox('L1', supplier, me, true, l1tax, l1Code, destination, true);
     html += buildDeliveryBox('L2', me, customer, false, l2tax, l2Code, destination, false, destination);
 
     html += `<div class="hints" style="margin-bottom:12px;">`;
@@ -3348,7 +3364,7 @@ function computeTax(isMoving, from, to, dep, dest, num, myCode) {
 
 function buildDeliveryBox(num, from, to, isMoving, tax, myCode, dest, iAmBuyer, placeOfSupply) {
   let vatSuggestion = '';
-  if (isMoving) {
+  if (isMoving && !tax.isImportPurchase) {
     // Bewegte Lieferung: UID gegenüber Lieferant empfehlen
     const vatId = myVat(myCode);
     if (vatId) {
@@ -3430,15 +3446,15 @@ function buildDeliveryBox(num, from, to, isMoving, tax, myCode, dest, iAmBuyer, 
           const pos = placeOfSupply || (isMoving ? from : dest) || dest;
           // Treatment aus badgeClass ableiten — Käufer auf IG-Lieferung → ic-acquisition
           const isExportDelivery = tax.badgeClass === 'badge-export';
-          const isIGDelivery = !isExportDelivery && (
+          const isIGDelivery = !isExportDelivery && !tax.isImportPurchase && (
                                tax.badgeClass === 'badge-ig'
                             || (tax.badgeClass === 'badge-rc' && tax.label === 'Dreiecksgeschäft')
                             || (tax.mwst && tax.mwst.includes('0%') && isMoving));
-          const treatment = isExportDelivery ? 'export'
+          const treatment = tax.sapTreatment || (isExportDelivery ? 'export'
                           : isIGDelivery
                           ? (iAmSeller ? 'ic-exempt' : 'ic-acquisition')
                           : tax.badgeClass === 'badge-rc' ? 'rc'
-                          : 'domestic';
+                          : 'domestic');
           // IG-Lieferung (Verkäufer): myHome + UID-Hint für AF vs. DH
           // IG-Erwerb (Käufer): UID-Land wo EPDE einkauft (myCode) für W5/VH/LP etc.
           // Ruhende Lieferung: Lieferort (pos) verwenden
@@ -3448,10 +3464,10 @@ function buildDeliveryBox(num, from, to, isMoving, tax, myCode, dest, iAmBuyer, 
           // (vat-knowledge/plants_abroad/README.md Punkt 5).
           const sellerMovingOut = iAmSeller && isMoving && placeOfSupply
                                && (treatment === 'ic-exempt' || treatment === 'export');
-          const sapCountry = sellerMovingOut ? pos
+          const sapCountry = tax.sapCountry || (sellerMovingOut ? pos
                           : (treatment === 'ic-exempt' || treatment === 'ic-acquisition') ? myHome
                           : treatment === 'export' ? myHome
-                          : pos;
+                          : pos);
           const uidHint    = sellerMovingOut ? pos
                           : (treatment === 'ic-exempt' || treatment === 'ic-acquisition') ? myCode : null;
           const eff = _sapEffectiveCountry(comp, sapCountry, treatment, uidHint);
@@ -6047,16 +6063,17 @@ function _importerConsequence(country, direction, movingL1, roleArg, depArg) {
   }
 
   // ── IMPORT: Drittland → EU `country` ──
+  const purchase = getImportPurchaseSap(co, country, role);
   if (role === 'customer') {
     return line('🛃', `<strong>Kunde</strong> ist Einführer (EXW/FCA/DAP) — deine Lieferung <strong>vor der Einfuhr</strong> (außerhalb EU), „unverzollt".`)
          + stk('Ausgangsrechnung', sc(home, 'not-taxable', 'seller'), 'nicht steuerbar')
-         + stk('Eingangsrechnung', sc(home, 'rc-purchase', 'buyer'), 'Drittlandseinkauf 0 %, Typ P0')
+         + stk('Eingangsrechnung', purchase.code, 'Drittlandseinkauf, Vorsteuer 0 %; EUSt separat')
          + details(line('ℹ️', `Lieferort außerhalb der EU (vor Einfuhr) → nicht steuerbar, kein deutscher Ausgangsumsatz. Der Kunde meldet die Einfuhr an und zahlt Einfuhr-USt ${rate(country)} % in ${cn(country)}.`));
   }
   if (role === 'supplier') {
     return line('🛃', `<strong>Lieferant</strong> ist Einführer (DDP) — du bekommst eine <strong>${cn(country)}-Inlandsrechnung</strong> und verkaufst ${cn(country)}-inländisch weiter.`)
          + stk('Ausgangsrechnung', sc(country, 'domestic', 'seller'), `${cn(country)}-Inland`)
-         + stk('Eingangsrechnung', sc(country, 'domestic', 'buyer'), `${cn(country)}-Vorsteuer`)
+         + stk('Eingangsrechnung', purchase.code, `${cn(country)}-Vorsteuer`)
          + details(line('ℹ️', `Der Lieferant verzollt (DDP) und macht eine ${cn(country)}-Inlandslieferung an dich → ${cn(country)}-Vorsteuer (Eingang). Dein Weiterverkauf ist ${cn(country)}-inländisch (Ausgang).`));
   }
   // self / DDP → wir führen in die EU ein
@@ -6066,11 +6083,13 @@ function _importerConsequence(country, direction, movingL1, roleArg, depArg) {
     : line('🛃', `Einfuhr über deine <strong>EORI-Nummer</strong> (EU-weit gültig — keine separate ${cn(country)}-EORI). ⚠ Keine ${cn(country)}-UID → <strong>Registrierung in ${cn(country)}</strong> nötig (oder Kunde als Einführer).`);
   return eori
        + stk('Ausgangsrechnung', sc(country, 'domestic', 'seller'), `${cn(country)}-Inland`)
-       + stk('Eingangsrechnung', sc(country, 'rc-purchase', 'buyer'), 'Drittlandseinkauf 0 %, Typ P0')
+       + stk('Eingangsrechnung', purchase.code, 'Drittlandseinkauf, Vorsteuer 0 %; EUSt separat')
        + details(
            line('ℹ️', `Einfuhr-USt = Zoll/EUSt über EORI — <strong>kein AP-MWSKZ</strong> (weder EPDE noch EPROHA); abziehbar nur als ${cn(country)}-EUSt-Vorsteuer.`)
-         + line('📥', `Eingangsrechnung des Drittland-Lieferanten: ohne EU-USt (Drittlandskauf) → 0 %-Vorsteuer (Typ P0), <strong>nicht</strong> G0 (das wäre ein deutscher Ausgangsumsatz).`)
-         + line('🧩', `Weiterverkauf mit ${cn(country)}-USt → Buchung im ${cn(country)}-Ledger → dort ein ${cn(country)}-Pendant zu P0 nötig; aktuell nicht in SAP angelegt.`));
+         + line('📥', `Eingangsrechnung des Drittland-Lieferanten: ohne EU-USt (Drittlandskauf) → Vorsteuer 0 %, keine Erwerbsteuer. Die EUSt wird separat anhand des Einfuhrbelegs behandelt.`)
+         + line('🧩', purchase.code
+             ? `Eingangsrechnung im ${cn(purchase.country)}-Ledger mit <strong>${purchase.code}</strong> (Vorsteuer 0 %) buchen; dieses Kennzeichen bildet keine EUSt ab.`
+             : `Für Vorsteuer 0 % im ${cn(purchase.country)}-Ledger ist aktuell kein SAP-Kennzeichen im Tool hinterlegt.`));
 }
 
 // ── EXW mit Drittlandskunde: zollrechtliche Ausführer-Falle ────────────────
@@ -10384,7 +10403,7 @@ const OUTPUT_TESTS = [
       { contains: 'SAP-Stkz. <strong>Ausgangsrechnung', desc: 'kompakte Ausgangs-MWSKZ-Zeile' },
       { contains: 'BS', desc: 'BE-Anschlusslieferung Ausgangs-MWSKZ' },
       { contains: 'Eingangsrechnung', desc: 'kompakte Eingangs-MWSKZ-Zeile' },
-      { contains: 'Typ P0', desc: 'Drittlandseinkauf 0% (P0-Typ)' },
+      { contains: 'Vorsteuer 0 %', desc: 'Drittlandseinkauf ohne Erwerbsteuer, EUSt separat' },
     ],
     notExpect: [
       { contains: 'Eing:', desc: 'kein irreführendes Eingangs-(Kunden-)Kennzeichen BI' },

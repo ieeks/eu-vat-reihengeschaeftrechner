@@ -15,7 +15,7 @@
     "export:pruefdaten": "node scripts/export-pruefdaten.mjs",
     "matrix:baseline": "node scripts/export-matrix.mjs --countries eu --out tests/matrix-baseline.csv",
     "matrix:check": "node scripts/export-matrix.mjs --countries eu --out tests/matrix-current.csv && node scripts/matrix-diff.mjs tests/matrix-baseline.csv tests/matrix-current.csv",
-    "test": "node scripts/test.mjs && node scripts/test-lohn-tabs.mjs"
+    "test": "node scripts/test.mjs && node scripts/test-lohn-tabs.mjs && node scripts/test-import-purchase.mjs"
   },
   "devDependencies": {
     "jsdom": "^24.1.3"
